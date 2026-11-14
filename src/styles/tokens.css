@@ -1,0 +1,70 @@
+/*
+ * Designsystem der Denk-Raupe. Farben der Perlen kommen aus src/design/farbe.ts –
+ * ein Test hält diese Datei und farbe.ts gleich. Nur helles Design.
+ */
+:root {
+  color-scheme: light;
+
+  /* Flächen und Schrift – dieselbe Familie wie die Lese-Raupe */
+  --bg: #F4F8F2;
+  --card: #FFFFFF;
+  --ink: #1F2421;
+  --muted: #5B655F;
+  --line: #CFE3C8;
+  --wiese: #E9F3E6;
+  --green: #2F6B3A;
+  --orange: #F2A65A;
+  --orange-ink: #4A2A0A;
+  --orange-light: #FDEEDC;
+  --kontur: #1B2033;
+
+  /* Ziffern 0–9, 100 */
+  --z0: #EEF1F4;
+  --z1: #FF4D6D;
+  --z2: #FF9F1C;
+  --z3: #FFD23F;
+  --z4: #A3D93B;
+  --z5: #3BC14A;
+  --z6: #22C3A6;
+  --z7: #2EC4F0;
+  --z8: #3A86FF;
+  --z9: #5B5BF0;
+  --z100: #8338EC;
+  --perle-neutral: #FBF5E6;
+
+  /* Blätter */
+  --blatt: #6DB85C;
+  --blatt-ader: #2F6B3A;
+  --gold: #F6C945;
+  --gold-ader: #A0740E;
+
+  /* Schrift (px, Inter Schule) */
+  --t-klein: 14px;
+  --t-text: 17px;
+  --t-auftrag: 22px;
+  --t-titel: 28px;
+
+  /* Abstände und Ecken */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --rund-s: 12px;
+  --rund-m: 18px;
+  --rund-l: 24px;
+
+  /* Tippflächen: Knöpfe mindestens 56 px, Perlen mindestens 48 px */
+  --tipp: 56px;
+  --tipp-perle: 48px;
+
+  /* Bewegung: kurz, hält nie auf */
+  --kurz: 160ms;
+  --mittel: 320ms;
+  --heben: 450ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --kurz: 1ms; --mittel: 1ms; --heben: 1ms; }
+}
