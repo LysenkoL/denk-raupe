@@ -1,7 +1,8 @@
 import { KIND } from '../i18n/kind';
 import { gleich } from '../perlen/antwort';
 import { perlenBild } from '../perlen/perle';
-import { blattSvg, perleSvg } from '../perlen/maler';
+import { blattImg, perleSvg } from '../perlen/maler';
+import { KORB } from '../bilder/bilder';
 import { szeneHtml } from '../satz/szene';
 import { DEMO, demoStimmt, type DemoAufgabe } from '../satz/demo';
 import {
@@ -55,7 +56,8 @@ export function renderSatz(app: HTMLElement, params: URLSearchParams): void {
       // Platzhalter: Korb und ein Buchstabe des Geheimworts – Etappe 3 macht daraus das kleine Ereignis
       aufgabe.innerHTML = `<div class="ende">
         <h2>${KIND.fertigTitel}</h2>
-        <div class="korb" aria-hidden="true">${Array.from({ length: b.gold }, () => blattSvg(true)).join('')}${Array.from({ length: b.normal }, () => blattSvg(false)).join('')}</div>
+        <img class="korb-bild" src="${KORB.voll}" alt="" draggable="false">
+        <div class="korb" aria-hidden="true">${Array.from({ length: b.gold }, () => blattImg('gold')).join('')}${Array.from({ length: b.normal }, () => blattImg('normal')).join('')}</div>
         <p>${KIND.fertigKorb}</p>
         ${zurueck ? `<p class="hinweis">${KIND.spaeter}</p>` : ''}
         <div class="geheim" aria-label="${KIND.geheimwort}"><span></span><span></span><span class="auf">U</span><span></span><span></span></div>

@@ -20,23 +20,17 @@
 
   /* Ziffern 0–9, 100 */
   --z0: #EEF1F4;
-  --z1: #FF4D6D;
-  --z2: #FF9F1C;
-  --z3: #FFD23F;
-  --z4: #A3D93B;
-  --z5: #3BC14A;
-  --z6: #22C3A6;
-  --z7: #2EC4F0;
-  --z8: #3A86FF;
-  --z9: #5B5BF0;
+  --z1: #E53935;
+  --z2: #FF8A00;
+  --z3: #FFE14D;
+  --z4: #8BD13B;
+  --z5: #178A3A;
+  --z6: #35C9F2;
+  --z7: #2A3FB8;
+  --z8: #FF9ACD;
+  --z9: #8D5524;
   --z100: #8338EC;
   --perle-neutral: #FBF5E6;
-
-  /* Blätter */
-  --blatt: #6DB85C;
-  --blatt-ader: #2F6B3A;
-  --gold: #F6C945;
-  --gold-ader: #A0740E;
 
   /* Schrift (px, Inter Schule) */
   --t-klein: 14px;

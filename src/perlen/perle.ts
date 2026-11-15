@@ -68,7 +68,7 @@ export function perlenBild(a: Antwort): PerlenBild {
     case 'zahl': {
       const { fuellung, ring } = zahlFarben(a.wert);
       const stellen = String(a.wert).length;
-      const groesse = stellen === 1 ? 1.05 : stellen === 2 ? (ring ? 0.8 : 0.9) : 0.68;
+      const groesse = stellen === 1 ? 1.05 : stellen === 2 ? (ring ? 0.72 : 0.9) : 0.68;
       const { schrift, saum } = schriftAuf(fuellung);
       return { breite: 2, fuellung, ring, inhalt: { typ: 'text', text: String(a.wert), schrift, saum, groesse, maxBreite: null }, name: String(a.wert) };
     }

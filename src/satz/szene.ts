@@ -1,6 +1,7 @@
 import { perlenBild } from '../perlen/perle';
-import { blattSvg, kopfImg, leerSvg, mulde, perleSvg, perlenBox, R } from '../perlen/maler';
-import type { Satz } from './vergleich';
+import { blattImg, kopfHtml, leerSvg, mulde, perleSvg, perlenBox, R } from '../perlen/maler';
+import { fertig, type Satz } from './vergleich';
+import type { KopfArt } from '../bilder/bilder';
 import { KIND } from '../i18n/kind';
 
 /**
@@ -24,6 +25,16 @@ export interface SzenenOptionen {
   ringe?: boolean;
   /** Perlen sind Knöpfe (App) oder nur Bild (Musterseite) */
   knoepfe?: boolean;
+  /** Ausdruck der Raupe; sonst aus dem Zustand */
+  kopf?: KopfArt;
+}
+
+/** Ausdruck der Raupe des Kindes: nie traurig – nach dem Vergleichen mit liegendem Blatt nachdenklich */
+export function kopfFuer(s: Satz): KopfArt {
+  if (fertig(s)) return 'freude';
+  if (s.runden > 0) return 'denkt';
+  if (s.perlen.some((p) => p.antwort !== null)) return 'schaut';
+  return 'normal';
 }
 
 function breite(s: Satz, i: number): number {
@@ -60,7 +71,7 @@ export function szeneHtml(s: Satz, o: SzenenOptionen = {}): string {
     const zk = ['zwilling-perle'];
     let inhalt: string;
     if (p.blatt !== 'zu' && i !== o.hebt) {
-      inhalt = perleSvg(bild!) + `<span class="lohn ${p.blatt === 'gold' ? 'gold' : ''}">${blattSvg(p.blatt === 'gold')}</span>`;
+      inhalt = perleSvg(bild!) + `<span class="lohn">${blattImg(p.blatt === 'gold' ? 'gold' : 'normal')}</span>`;
     } else {
       const { w: bw, h: bh } = perlenBox(breite(s, i));
       const mitte = `<svg class="perle-svg" viewBox="0 0 ${bw} ${bh}" aria-hidden="true"><g transform="translate(${(bw - 2 * R - 12) / 2} 0)">${mulde()}</g></svg>`;
@@ -68,13 +79,13 @@ export function szeneHtml(s: Satz, o: SzenenOptionen = {}): string {
       const bk = ['blatt'];
       if (o.wackeln?.includes(i)) bk.push('wackelt');
       if (i === o.hebt) bk.push('hebt');
-      inhalt = `${unter}<span class="${bk.join(' ')}">${blattSvg(p.blatt === 'gold')}</span>`;
+      inhalt = `${unter}<span class="${bk.join(' ')}">${blattImg(i === o.hebt && p.blatt === 'gold' ? 'gold' : 'normal')}</span>`;
     }
     unten.push(`<div class="${zk.join(' ')}" style="--w:${w}">${inhalt}</div>`);
   });
   const e = einheiten(s).toFixed(2);
   return `<div class="buehne" style="--e:${e};--n:${s.perlen.length}">
-    <div class="raupe-zeile kind" role="group" aria-label="${KIND.deineRaupe}">${oben.join('')}${kopfImg()}</div>
-    <div class="raupe-zeile zwilling" role="img" aria-label="${KIND.zwilling}">${unten.join('')}${kopfImg()}</div>
+    <div class="raupe-zeile kind" role="group" aria-label="${KIND.deineRaupe}">${oben.join('')}${kopfHtml(o.kopf ?? kopfFuer(s))}</div>
+    <div class="raupe-zeile zwilling" role="img" aria-label="${KIND.zwilling}">${unten.join('')}${kopfHtml('zwilling')}</div>
   </div>`;
 }

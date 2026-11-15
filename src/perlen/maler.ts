@@ -1,7 +1,7 @@
-import { BLATT, GOLD_BLATT, KONTUR, mix } from '../design/farbe';
+import { KONTUR, mix } from '../design/farbe';
+import { BLAETTER, KOEPFE, type BlattArt, type KopfArt } from '../bilder/bilder';
 import type { Form, Sammelzeichen } from './antwort';
 import type { PerlenBild } from './perle';
-import KOPF from './raupenkopf.png';
 
 /**
  * Zeichnet Perlen, Blätter und den Kopf als SVG – im Stil der Lese-Raupe:
@@ -104,7 +104,7 @@ export function perleInhalt(p: PerlenBild): string {
   let s = '';
   if (p.ring) {
     defs += verlauf(`${id}r`, p.ring);
-    const d = R * 0.27;
+    const d = R * 0.34; // Zehner-Ring kräftig, damit seine Farbe gut erkennbar ist
     s += kapsel(x, y, w, 2 * R, `fill="url(#${id}r)" stroke="${KONTUR}" stroke-width="${f(R * 0.13)}"`);
     s += kapsel(x + d, y + d, w - 2 * d, 2 * R - 2 * d, `fill="url(#${id}f)" stroke="${KONTUR}" stroke-width="${f(R * 0.07)}"`);
   } else {
@@ -143,25 +143,25 @@ export function mulde(): string {
   return `<circle cx="${RAND + R}" cy="${RAND + R}" r="${R - 2}" fill="#E4EEE1" stroke="#B9CDB4" stroke-width="${R * 0.08}"/>`;
 }
 
-/** ein Blatt; gold = für eine Perle, die beim ersten Vergleichen gleich war */
-export function blattPfad(cx: number, cy: number, s: number, gold = false): string {
-  const c = gold ? GOLD_BLATT : BLATT;
-  const p = (dx: number, dy: number) => `${f(cx + dx * s)} ${f(cy + dy * s)}`;
-  return (
-    `<path d="M${p(-1, 0.14)} Q${p(-0.5, -1.07)} ${p(1, -0.29)} Q${p(0.57, 1.07)} ${p(-1, 0.14)} Z" fill="${c.flaeche}" stroke="${c.ader}" stroke-width="${f(s * 0.09)}" stroke-linejoin="round"/>` +
-    `<path d="M${p(-0.86, 0.11)} Q${p(0, -0.07)} ${p(0.86, -0.25)}" fill="none" stroke="${c.ader}" stroke-width="${f(s * 0.07)}" stroke-linecap="round"/>`
-  );
+/** Blatt als Bild (Blätter des Zwillings, Lohn, Korb) */
+export function blattImg(art: BlattArt = 'normal', cls = 'blatt-img'): string {
+  return `<img class="${cls}" src="${BLAETTER[art]}" alt="" draggable="false">`;
 }
 
-export function blattSvg(gold = false, cls = 'blatt-svg'): string {
-  return `<svg class="${cls}" viewBox="-36 -36 72 72" aria-hidden="true">${blattPfad(0, 0, 32, gold)}</svg>`;
-}
+/**
+ * Kopfkreis = 1,25 Perlen. Der Platz ist 1,5 Perlen breit (Fühler, Blatt und Funken ragen seitlich heraus),
+ * die Kopfmitte liegt 0,65 Perlen vom linken Rand und 0,6 Perlen über dem Boden.
+ */
+const KOPF_D = 1.25;
+const MITTE_X = 0.65;
+const MITTE_HOEHE = 0.6;
 
-/** Kopf der Raupe – derselbe wie bei der Lese-Raupe (Bild vom App-Icon) */
-export const KOPF_BILD = { src: KOPF as string, w: 168, h: 200, mx: 75.7, my: 131.1, r: 72 };
-
-export function kopfImg(cls = 'kopf'): string {
-  return `<img class="${cls}" src="${KOPF_BILD.src}" alt="" width="${KOPF_BILD.w}" height="${KOPF_BILD.h}" draggable="false">`;
+/** Kopf der Raupe: Bild so gelegt, dass der Kopfkreis immer gleich groß und an gleicher Stelle sitzt */
+export function kopfHtml(art: KopfArt = 'normal'): string {
+  const k = KOEPFE[art];
+  const s = KOPF_D / (2 * k.r);
+  const style = `width:calc(var(--b) * ${f(k.w * s * 1000) / 1000});left:calc(var(--b) * ${f((MITTE_X - k.mx * s) * 1000) / 1000});bottom:calc(var(--b) * ${f((MITTE_HOEHE - (k.h - k.my) * s) * 1000) / 1000})`;
+  return `<span class="kopf-platz" data-kopf="${art}"><img class="kopf" src="${k.src}" alt="" draggable="false" style="${style}"></span>`;
 }
 
 function esc(s: string): string {

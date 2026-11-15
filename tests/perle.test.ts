@@ -2,11 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { HUNDERT_FARBE, KONTUR, NEUTRAL_PERLE, ZIFFER_FARBEN, kontrast } from '../src/design/farbe';
 import { perlenBild, zahlFarben, geld } from '../src/perlen/perle';
 import { gleich, type Antwort } from '../src/perlen/antwort';
+import { deltaE2000 } from './helpers/farbabstand';
 
 describe('Ziffernfarben (docs/TZ.md)', () => {
   it('zehn feste Farben für 0–9, alle verschieden', () => {
-    expect(ZIFFER_FARBEN).toEqual(['#EEF1F4', '#FF4D6D', '#FF9F1C', '#FFD23F', '#A3D93B', '#3BC14A', '#22C3A6', '#2EC4F0', '#3A86FF', '#5B5BF0']);
+    expect(ZIFFER_FARBEN).toEqual(['#EEF1F4', '#E53935', '#FF8A00', '#FFE14D', '#8BD13B', '#178A3A', '#35C9F2', '#2A3FB8', '#FF9ACD', '#8D5524']);
     expect(new Set(ZIFFER_FARBEN).size).toBe(10);
+  });
+
+  it('je zwei Ziffern gut zu unterscheiden, auch als dünner Ring (ΔE2000 ≥ 20)', () => {
+    for (let i = 0; i < 10; i++)
+      for (let j = i + 1; j < 10; j++)
+        expect(deltaE2000(ZIFFER_FARBEN[i], ZIFFER_FARBEN[j]), `${i} und ${j}`).toBeGreaterThanOrEqual(20);
+  });
+
+  it('die 100 hebt sich von jeder Ziffer ab', () => {
+    for (const c of ZIFFER_FARBEN) expect(deltaE2000(c, HUNDERT_FARBE), c).toBeGreaterThanOrEqual(12);
   });
 
   it('einstellig: Perle in der Farbe der Ziffer, ohne Ring', () => {
@@ -14,10 +25,10 @@ describe('Ziffernfarben (docs/TZ.md)', () => {
   });
 
   it('zweistellig: Füllung = Einer, Ring = Zehner (Beispiele aus dem Brief)', () => {
-    expect(zahlFarben(14)).toEqual({ fuellung: '#A3D93B', ring: '#FF4D6D' }); // hellgrün, roter Ring
-    expect(zahlFarben(10)).toEqual({ fuellung: '#EEF1F4', ring: '#FF4D6D' }); // hell, roter Ring
-    expect(zahlFarben(47)).toEqual({ fuellung: '#2EC4F0', ring: '#A3D93B' }); // hellblau, hellgrüner Ring
-    expect(zahlFarben(99)).toEqual({ fuellung: '#5B5BF0', ring: '#5B5BF0' });
+    expect(zahlFarben(14)).toEqual({ fuellung: '#8BD13B', ring: '#E53935' }); // hellgrün, roter Ring
+    expect(zahlFarben(10)).toEqual({ fuellung: '#EEF1F4', ring: '#E53935' }); // hell, roter Ring
+    expect(zahlFarben(47)).toEqual({ fuellung: '#2A3FB8', ring: '#8BD13B' }); // dunkelblau, hellgrüner Ring
+    expect(zahlFarben(99)).toEqual({ fuellung: '#8D5524', ring: '#8D5524' });
   });
 
   it('100 ist lila, mehr gibt es nicht', () => {

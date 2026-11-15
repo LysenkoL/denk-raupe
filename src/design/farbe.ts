@@ -3,18 +3,22 @@
  * ein Test hält beide gleich).
  */
 
-/** Ziffernfarben 0–9 (docs/TZ.md, „Цвета цифр“) – dieselben Regenbogenfarben wie bei der Lese-Raupe */
+/**
+ * Ziffernfarben 0–9 (docs/TZ.md, „Цвета цифр“). Gewählt nach Unterscheidbarkeit, nicht als Regenbogen:
+ * je zwei Ziffern unterscheiden sich um ΔE2000 ≥ 20, damit auch der Zehner-Ring erkennbar ist
+ * (Test: tests/perle.test.ts). Rot, Orange, Gelb und Hellgrün bleiben aus der Lese-Raupe-Familie.
+ */
 export const ZIFFER_FARBEN = [
   '#EEF1F4', // 0 hell
-  '#FF4D6D', // 1 rot
-  '#FF9F1C', // 2 orange
-  '#FFD23F', // 3 gelb
-  '#A3D93B', // 4 hellgrün
-  '#3BC14A', // 5 grün
-  '#22C3A6', // 6 türkis
-  '#2EC4F0', // 7 hellblau
-  '#3A86FF', // 8 blau
-  '#5B5BF0', // 9 indigo
+  '#E53935', // 1 rot
+  '#FF8A00', // 2 orange
+  '#FFE14D', // 3 gelb
+  '#8BD13B', // 4 hellgrün
+  '#178A3A', // 5 dunkelgrün
+  '#35C9F2', // 6 hellblau
+  '#2A3FB8', // 7 dunkelblau
+  '#FF9ACD', // 8 rosa
+  '#8D5524', // 9 braun
 ] as const;
 
 /** 100 – eigene Perle */
@@ -36,10 +40,6 @@ export const FORM_FARBEN = {
   lila: '#8338EC',
 } as const;
 export type FormFarbe = keyof typeof FORM_FARBEN;
-
-/** Blätter des Zwillings */
-export const BLATT = { flaeche: '#6DB85C', ader: '#2F6B3A' } as const;
-export const GOLD_BLATT = { flaeche: '#F6C945', ader: '#A0740E' } as const;
 
 export function hex(c: string): [number, number, number] {
   return [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)) as [number, number, number];

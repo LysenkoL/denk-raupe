@@ -1,8 +1,9 @@
-import { setSprache, t, type Sprache } from '../app/i18n';
+import { setSprache, t, type Key, type Sprache } from '../app/i18n';
 import { HUNDERT_FARBE, ZIFFER_FARBEN } from '../design/farbe';
 import { KIND } from '../i18n/kind';
 import type { Antwort } from '../perlen/antwort';
-import { blattSvg, leerSvg, perleSvg } from '../perlen/maler';
+import { blattImg, kopfHtml, leerSvg, perleSvg } from '../perlen/maler';
+import { BLAETTER, KOEPFE, KORB, type BlattArt, type KopfArt } from '../bilder/bilder';
 import { perlenBild } from '../perlen/perle';
 import { DEMO, demoStimmt } from '../satz/demo';
 import { szeneHtml } from '../satz/szene';
@@ -102,8 +103,14 @@ export function renderStil(app: HTMLElement, params: URLSearchParams): void {
     <section><h2>${t('stil.zustaende')}</h2>
       <div class="perlen-raster beschriftet">
         <figure class="muster-perle" style="--w:1">${leerSvg()}<figcaption>${t('stil.leer')}</figcaption></figure>
-        <figure class="muster-perle" style="--w:1">${blattSvg(false)}<figcaption>${t('stil.blatt')}</figcaption></figure>
-        <figure class="muster-perle" style="--w:1">${blattSvg(true)}<figcaption>${t('stil.gold')}</figcaption></figure>
+      </div>
+    </section>
+    <section><h2>${t('stil.bilder')}</h2>
+      <div class="bilder-raster">
+        ${(Object.keys(KOEPFE) as KopfArt[]).map((k) => `<figure><div class="kopf-probe" style="--b:72px">${kopfHtml(k)}</div><figcaption>${t(`stil.kopf.${k}` as Key)}</figcaption></figure>`).join('')}
+        ${(Object.keys(BLAETTER) as BlattArt[]).map((b) => `<figure>${blattImg(b, 'blatt-probe')}<figcaption>${t(`stil.blatt.${b}` as Key)}</figcaption></figure>`).join('')}
+        <figure><img class="korb-probe" src="${KORB.leer}" alt=""><figcaption>${t('stil.korb.leer')}</figcaption></figure>
+        <figure><img class="korb-probe" src="${KORB.voll}" alt=""><figcaption>${t('stil.korb.voll')}</figcaption></figure>
       </div>
     </section>
     <section><h2>${t('stil.satz')}</h2>

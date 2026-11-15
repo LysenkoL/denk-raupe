@@ -20,7 +20,7 @@
 
 ## Стек
 
-Как в Lese-Raupe: Vite + TypeScript без фреймворка, тесты на Vitest (вёрстка — Playwright внутри тестов), позже Capacitor для Android. Голова гусеницы и стиль бусин взяты из Lese-Raupe.
+Как в Lese-Raupe: Vite + TypeScript без фреймворка, тесты на Vitest (вёрстка — Playwright внутри тестов), позже Capacitor для Android. Стиль бусин взят из Lese-Raupe; картинки (головы, листья, корзинка) — свои, в `src/bilder/`.
 
 - `npm run dev` — разработка; `#/` — экран набора, `#/stil` — витрина дизайн-системы.
 - `npm run build && npm run screenshots` — скриншоты телефона и планшета в `screenshots/` (не в репозитории).

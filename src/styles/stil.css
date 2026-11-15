@@ -26,3 +26,8 @@
 /* Bühnen hier nur Bild, keine Tippflächen: dürfen kleiner werden */
 .stil .buehne { --tipp-perle: 30px; }
 .stil section { padding: var(--s3); }
+.bilder-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: var(--s4); }
+.bilder-raster figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: var(--s2); text-align: center; font-size: var(--t-klein); color: var(--muted); }
+.kopf-probe { display: flex; justify-content: center; padding-top: calc(var(--b) * 0.8); }
+.blatt-probe { width: 96px; height: auto; display: block; }
+.korb-probe { width: 96px; height: auto; display: block; }
