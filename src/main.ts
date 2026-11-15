@@ -14,7 +14,7 @@ function route(): void {
   window.scrollTo(0, 0);
   // vorerst zwei Bildschirme: der Satz und die Musterseite des Designsystems
   if (path === '/stil') return renderStil(app, params);
-  return renderSatz(app, params);
+  void renderSatz(app);
 }
 
 window.addEventListener('hashchange', route);

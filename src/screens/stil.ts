@@ -5,7 +5,7 @@ import type { Antwort } from '../perlen/antwort';
 import { blattImg, kopfHtml, leerSvg, perleSvg } from '../perlen/maler';
 import { BLAETTER, KOEPFE, KORB, type BlattArt, type KopfArt } from '../bilder/bilder';
 import { perlenBild } from '../perlen/perle';
-import { DEMO, demoStimmt } from '../satz/demo';
+import { gleich } from '../perlen/antwort';
 import { szeneHtml } from '../satz/szene';
 import { neuerSatz, setzeAntwort, vergleiche, zuruecklegen, type Satz } from '../satz/vergleich';
 
@@ -24,8 +24,16 @@ function mitAntworten(s: Satz, antworten: (Antwort | null)[]): Satz {
 }
 
 function zustaende(): [string, string][] {
-  const stimmt = demoStimmt(DEMO);
-  const loesung = DEMO.map((d) => d.loesung);
+  // Beispielantworten nur für die Bilder dieser Seite
+  const loesung: Antwort[] = [
+    { art: 'zahl', wert: 7 },
+    { art: 'zahl', wert: 14 },
+    { art: 'form', form: 'dreieck', farbe: 'blau' },
+    { art: 'buchstabe', wert: 'C' },
+    { art: 'artikel', wert: 'die' },
+    { art: 'wort', wert: 'Haus' },
+  ];
+  const stimmt = (i: number, a: Antwort) => gleich(loesung[i], a);
   const falsch: Antwort = { art: 'zahl', wert: 12 };
   const leer = neuerSatz(6);
   const teil = mitAntworten(leer, [loesung[0], loesung[1], null, loesung[3], null, null]);

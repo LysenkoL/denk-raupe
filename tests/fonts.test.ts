@@ -9,7 +9,7 @@ const ROOT = resolve(__dirname, '..');
 describe('Schrift Inter (Schulvariante), lokal', () => {
   for (const w of ['Medium', 'SemiBold', 'ExtraBold']) {
     it(`Inter-${w} hat cv05 (l mit Bogen) und cv11 (einstöckiges a)`, () => {
-      const font = fontkit.openSync(resolve(ROOT, 'public/fonts', `Inter-${w}.woff2`));
+      const font = fontkit.openSync(resolve(ROOT, 'src/fonts', `Inter-${w}.woff2`));
       expect(font.availableFeatures).toContain('cv05');
       expect(font.availableFeatures).toContain('cv11');
       const names = font.layout('l a I', ['cv05', 'cv11']).glyphs.map((g: { name: string }) => g.name);

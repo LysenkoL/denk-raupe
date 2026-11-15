@@ -73,7 +73,8 @@ svg text { font-family: var(--font); font-feature-settings: var(--font-features)
 .buehne { display: flex; flex-direction: column; gap: calc(var(--b) * 0.32);
   /* Perlengröße aus der Breite: alle Perlen + Kopf passen in eine Zeile */
   /* Breite = Perlen (--e Durchmesser) + Kopfplatz 1.5 − Überlappungen 0.14 je Perle */
-  --b: clamp(var(--tipp-perle), calc(100cqw / (var(--e) + 1.5 - 0.14 * var(--n))), 96px);
+  --b: clamp(var(--tipp-perle), min(calc(100cqw / (var(--e) + 1.5 - 0.14 * var(--n))), calc((100dvh - 130px) / 3.95)), 96px);
+  /* zweite Grenze: Raupe und Zwilling passen in die Höhe (Telefon quer), „Vergleichen“ bleibt sichtbar */
 }
 .raupe-zeile { display: flex; align-items: flex-end; justify-content: center; padding-top: calc(var(--b) * 0.8); }
 .raupe-zeile > * + * { margin-left: calc(var(--b) * -0.14); }
@@ -127,7 +128,7 @@ svg text { font-family: var(--font); font-feature-settings: var(--font-features)
 }
 .auftrag { margin: 0; font-size: var(--t-auftrag); font-weight: 800; line-height: 1.2; text-wrap: balance; }
 .aufgabe-bild { background: var(--bg); border-radius: var(--rund-m); padding: var(--s2); }
-.aufgabe-bild svg { display: block; width: 100%; height: auto; max-height: 160px; }
+
 .wahl { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: center; }
 .wahl button {
   min-width: 72px; height: 72px; padding: 4px; border-radius: 22px; border: 3px solid transparent; background: none;
@@ -161,3 +162,35 @@ svg text { font-family: var(--font); font-feature-settings: var(--font-features)
 }
 .geheim span.auf { border: 2px solid var(--green); color: var(--green); background: var(--card); }
 .hinweis { font-size: var(--t-klein); color: var(--muted); }
+
+/* ---------- Etappe 3: Eingabe, Hilfe, Lernbeispiel ---------- */
+.buehne-wrap { position: relative; }
+.ton-knopf { position: absolute; top: var(--s2); left: var(--s2); width: 44px; height: 44px; border-radius: 14px; color: var(--muted); z-index: 2; }
+.aufgabe-kopf { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s2); }
+.aufgabe-kopf .auftrag { flex: 1; min-width: 0; padding-top: 6px; }
+.hilfe-knopf { min-height: 48px; padding: 0 var(--s3); font-size: 16px; flex: none; }
+.hilfe-knopf:disabled { opacity: .45; cursor: default; }
+.aufgabe-svg { display: block; width: 100%; height: auto; max-height: min(300px, 42dvh); }
+.aufgabe-bild.tippbar [data-wahl] { cursor: pointer; }
+.aufgabe-bild [data-wahl]:focus-visible { outline: none; }
+.aufgabe-bild [data-wahl]:focus-visible rect { stroke: var(--orange); }
+/* Ziffernperlen 0–9 und Löschen: feste Größe, brechen um */
+.ziffern { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.ziffern button {
+  --z: clamp(48px, 14vw, 62px);
+  width: var(--z); height: var(--z); flex: none; padding: 2px; border: 0; background: none; border-radius: 50%;
+  touch-action: manipulation; display: flex; align-items: center; justify-content: center;
+}
+.ziffern button .perle-svg { width: 100%; height: 100%; display: block; }
+.ziffern button:active { transform: scale(.92); }
+.ziffern .loeschen { border-radius: var(--rund-m); background: var(--bg); border: 2px solid var(--line); font-size: 24px; color: var(--ink); }
+.ziffern .loeschen:disabled { opacity: .4; }
+.ziffern button:disabled:not(.loeschen) { opacity: .45; }
+.hilfe-box { background: var(--orange-light); border-radius: var(--rund-m); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
+.hilfe-box .aufgabe-svg { max-height: 200px; }
+.hilfe-box .spaeter { align-self: flex-start; }
+.lern { display: flex; flex-direction: column; gap: var(--s3); }
+.lern-titel { margin: 0; font-size: var(--t-klein); font-weight: 800; color: var(--green); text-transform: uppercase; letter-spacing: .06em; }
+.lern .los { align-self: stretch; }
+.geheim span.neu { box-shadow: 0 0 0 3px var(--orange); animation: hupf var(--mittel) ease-out 2; }
+.ende .neuer-satz { align-self: stretch; margin-top: var(--s2); }

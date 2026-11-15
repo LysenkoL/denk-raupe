@@ -15,6 +15,19 @@ export const KIND = {
   fertigKorb: 'Die Blätter sind im Korb.',
   spaeter: 'Eine Aufgabe wartet auf später.',
   geheimwort: 'Geheimwort',
+  hilfe: 'Hilfe',
+  mehrHilfe: 'Mehr Hilfe',
+  soGehts: "So geht's",
+  losGehts: "Los geht's",
+  genau: 'Genau so!',
+  nochmalSchauen: 'Schau noch einmal.',
+  aehnlich: 'So geht es bei einer ähnlichen Aufgabe:',
+  spaeterKnopf: 'Später',
+  wartet: 'Diese Aufgabe wartet auf später. Du kannst sie jetzt lösen.',
+  neuerSatz: 'Neuer Satz',
+  loeschen: 'Löschen',
+  ton: 'Ton',
+  neuerBuchstabe: 'Ein neuer Buchstabe!',
   /** Vorlesename für Screenreader */
   perleName(nr: number, inhalt: string | null): string {
     return inhalt ? `Aufgabe ${nr}: ${inhalt}` : `Aufgabe ${nr}: noch leer`;
