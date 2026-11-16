@@ -277,11 +277,11 @@ Nov 16, 2026
 
 ## 11. Персонажи
 
-**Гусеница.** Мягкая, бархатистая, тёплого зелёного цвета, без контура. Глаза внимательные, не огромные: голова к телу как у героя для школьника, а не для малыша. Одна узнаваемая деталь одежды. Выражения: спокойное, думает, радуется, удивляется.
+**Гусеница.** Мягкая, бархатистая, тёплого зелёного цвета, без контура. Глаза внимательные, не огромные: голова к телу как у героя для школьника, а не для малыша. Одна узнаваемая деталь одежды — треугольная бандана исследователя тёплого терракотово-оранжевого цвета. Выражения: спокойное, думает, радуется, удивляется.
 
 На старте и в мире гусеница видна целиком. В заданиях и при сравнении её тело — это бусины ответов: ряд сегментов-гнёзд на деревянной ветке. Впереди ряда гусеница приподнимает переднюю часть, как настоящая гусеница: голова, деталь одежды, первый сегмент и две передние лапки. На широком экране передняя часть стоит в начале ряда. На узком она поднята над первым гнездом и плавно в него переходит. Отдельно висящей головы нет ни на одном экране.
 
-**Близнец.** Та же форма, но другая деталь одежды и другой её цвет. В сравнении он тоже приподнимает переднюю часть, а его сегменты-бусины лежат под листьями. Различие видно и без цвета: под рядами стоят подписи «Deine Raupe» и «Dein Zwilling».
+**Близнец.** Та же форма, но другая деталь одежды и другой её цвет: аккуратная галстук-бабочка небесно-голубого цвета. Форма детали другая, поэтому близнецы различаются и без цвета. В сравнении он тоже приподнимает переднюю часть, а его сегменты-бусины лежат под листьями. Различие видно и без цвета: под рядами стоят подписи «Deine Raupe» и «Dein Zwilling».
 
 **Друзья.** Настоящие животные в том же материале и свете, что гусеница. Каждый — отдельная картинка на прозрачном фоне в одной позе.
 
@@ -298,13 +298,15 @@ Nov 16, 2026
 | 3 | Один друг (божья коровка) и одна игрушка (гриб) отдельными картинками | смотрятся частью сцены: тот же свет и материал |
 | 4 | Листья: обычный, золотой, три редких; корзинка пустая и полная; плитки текстуры дерева и бумаги | лист читается на 48 px; текстуры не спорят с цифрами |
 
-После пакета 1 автор выбирает три вещи, которые нельзя выбрать по описанию:
+Решено автором 16.11.2026:
 
-- **бусины:** глянцевое стекло или матовая глина;
-- **деталь гусеницы:** платок, шляпка-лист или что-то своё;
-- **насыщенность мира:** яркая или приглушённая.
+- **бусины:** глянцевое стекло;
+- **деталь:** у гусеницы треугольная бандана исследователя, у близнеца галстук-бабочка;
+- **насыщенность мира:** яркая — чистые, тёплые, солнечные цвета, сочная зелень и чистое небо, без неона. Приглушённый вариант генераторы уводят в серо-болотные тона, мир выглядит пасмурным.
 
-По выбранному листу фиксируется образец стиля, и все остальные картинки генерируются с ним.
+Отбор фона: нижняя треть и центр поляны спокойные и однородные, без мелкой пестроты — там лежат главная кнопка и деревянные плитки.
+
+Из пакета 1 автор выбирает лучшие картинки. По выбранному листу фиксируется образец стиля, и все остальные картинки генерируются с ним.
 
 ### Запросы
 
@@ -318,17 +320,17 @@ Nov 16, 2026
 
 | Для чего | Окончание |
 | --- | --- |
-| Сцена | `gentle soft shadows` |
+| Сцена | `gentle soft shadows`; в общей части `rich but natural colours` заменяется на `bright, clean, warm sunny colours, juicy fresh greens and a clear blue sky, never neon or acid` |
 | Персонаж, друг, предмет | `soft volumetric shading on the object, no cast shadow on the ground, crisp clean edges, solid pure white background` |
 
 Тень под вырезанным предметом рисует код (`--schatten`). Если генератор нарисует тень на белом полу, после вырезания вокруг предмета останется серый ореол.
 
 | Что | Запрос (перед общей частью) |
 | --- | --- |
-| Гусеница | `Character sheet of a curious, clever caterpillar, warm green velvet body, attentive friendly eyes of moderate size, small antennae with warm tips, one small clothing detail, full body front view and three-quarter view, four expressions: calm, thinking, happy, surprised,` |
+| Гусеница | `Character sheet of a curious, clever caterpillar, warm green velvet body, attentive friendly eyes of moderate size, small antennae with warm tips, one small clothing detail: a small triangular explorer bandana in warm terracotta orange tied around the neck, full body front view and three-quarter view, four expressions: calm, thinking, happy, surprised,` |
 | Передняя часть | `Front part of the same caterpillar as in the reference: head, clothing detail, first body segment and two small front legs, raised up the way a real caterpillar lifts its front, the segment ends in a clean round edge where the next body segment will join,` |
-| Близнец | `The same caterpillar character as in the reference, same proportions, different clothing detail in a different colour,` |
-| Сцена | `Wide sunny meadow with a cosy treehouse in an old oak, open clear area in the lower third for buttons, foreground framed by leaves, no characters,` |
+| Близнец | `The same caterpillar character as in the reference, same proportions, different clothing detail in a different colour: a neat small bow tie in soft sky blue instead of the bandana,` |
+| Сцена | `Wide sunny meadow with a cosy treehouse in an old oak, open clear area in the lower third for buttons, the lower third and the centre of the clearing are calm and fairly uniform without small busy details, foreground framed by leaves, no characters,` |
 | Друг | `Single [animal], full body, one calm friendly pose,` |
 | Предмет | `Single [object], centred,` |
 
