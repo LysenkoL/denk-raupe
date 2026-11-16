@@ -11,7 +11,7 @@
 .sprachen a[aria-current='true'] { background: var(--green); border-color: var(--green); color: #fff; }
 .ziffern { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s2); }
 .ziffern li { display: flex; align-items: center; gap: var(--s2); }
-.farbfeld { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--kontur); flex: none; }
+.farbfeld { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--holz-kante); flex: none; }
 .ziffern code { font-size: var(--t-klein); color: var(--muted); }
 .perlen-raster { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .muster-perle { margin: 0; height: 56px; width: calc(56px * var(--w)); display: flex; flex-direction: column; align-items: center; }

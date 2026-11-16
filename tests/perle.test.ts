@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { HUNDERT_FARBE, KONTUR, NEUTRAL_PERLE, ZIFFER_FARBEN, kontrast } from '../src/design/farbe';
+import { FORM_FARBEN, HUNDERT_FARBE, NEUTRAL_PERLE, TINTE, ZIFFER_FARBEN, kontrast } from '../src/design/farbe';
 import { perlenBild, zahlFarben, geld } from '../src/perlen/perle';
 import { gleich, type Antwort } from '../src/perlen/antwort';
 import { deltaE2000 } from './helpers/farbabstand';
 
 describe('Ziffernfarben (docs/TZ.md)', () => {
   it('zehn feste Farben für 0–9, alle verschieden', () => {
-    expect(ZIFFER_FARBEN).toEqual(['#EEF1F4', '#E53935', '#FF8A00', '#FFE14D', '#8BD13B', '#178A3A', '#35C9F2', '#2A3FB8', '#FF9ACD', '#8D5524']);
     expect(new Set(ZIFFER_FARBEN).size).toBe(10);
   });
 
@@ -17,7 +16,7 @@ describe('Ziffernfarben (docs/TZ.md)', () => {
   });
 
   it('die 100 hebt sich von jeder Ziffer ab', () => {
-    for (const c of ZIFFER_FARBEN) expect(deltaE2000(c, HUNDERT_FARBE), c).toBeGreaterThanOrEqual(12);
+    for (const c of ZIFFER_FARBEN) expect(deltaE2000(c, HUNDERT_FARBE), c).toBeGreaterThanOrEqual(20);
   });
 
   it('einstellig: Perle in der Farbe der Ziffer, ohne Ring', () => {
@@ -25,15 +24,15 @@ describe('Ziffernfarben (docs/TZ.md)', () => {
   });
 
   it('zweistellig: Füllung = Einer, Ring = Zehner (Beispiele aus dem Brief)', () => {
-    expect(zahlFarben(14)).toEqual({ fuellung: '#8BD13B', ring: '#E53935' }); // hellgrün, roter Ring
-    expect(zahlFarben(10)).toEqual({ fuellung: '#EEF1F4', ring: '#E53935' }); // hell, roter Ring
-    expect(zahlFarben(47)).toEqual({ fuellung: '#2A3FB8', ring: '#8BD13B' }); // dunkelblau, hellgrüner Ring
-    expect(zahlFarben(99)).toEqual({ fuellung: '#8D5524', ring: '#8D5524' });
+    expect(zahlFarben(14)).toEqual({ fuellung: '#71E053', ring: '#EC003F' }); // hellgrün, roter Ring
+    expect(zahlFarben(10)).toEqual({ fuellung: '#EEF1F4', ring: '#EC003F' }); // hell, roter Ring
+    expect(zahlFarben(47)).toEqual({ fuellung: '#2B289F', ring: '#71E053' }); // dunkelblau, hellgrüner Ring
+    expect(zahlFarben(99)).toEqual({ fuellung: '#7A3004', ring: '#7A3004' });
   });
 
   it('100 ist lila, mehr gibt es nicht', () => {
     expect(zahlFarben(100)).toEqual({ fuellung: HUNDERT_FARBE, ring: null });
-    expect(HUNDERT_FARBE).toBe('#8338EC');
+    expect(HUNDERT_FARBE).toBe('#983AF1');
     expect(() => zahlFarben(101)).toThrow();
     expect(() => zahlFarben(-1)).toThrow();
     expect(() => zahlFarben(2.5)).toThrow();
@@ -91,7 +90,7 @@ describe('Perle zeigt die Antwort selbst, die Farbe hilft nur', () => {
   it('Form behält ihre eigene Farbe und Größe', () => {
     const gross = perlenBild({ art: 'form', form: 'kreis', farbe: 'rot' });
     const klein = perlenBild({ art: 'form', form: 'kreis', farbe: 'rot', klein: true });
-    expect(gross.inhalt).toMatchObject({ typ: 'form', form: 'kreis', farbe: '#FF4D6D', klein: false });
+    expect(gross.inhalt).toMatchObject({ typ: 'form', form: 'kreis', farbe: FORM_FARBEN.rot, klein: false });
     expect(klein.inhalt).toMatchObject({ klein: true });
   });
 
@@ -106,10 +105,10 @@ describe('Perle zeigt die Antwort selbst, die Farbe hilft nur', () => {
     if (lang.inhalt.typ === 'text') expect(lang.inhalt.maxBreite).not.toBeNull();
   });
 
-  it('Text dunkel mit weißem Saum, wo es lesbar ist; der dunkle Umriss ist der der Lese-Raupe', () => {
-    expect(KONTUR).toBe('#1B2033');
+  it('Text in Tinte mit weißem Saum, wo es lesbar ist', () => {
+    expect(TINTE).toBe('#182218');
     const p = perlenBild({ art: 'zahl', wert: 3 });
-    expect(p.inhalt).toMatchObject({ schrift: KONTUR, saum: '#FFFFFF' });
+    expect(p.inhalt).toMatchObject({ schrift: TINTE, saum: '#FFFFFF' });
   });
 
   it('Geld in deutscher Schreibweise', () => {

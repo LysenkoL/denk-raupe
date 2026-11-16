@@ -1,11 +1,11 @@
-import { KONTUR, mix } from '../design/farbe';
+import { SCHATTEN, TINTE, formRand, kanteVon, mix } from '../design/farbe';
 import { BLAETTER, KOEPFE, type BlattArt, type KopfArt } from '../bilder/bilder';
 import type { Form, Sammelzeichen } from './antwort';
 import type { PerlenBild } from './perle';
 
 /**
- * Zeichnet Perlen, Blätter und den Kopf als SVG – im Stil der Lese-Raupe:
- * Perle mit Verlauf, Glanzlicht und dunklem Umriss. Jede Perle ist ein eigenes kleines SVG,
+ * Zeichnet Perlen, Blätter und den Kopf als SVG (docs/STIL.md, „Бусина: пять слоёв“):
+ * Glasperle mit Kante, ohne dunklen Umriss. Jede Perle ist ein eigenes kleines SVG,
  * damit sie ein eigener Knopf sein kann (große Tippfläche, Tastatur, Screenreader).
  */
 
@@ -20,15 +20,16 @@ function neueId(): string {
   return `dr${(++zaehler).toString(36)}`;
 }
 
+/** Glas: hell oben links, volle Farbe in der Mitte, zum Rand hin in Richtung Kante */
 function verlauf(id: string, farbe: string): string {
-  return `<radialGradient id="${id}" cx="0.38" cy="0.32" r="0.78" fx="0.3" fy="0.25"><stop offset="0" stop-color="${mix(farbe, '#ffffff', 0.6)}"/><stop offset="0.45" stop-color="${farbe}"/><stop offset="1" stop-color="${mix(farbe, '#000000', 0.28)}"/></radialGradient>`;
+  return `<radialGradient id="${id}" cx="0.4" cy="0.36" r="0.75" fx="0.32" fy="0.26"><stop offset="0" stop-color="${mix(farbe, '#ffffff', 0.4)}"/><stop offset="0.55" stop-color="${farbe}"/><stop offset="1" stop-color="${mix(farbe, kanteVon(farbe), 0.6)}"/></radialGradient>`;
 }
 
 function kapsel(x: number, y: number, w: number, h: number, attrs: string): string {
   return `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(h / 2)}" ${attrs}/>`;
 }
 
-export function formPfad(form: Form, cx: number, cy: number, s: number, fill: string, stroke = KONTUR, sw = s * 0.14): string {
+export function formPfad(form: Form, cx: number, cy: number, s: number, fill: string, stroke = formRand(fill), sw = s * 0.14): string {
   const st = `fill="${fill}" stroke="${stroke}" stroke-width="${f(sw)}" stroke-linejoin="round"`;
   switch (form) {
     case 'kreis':
@@ -53,8 +54,8 @@ export function formPfad(form: Form, cx: number, cy: number, s: number, fill: st
 
 /** Zeichen der Sammelantworten, dunkel auf heller Perle */
 function zeichenPfad(z: Sammelzeichen, cx: number, cy: number, s: number): string {
-  const k = `fill="none" stroke="${KONTUR}" stroke-width="${f(s * 0.16)}" stroke-linecap="round" stroke-linejoin="round"`;
-  const voll = `fill="${KONTUR}"`;
+  const k = `fill="none" stroke="${TINTE}" stroke-width="${f(s * 0.16)}" stroke-linecap="round" stroke-linejoin="round"`;
+  const voll = `fill="${TINTE}"`;
   switch (z) {
     case 'reihe':
       return [0, 1, 2]
@@ -69,7 +70,7 @@ function zeichenPfad(z: Sammelzeichen, cx: number, cy: number, s: number): strin
     case 'paar':
       return (
         `<rect x="${f(cx - s * 1.05)}" y="${f(cy - s * 0.75)}" width="${f(s * 1.1)}" height="${f(s * 1.4)}" rx="${f(s * 0.2)}" ${k}/>` +
-        `<rect x="${f(cx - s * 0.05)}" y="${f(cy - s * 0.65)}" width="${f(s * 1.1)}" height="${f(s * 1.4)}" rx="${f(s * 0.2)}" fill="#fff" stroke="${KONTUR}" stroke-width="${f(s * 0.16)}"/>`
+        `<rect x="${f(cx - s * 0.05)}" y="${f(cy - s * 0.65)}" width="${f(s * 1.1)}" height="${f(s * 1.4)}" rx="${f(s * 0.2)}" fill="#fff" stroke="${TINTE}" stroke-width="${f(s * 0.16)}"/>`
       );
     case 'bau': {
       const a = s * 0.62;
@@ -91,38 +92,79 @@ export function perlenBox(breite: number): { w: number; h: number } {
   return { w: breite * R + 2 * RAND, h: 2 * R + 2 * RAND };
 }
 
-/** Innenteil einer Perle (ohne <svg>) */
+/** Kante: so weit liegt der Perlenkörper über seiner Kante (in SVG-Einheiten, ≈ 3 px bei 48-px-Perle) */
+const KANTE = R * 0.12;
+/** Zehner-Ring: so breit ist er */
+const RING = R * 0.34;
+/** Trennring aus Tinte, ≈ 2,5 px sichtbar (die Linie liegt halb unter dem Kern, daher doppelt gezeichnet) */
+const TRENN = R * 0.12;
+
+export interface PerlenLage {
+  /** Mitte des Perlenkörpers */
+  cx: number;
+  cy: number;
+  /** Radius und Breite des Körpers */
+  rk: number;
+  wk: number;
+  /** Kern (Füllung der Einer) */
+  kern: { x: number; y: number; w: number; h: number };
+  /** Glanzlicht als Ellipse */
+  glanz: { cx: number; cy: number; rx: number; ry: number };
+}
+
+/** Geometrie einer Perle – getrennt vom Zeichnen, damit Tests prüfen können, dass der Glanz die Schrift nicht berührt */
+export function perlenLage(p: PerlenBild): PerlenLage {
+  const { w: bw } = perlenBox(p.breite);
+  const rk = R - KANTE / 2;
+  const wk = p.breite * R - KANTE;
+  const cx = bw / 2;
+  const cy = RAND + rk;
+  const d = p.ring ? RING : 0;
+  const kern = { x: cx - wk / 2 + d, y: cy - rk + d, w: wk - 2 * d, h: 2 * (rk - d) };
+  const rc = kern.h / 2;
+  // Glanz oben links im Kern, über der Schrift
+  const gcx = kern.x + rc * 0.62;
+  const gcy = cy - rc * 0.66;
+  return { cx, cy, rk, wk, kern, glanz: { cx: gcx, cy: gcy, rx: rc * 0.3, ry: rc * 0.1 } };
+}
+
+/** Innenteil einer Perle (ohne <svg>): Kante, Zehner-Ring, Trennring, Kern mit Glanz, Inhalt */
 export function perleInhalt(p: PerlenBild): string {
   const id = neueId();
-  const { w: bw } = perlenBox(p.breite);
-  const w = p.breite * R;
-  const x = RAND;
-  const y = RAND;
-  const cx = bw / 2;
-  const cy = RAND + R;
+  const L = perlenLage(p);
+  const aussen = p.ring ?? p.fuellung;
+  const kx = L.cx - L.wk / 2;
+  const ky = L.cy - L.rk;
   let defs = verlauf(`${id}f`, p.fuellung);
-  let s = '';
+  // 1. weicher Schatten und Kante
+  defs += `<radialGradient id="${id}s"><stop offset="0" stop-color="${SCHATTEN}"/><stop offset="1" stop-color="${SCHATTEN}" stop-opacity="0"/></radialGradient>`;
+  let s = `<ellipse cx="${f(L.cx)}" cy="${f(ky + 2 * L.rk + KANTE - 2)}" rx="${f(L.wk / 2 + 2)}" ry="${f(R * 0.2)}" fill="url(#${id}s)"/>`;
+  s += kapsel(kx, ky + KANTE, L.wk, 2 * L.rk, `fill="${kanteVon(aussen)}"`);
   if (p.ring) {
+    // 2. Zehner-Ring mit heller Lichtkante oben
     defs += verlauf(`${id}r`, p.ring);
-    const d = R * 0.34; // Zehner-Ring kräftig, damit seine Farbe gut erkennbar ist
-    s += kapsel(x, y, w, 2 * R, `fill="url(#${id}r)" stroke="${KONTUR}" stroke-width="${f(R * 0.13)}"`);
-    s += kapsel(x + d, y + d, w - 2 * d, 2 * R - 2 * d, `fill="url(#${id}f)" stroke="${KONTUR}" stroke-width="${f(R * 0.07)}"`);
-  } else {
-    s += kapsel(x, y, w, 2 * R, `fill="url(#${id}f)" stroke="${KONTUR}" stroke-width="${f(R * 0.13)}"`);
+    s += kapsel(kx, ky, L.wk, 2 * L.rk, `fill="url(#${id}r)"`);
+    s += `<path d="M${f(kx + L.rk * 0.45)} ${f(L.cy - L.rk * 0.55)}A${f(L.rk * 0.82)} ${f(L.rk * 0.82)} 0 0 1 ${f(kx + L.rk * 1.2)} ${f(ky + L.rk * 0.2)}" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="${f(R * 0.07)}" stroke-linecap="round"/>`;
+    // 3. Trennring aus Tinte
+    s += kapsel(L.kern.x, L.kern.y, L.kern.w, L.kern.h, `fill="${TINTE}" stroke="${TINTE}" stroke-width="${f(2 * TRENN)}"`);
   }
-  // Glanzlicht oben links
-  const gx = x + Math.min(R * 0.68, w * 0.34);
-  const gy = cy - R * 0.5;
-  s += `<ellipse cx="${f(gx)}" cy="${f(gy)}" rx="${f(R * 0.34)}" ry="${f(R * 0.17)}" fill="#fff" opacity="0.8" transform="rotate(-32 ${f(gx)} ${f(gy)})"/>`;
+  // 4. Kern: Füllung der Einer, sichelförmiger Schatten unten, Glanz oben links
+  const k = L.kern;
+  s += kapsel(k.x, k.y, k.w, k.h, `fill="url(#${id}f)"`);
+  defs += `<clipPath id="${id}k">${kapsel(k.x, k.y, k.w, k.h, '')}</clipPath>`;
+  s += `<ellipse cx="${f(L.cx)}" cy="${f(k.y + k.h * 1.12)}" rx="${f(k.w * 0.62)}" ry="${f(k.h * 0.42)}" fill="${kanteVon(p.fuellung)}" opacity="0.45" clip-path="url(#${id}k)"/>`;
+  const g = L.glanz;
+  s += `<ellipse cx="${f(g.cx)}" cy="${f(g.cy)}" rx="${f(g.rx)}" ry="${f(g.ry)}" fill="#fff" opacity="0.85" transform="rotate(-24 ${f(g.cx)} ${f(g.cy)})"/>`;
+  // 5. Inhalt
   const i = p.inhalt;
   if (i.typ === 'text') {
     const fs = R * i.groesse;
     const laenge = i.maxBreite ? ` textLength="${f(i.maxBreite * R)}" lengthAdjust="spacingAndGlyphs"` : '';
-    s += `<text x="${f(cx)}" y="${f(cy + fs * 0.36)}" text-anchor="middle" font-size="${f(fs)}" font-weight="800" fill="${i.schrift}" stroke="${i.saum}" stroke-width="${f(fs * 0.18)}" paint-order="stroke" stroke-linejoin="round"${laenge}>${esc(i.text)}</text>`;
+    s += `<text x="${f(L.cx)}" y="${f(L.cy + fs * 0.36)}" text-anchor="middle" font-size="${f(fs)}" font-weight="800" fill="${i.schrift}" stroke="${i.saum}" stroke-width="${f(fs * 0.12)}" paint-order="stroke" stroke-linejoin="round"${laenge}>${esc(i.text)}</text>`;
   } else if (i.typ === 'form') {
-    s += formPfad(i.form, cx, cy + R * 0.04, R * (i.klein ? 0.3 : 0.5), i.farbe);
+    s += formPfad(i.form, L.cx, L.cy + R * 0.04, R * (i.klein ? 0.3 : 0.5), i.farbe);
   } else {
-    s += zeichenPfad(i.zeichen, cx, cy, R * 0.5);
+    s += zeichenPfad(i.zeichen, L.cx, L.cy, R * 0.5);
   }
   return `<defs>${defs}</defs>${s}`;
 }

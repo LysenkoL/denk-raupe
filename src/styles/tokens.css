@@ -1,42 +1,80 @@
 /*
- * Designsystem der Denk-Raupe. Farben der Perlen kommen aus src/design/farbe.ts –
- * ein Test hält diese Datei und farbe.ts gleich. Nur helles Design.
+ * Designsystem der Denk-Raupe (docs/STIL.md). Farben kommen aus src/design/farbe.ts –
+ * ein Test hält diese Datei, farbe.ts und docs/STIL.md gleich. Nur helles Design.
  */
 :root {
   color-scheme: light;
 
-  /* Flächen und Schrift – dieselbe Familie wie die Lese-Raupe */
-  --bg: #F4F8F2;
+  /* Flächen, Text, Aktionen – docs/STIL.md, Abschnitt 4; ein Test vergleicht mit dem Dokument */
+  --papier: #FDFBF4;
+  --holz: #F2E6D0;
+  --holz-kante: #D6C4A2;
+  --stein: #EFD9B4;
+  --stein-kante: #C4A878;
+  --tinte: #182218;
+  --tinte-leise: #56604F;
+  --schatten: rgba(70, 50, 20, 0.20);
+  --honig: #FFC83D;
+  --honig-kante: #D99A00;
+  --holzknopf: #FFF8EA;
+  --holzknopf-kante: #D6C4A2;
+  --laterne: #FFE9A8;
+  --laterne-kante: #E0B84A;
+  --fokus: #2B289F;
+
+  /* alte Namen bis A9: zeigen auf die neuen Tokens */
+  --bg: var(--papier);
+  --ink: var(--tinte);
+  --muted: var(--tinte-leise);
   --card: #FFFFFF;
-  --ink: #1F2421;
-  --muted: #5B655F;
   --line: #CFE3C8;
   --wiese: #E9F3E6;
   --green: #2F6B3A;
   --orange: #F2A65A;
   --orange-ink: #4A2A0A;
   --orange-light: #FDEEDC;
-  --kontur: #1B2033;
 
-  /* Ziffern 0–9, 100 */
+  /* Ziffern 0–9, 100 und ihre Kanten */
   --z0: #EEF1F4;
-  --z1: #E53935;
-  --z2: #FF8A00;
-  --z3: #FFE14D;
-  --z4: #8BD13B;
-  --z5: #178A3A;
-  --z6: #35C9F2;
-  --z7: #2A3FB8;
-  --z8: #FF9ACD;
-  --z9: #8D5524;
-  --z100: #8338EC;
+  --z1: #EC003F;
+  --z2: #FE8100;
+  --z3: #FFFD4F;
+  --z4: #71E053;
+  --z5: #068846;
+  --z6: #42C4FF;
+  --z7: #2B289F;
+  --z8: #F598C6;
+  --z9: #7A3004;
+  --z100: #983AF1;
+  --k0: #8EA3B9;
+  --k1: #A0002A;
+  --k2: #AC5700;
+  --k3: #E3E000;
+  --k4: #3AB818;
+  --k5: #00602F;
+  --k6: #0096DA;
+  --k7: #191770;
+  --k8: #F31A85;
+  --k9: #551F00;
+  --k100: #6804C6;
   --perle-neutral: #FBF5E6;
+  --perle-neutral-kante: #C8B99E;
 
-  /* Schrift (px, Inter Schule) */
-  --t-klein: 14px;
-  --t-text: 17px;
-  --t-auftrag: 22px;
+  /* Schrift (px) – docs/STIL.md, Abschnitt 6 */
+  --t-klein: 16px;
+  --t-text: 18px;
+  --t-knopf: 22px;
+  --t-auftrag: 26px;
   --t-titel: 28px;
+  --t-ziffer: 32px;
+
+  /* Form – docs/STIL.md, Abschnitt 5 */
+  --kante-s: 3px;
+  --kante: 4px;
+  --kante-l: 5px;
+  --schatten-weich: 0 6px 14px var(--schatten);
+  --schatten-tisch: 0 2px 4px var(--schatten);
+  --linie: 2.5px;
 
   /* Abstände und Ecken */
   --s1: 4px;
@@ -45,13 +83,14 @@
   --s4: 16px;
   --s5: 24px;
   --s6: 32px;
-  --rund-s: 12px;
-  --rund-m: 18px;
-  --rund-l: 24px;
+  --rund-s: 14px;
+  --rund-m: 20px;
+  --rund-l: 28px;
 
-  /* Tippflächen: Knöpfe mindestens 56 px, Perlen mindestens 48 px */
+  /* Tippflächen: mindestens 48 px, Knöpfe 56 px, Hauptknopf 72 px */
   --tipp: 56px;
   --tipp-perle: 48px;
+  --tipp-haupt: 72px;
 
   /* Bewegung: kurz, hält nie auf */
   --kurz: 160ms;

@@ -1,6 +1,7 @@
 import type { Antwort } from '../perlen/antwort';
 import type { Format } from './format';
 import type { Zufall } from '../core/zufall';
+import { FORM_FARBEN } from '../design/farbe';
 
 /**
  * Wer ist es? (Auswahl): sechs Raupen mit Hut und Brille; Hinweis-Karten sagen, welche gemeint ist.
@@ -24,7 +25,8 @@ export interface WerIstEs {
   hinweise: Hinweis[];
 }
 
-const HUT_FARBE: Record<Exclude<Hut, 'kein'>, string> = { rot: '#E53935', blau: '#3A86FF', gelb: '#FFD23F' };
+/** Hutfarben aus den Formfarben – dieselbe Palette, dieselbe Prüfung */
+const HUT_FARBE: Record<Exclude<Hut, 'kein'>, string> = { rot: FORM_FARBEN.rot, blau: FORM_FARBEN.blau, gelb: FORM_FARBEN.gelb };
 
 export function passt(r: Raupe, h: Hinweis): boolean {
   const ja = h.art === 'hut' ? r.hut === h.farbe : h.art === 'hut-da' ? r.hut !== 'kein' : r.brille;
