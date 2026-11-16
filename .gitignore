@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-artefakt
+*.local
+test-results
+screenshots
+# Signaturschlüssel und Passwörter – nie ins Repo
+*.jks
+*.keystore
+key.properties
+keystore.properties

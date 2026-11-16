@@ -1,0 +1,196 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-feature-settings: var(--font-features);
+  font-weight: 500;
+  font-size: var(--t-text);
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+button { font: inherit; font-feature-settings: inherit; color: inherit; cursor: pointer; }
+svg text { font-family: var(--font); font-feature-settings: var(--font-features); }
+#app { min-height: 100%; }
+[hidden] { display: none !important; }
+:root {
+  --oben: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --unten: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+
+/* ---------- Knöpfe ---------- */
+.btn {
+  min-height: var(--tipp); border-radius: var(--rund-m); border: 0; padding: 0 var(--s5);
+  font-weight: 800; font-size: 19px; display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  transition: transform var(--kurz), background var(--kurz);
+}
+.btn:active { transform: scale(.97); }
+.btn.haupt { background: var(--orange); color: var(--orange-ink); }
+.btn.haupt:disabled { background: var(--wiese); color: var(--muted); cursor: default; transform: none; }
+.btn.leise { background: var(--card); color: var(--green); border: 2px solid var(--line); font-size: 17px; }
+.iconbtn {
+  width: var(--tipp); height: var(--tipp); border-radius: var(--rund-m); border: 2px solid var(--line);
+  background: var(--card); display: inline-flex; align-items: center; justify-content: center; color: var(--ink);
+}
+
+/* ---------- Satz-Bildschirm ---------- */
+.satz {
+  min-height: 100dvh; max-width: 1180px; margin: 0 auto;
+  padding: calc(var(--oben) + var(--s2)) var(--s2) 0;
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'buehne' 'aufgabe' 'unten';
+  gap: var(--s3);
+}
+.satz > .buehne-wrap { grid-area: buehne; }
+.satz > .aufgabe { grid-area: aufgabe; }
+.satz > .unten { grid-area: unten; }
+
+/* Querformat ab Tablet/Telefon quer: Bühne links, Aufgabe rechts */
+@media (orientation: landscape) and (min-width: 640px) {
+  .satz {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: 1fr auto;
+    grid-template-areas: 'buehne aufgabe' 'unten aufgabe';
+    padding-left: max(var(--s3), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s3), env(safe-area-inset-right, 0px));
+    padding-bottom: calc(var(--unten) + var(--s3));
+    align-items: start;
+    /* eine Bildschirmhöhe: „Vergleichen“ bleibt sichtbar, die Aufgabe scrollt für sich */
+    height: 100dvh; min-height: 0;
+  }
+  .satz > .buehne-wrap { align-self: center; }
+  .satz > .unten { position: static; padding: 0; background: none; }
+  .satz > .aufgabe { align-self: start; max-height: 100%; overflow: auto; }
+}
+@media (min-width: 720px) and (orientation: portrait) {
+  .satz { padding-left: var(--s5); padding-right: var(--s5); gap: var(--s4); }
+}
+
+.buehne-wrap { background: var(--wiese); border-radius: var(--rund-l); padding: var(--s2) var(--s2) var(--s3); container-type: inline-size; }
+.buehne { display: flex; flex-direction: column; gap: calc(var(--b) * 0.32);
+  /* Perlengröße aus der Breite: alle Perlen + Kopf passen in eine Zeile */
+  /* Breite = Perlen (--e Durchmesser) + Kopfplatz 1.5 − Überlappungen 0.14 je Perle */
+  --b: clamp(var(--tipp-perle), min(calc(100cqw / (var(--e) + 1.5 - 0.14 * var(--n))), calc((100dvh - 130px) / 3.95)), 96px);
+  /* zweite Grenze: Raupe und Zwilling passen in die Höhe (Telefon quer), „Vergleichen“ bleibt sichtbar */
+}
+.raupe-zeile { display: flex; align-items: flex-end; justify-content: center; padding-top: calc(var(--b) * 0.8); }
+.raupe-zeile > * + * { margin-left: calc(var(--b) * -0.14); }
+.perle, .zwilling-perle {
+  position: relative; flex: none; width: calc(var(--b) * var(--w)); height: var(--b);
+  padding: 0; border: 0; background: none; border-radius: calc(var(--b) / 2);
+}
+.perle-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.perle { touch-action: manipulation; }
+.perle:focus-visible { outline-offset: -2px; }
+/* aktuelle Aufgabe: Ring */
+.perle.aktuell::after, .perle.offen::after {
+  content: ''; position: absolute; inset: calc(var(--b) * -0.02); border-radius: inherit;
+  border: 3px solid var(--orange); pointer-events: none;
+}
+.perle.offen:not(.aktuell)::after { border-style: dashed; }
+.perle .marke { position: absolute; right: -2px; top: -4px; width: calc(var(--b) * 0.42); height: calc(var(--b) * 0.42); }
+/* Kopf: Platz 1,5 Perlen breit; das Bild liegt darin so, dass der Kopfkreis immer gleich sitzt (maler.ts) */
+.kopf-platz { flex: none; position: relative; width: calc(var(--b) * 1.5); height: var(--b); z-index: 1; }
+.kopf { position: absolute; height: auto; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.raupe-zeile.kind > :first-child { margin-left: 0; }
+
+/* Zwilling */
+.zwilling-perle .blatt {
+  /* Blattbild 1,46 : 1 – deckt die Mulde ganz */
+  position: absolute; left: 50%; top: 50%; width: calc(var(--b) * 1.32);
+  transform: translate(-50%, -50%); pointer-events: none;
+}
+.blatt-img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+.zwilling-perle .blatt.wackelt { animation: wackeln var(--mittel) ease-in-out 3; }
+.zwilling-perle .blatt.hebt { animation: heben var(--heben) ease-in forwards; }
+@keyframes wackeln {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0); }
+  25% { transform: translate(-50%, -54%) rotate(-10deg); }
+  75% { transform: translate(-50%, -46%) rotate(8deg); }
+}
+@keyframes heben {
+  0% { transform: translate(-50%, -50%); opacity: 1; }
+  100% { transform: translate(-30%, -150%) rotate(28deg) scale(.7); opacity: 0; }
+}
+/* Lohn: kleines Blatt am gehobenen Platz, golden = beim ersten Vergleichen gleich */
+.zwilling-perle .lohn { position: absolute; right: calc(var(--b) * -0.12); top: calc(var(--b) * -0.2); width: calc(var(--b) * 0.5); }
+.hupf { animation: hupf var(--mittel) ease-out; }
+@keyframes hupf { 0% { transform: scale(.7); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+
+/* Aufgabe */
+.aufgabe {
+  align-self: start;
+  background: var(--card); border-radius: var(--rund-l); padding: var(--s4);
+  display: flex; flex-direction: column; gap: var(--s3); min-height: 0;
+}
+.auftrag { margin: 0; font-size: var(--t-auftrag); font-weight: 800; line-height: 1.2; text-wrap: balance; }
+.aufgabe-bild { background: var(--bg); border-radius: var(--rund-m); padding: var(--s2); }
+
+.wahl { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: center; }
+.wahl button {
+  min-width: 72px; height: 72px; padding: 4px; border-radius: 22px; border: 3px solid transparent; background: none;
+  display: inline-flex; align-items: center; justify-content: center; touch-action: manipulation;
+}
+.wahl button .perle-svg { height: 60px; width: auto; }
+.wahl button[aria-pressed='true'] { border-color: var(--orange); background: var(--orange-light); }
+.wahl button:disabled { opacity: .45; cursor: default; }
+.aufgabe > * { flex-shrink: 0; }
+.aufgabe .weiter { align-self: flex-end; margin-top: auto; }
+.meldung { margin: 0; font-size: var(--t-text); font-weight: 600; min-height: 1.4em; }
+
+.unten {
+  position: sticky; bottom: 0; background: var(--bg);
+  padding: var(--s2) 0 calc(var(--unten) + var(--s3));
+  display: flex; flex-direction: column; gap: var(--s2);
+}
+.unten .btn { width: 100%; }
+
+/* Ende des Satzes (Platzhalter für Etappe 3: Korb, Geheimwort) */
+.ende { display: flex; flex-direction: column; gap: var(--s3); align-items: center; text-align: center; }
+.ende h2 { margin: 0; font-size: var(--t-titel); font-weight: 800; }
+.ende p { margin: 0; }
+.korb { display: flex; gap: var(--s1); flex-wrap: wrap; justify-content: center; }
+.korb .blatt-img { width: 44px; }
+.korb-bild { width: 120px; height: auto; }
+.geheim { display: flex; gap: var(--s2); }
+.geheim span {
+  width: 44px; height: 52px; border-radius: var(--rund-s); border: 2px dashed var(--line);
+  display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; background: var(--bg);
+}
+.geheim span.auf { border: 2px solid var(--green); color: var(--green); background: var(--card); }
+.hinweis { font-size: var(--t-klein); color: var(--muted); }
+
+/* ---------- Etappe 3: Eingabe, Hilfe, Lernbeispiel ---------- */
+.buehne-wrap { position: relative; }
+.ton-knopf { position: absolute; top: var(--s2); left: var(--s2); width: 44px; height: 44px; border-radius: 14px; color: var(--muted); z-index: 2; }
+.aufgabe-kopf { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s2); }
+.aufgabe-kopf .auftrag { flex: 1; min-width: 0; padding-top: 6px; }
+.hilfe-knopf { min-height: 48px; padding: 0 var(--s3); font-size: 16px; flex: none; }
+.hilfe-knopf:disabled { opacity: .45; cursor: default; }
+.aufgabe-svg { display: block; width: 100%; height: auto; max-height: min(300px, 42dvh); }
+.aufgabe-bild.tippbar [data-wahl] { cursor: pointer; }
+.aufgabe-bild [data-wahl]:focus-visible { outline: none; }
+.aufgabe-bild [data-wahl]:focus-visible rect { stroke: var(--orange); }
+/* Ziffernperlen 0–9 und Löschen: feste Größe, brechen um */
+.ziffern { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.ziffern button {
+  --z: clamp(48px, 14vw, 62px);
+  width: var(--z); height: var(--z); flex: none; padding: 2px; border: 0; background: none; border-radius: 50%;
+  touch-action: manipulation; display: flex; align-items: center; justify-content: center;
+}
+.ziffern button .perle-svg { width: 100%; height: 100%; display: block; }
+.ziffern button:active { transform: scale(.92); }
+.ziffern .loeschen { border-radius: var(--rund-m); background: var(--bg); border: 2px solid var(--line); font-size: 24px; color: var(--ink); }
+.ziffern .loeschen:disabled { opacity: .4; }
+.ziffern button:disabled:not(.loeschen) { opacity: .45; }
+.hilfe-box { background: var(--orange-light); border-radius: var(--rund-m); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
+.hilfe-box .aufgabe-svg { max-height: 200px; }
+.hilfe-box .spaeter { align-self: flex-start; }
+.lern { display: flex; flex-direction: column; gap: var(--s3); }
+.lern-titel { margin: 0; font-size: var(--t-klein); font-weight: 800; color: var(--green); text-transform: uppercase; letter-spacing: .06em; }
+.lern .los { align-self: stretch; }
+.geheim span.neu { box-shadow: 0 0 0 3px var(--orange); animation: hupf var(--mittel) ease-out 2; }
+.ende .neuer-satz { align-self: stretch; margin-top: var(--s2); }
