@@ -5,11 +5,11 @@ import { blattImg, perleSvg } from '../perlen/maler';
 import { KORB } from '../bilder/bilder';
 import { szeneHtml } from '../satz/szene';
 import { FORMATE } from '../aufgaben';
-import { aufgabeAus, type Aufgabe, type HilfeStufe } from '../aufgaben/format';
+import { aufgabeAus, STANDARD_EINSTELLUNG, type Aufgabe, type Format, type HilfeStufe } from '../aufgaben/format';
 import { zufall, neuerSamen } from '../core/zufall';
 import { lesen, schreiben } from '../core/speicher';
 import { fertigTon, heben, klick, rascheln, tonAn } from '../app/ton';
-import { abschliessen, neueSitzung, neuesProfil, stimmtFuer, type Profil, type Sitzung } from '../satz/sitzung';
+import { abschliessen, ladeSitzung, neueSitzung, neuesProfil, stimmtFuer, type Profil, type Sitzung } from '../satz/sitzung';
 import { aenderbar, blaetter, fertig, kannVergleichen, setzeAntwort, vergleiche, zuruecklegen } from '../satz/vergleich';
 
 /**
@@ -23,10 +23,12 @@ const LAMPE = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true
 
 const pause = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 40 : 380);
 const warte = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+/** Lernbeispiel: vorerst nur der erste Schritt (mehrere Schritte: Aufgabe A4) */
+const lernAufgabe = <B>(f: Format<B>): B => f.beispiele(zufall(1))[0];
 
 export async function renderSatz(app: HTMLElement): Promise<void> {
   let profil: Profil = (await lesen<Profil>('profil')) ?? neuesProfil();
-  let sitzung: Sitzung = (await lesen<Sitzung>('sitzung')) ?? neueSitzung(neuerSamen());
+  let sitzung: Sitzung = ladeSitzung(await lesen<unknown>('sitzung')) ?? neueSitzung(neuerSamen());
   tonAn(profil.ton);
 
   // flüchtiger Zustand (wird nicht gespeichert)
@@ -62,7 +64,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   const lernbeispielNoetig = () => !ende() && !profil.gesehen.includes(aufgabe().format);
 
   /** ähnliche Aufgabe für Hilfe 3/4: gleiches Format, gleiche Stufe, anderer Samen */
-  const aehnlich = (a: Aufgabe) => aufgabeAus(FORMATE[a.format], (a.samen + 1_000_003) >>> 0, a.stufe);
+  const aehnlich = (a: Aufgabe) => aufgabeAus(FORMATE[a.format], (a.samen + 1_000_003) >>> 0, a.stufe, { zahlenraum: a.zahlenraum });
 
   function zeichneBuehne(): void {
     buehne.innerHTML = szeneHtml(satz(), { aktuell: ende() ? null : aktuell(), wackeln, hebt, hupf, ringe: !busy && !wackeln.length });
@@ -74,11 +76,12 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   function eingabeHtml(a: Aufgabe, antwort: Antwort | null, gesperrt: boolean): string {
     const f = FORMATE[a.format];
     const dis = gesperrt ? ' disabled' : '';
-    if (f.eingabe === 'zahl') {
+    const art = f.eingabe(a.bedingung).art;
+    if (art === 'zahl') {
       const ziffern = Array.from({ length: 10 }, (_, d) => `<button type="button" data-ziffer="${d}" aria-label="${d}"${dis}>${perleSvg(perlenBild({ art: 'zahl', wert: d }))}</button>`).join('');
       return `<div class="ziffern" role="group" aria-label="Zahl eingeben">${ziffern}<button type="button" class="loeschen" data-ziffer="x" aria-label="${KIND.loeschen}"${dis || (antwort ? '' : ' disabled')}>⌫</button></div>`;
     }
-    if (f.eingabe === 'wahl')
+    if (art === 'wahl')
       return `<div class="wahl" role="group">${a.wahl!.map((w, k) => `<button type="button" data-k="${k}" aria-pressed="${gleich(antwort, w)}" aria-label="${perlenBild(w).name}"${dis}>${perleSvg(perlenBild(w))}</button>`).join('')}</div>`;
     return ''; // 'bild': im Bild tippen
   }
@@ -86,7 +89,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   function hilfeHtml(a: Aufgabe, stufe: HilfeStufe): string {
     const f = FORMATE[a.format];
     if (stufe === 1) {
-      const b = f.beispiel(zufall(1));
+      const b = lernAufgabe(f);
       return `<div class="hilfe-box"><b>${KIND.soGehts}</b>${f.zeichne(b, { hilfe: 0, gewaehlt: null, vorrechnen: true })}</div>`;
     }
     if (stufe === 3 && f.schrittVerraet?.(a.bedingung)) {
@@ -120,13 +123,13 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
 
   function zeichneLernbeispiel(): void {
     const f = format();
-    const b = f.beispiel(zufall(1));
+    const b = lernAufgabe(f);
     const st = beispiel ?? (beispiel = { antwort: null, richtig: false, versucht: false });
-    const tmp: Aufgabe = { format: f.id, version: f.version, samen: 1, stufe: 1, bedingung: b, wahl: f.wahl ? f.wahl(b, zufall(1)) : null, hilfe: 0 };
+    const tmp: Aufgabe = { format: f.id, version: f.version, samen: 1, stufe: 1, zahlenraum: STANDARD_EINSTELLUNG.zahlenraum, bedingung: b, wahl: f.wahl ? f.wahl(b, zufall(1)) : null, hilfe: 0 };
     panel.innerHTML = `<div class="lern">
       <p class="lern-titel">${KIND.soGehts}</p>
-      <h1 class="auftrag">${f.auftrag}</h1>
-      <div class="aufgabe-bild${f.eingabe === 'bild' ? ' tippbar' : ''}">${f.zeichne(b, { hilfe: st.versucht && !st.richtig ? 2 : 0, gewaehlt: st.antwort })}</div>
+      <h1 class="auftrag">${KIND.auftrag[f.auftrag]}</h1>
+      <div class="aufgabe-bild${f.eingabe(b).art === 'bild' ? ' tippbar' : ''}">${f.zeichne(b, { hilfe: st.versucht && !st.richtig ? 2 : 0, gewaehlt: st.antwort })}</div>
       ${eingabeHtml(tmp, st.antwort, st.richtig)}
       <p class="meldung">${st.richtig ? KIND.genau : st.versucht ? KIND.nochmalSchauen : ''}</p>
       ${st.richtig ? `<button class="btn haupt los" type="button">${KIND.losGehts}</button>` : ''}
@@ -144,9 +147,9 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const maxHilfe: HilfeStufe = satz().runden > 0 ? 4 : 2;
     const bildHilfe: HilfeStufe = offen === 2 || (offen >= 3 && !f.schrittVerraet?.(a.bedingung)) ? (Math.min(offen, 3) as HilfeStufe) : offen >= 3 ? 2 : 0;
     panel.innerHTML = `
-      <div class="aufgabe-kopf"><h1 class="auftrag">${f.auftrag}</h1>
+      <div class="aufgabe-kopf"><h1 class="auftrag">${KIND.auftrag[f.auftrag]}</h1>
         ${gesperrt ? '' : `<button class="btn leise hilfe-knopf" type="button"${offen >= maxHilfe ? ' disabled' : ''}>${LAMPE}${offen ? KIND.mehrHilfe : KIND.hilfe}</button>`}</div>
-      <div class="aufgabe-bild${f.eingabe === 'bild' && !gesperrt ? ' tippbar' : ''}">${f.zeichne(a.bedingung, { hilfe: gesperrt ? 0 : bildHilfe, gewaehlt: p.antwort })}</div>
+      <div class="aufgabe-bild${f.eingabe(a.bedingung).art === 'bild' && !gesperrt ? ' tippbar' : ''}">${f.zeichne(a.bedingung, { hilfe: gesperrt ? 0 : bildHilfe, gewaehlt: p.antwort })}</div>
       ${gesperrt ? '' : eingabeHtml(a, p.antwort, gesperrt)}
       ${gesperrt ? '' : hilfeHtml(a, offen)}
       ${p.zurueck ? `<p class="hinweis">${KIND.wartet}</p>` : ''}
@@ -178,7 +181,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   function eingabe(antwort: Antwort | null): void {
     if (lernbeispielNoetig()) {
       const f = format();
-      const b = f.beispiel(zufall(1));
+      const b = lernAufgabe(f);
       const richtig = !!antwort && f.loesungen(b).some((l) => gleich(l, antwort));
       beispiel = { antwort, richtig, versucht: !!antwort };
       if (richtig) klick();
@@ -214,7 +217,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const lern = lernbeispielNoetig();
     const a = lern ? null : aufgabe();
     const f = format();
-    const wahlListe = lern ? (f.wahl ? f.wahl(f.beispiel(zufall(1)), zufall(1)) : null) : a!.wahl;
+    const wahlListe = lern ? (f.wahl ? f.wahl(lernAufgabe(f), zufall(1)) : null) : a!.wahl;
 
     const ziffer = t.closest<HTMLButtonElement>('[data-ziffer]');
     if (ziffer && !ziffer.disabled) {

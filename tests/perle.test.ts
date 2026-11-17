@@ -53,6 +53,14 @@ describe('Perle zeigt die Antwort selbst, die Farbe hilft nur', () => {
     { art: 'zeit', stunde: 7, minute: 30 },
     { art: 'geld', cent: 250 },
     { art: 'laenge', cm: 12 },
+    { art: 'ausdruck', links: 7, zeichen: 'plus', rechts: 3 },
+    { art: 'ausdruck', links: 10, zeichen: 'minus', rechts: 7 },
+    { art: 'ausdruck', links: 3, zeichen: 'mal', rechts: 5 },
+    { art: 'ausdruck', links: 15, zeichen: 'geteilt', rechts: 5 },
+    { art: 'groesse', wert: 15, einheit: 'cm' },
+    { art: 'groesse', wert: 15, einheit: 'kg' },
+    { art: 'stelle', nr: 3 },
+    { art: 'stelle', nr: 12 },
   ];
 
   it('jede Zahl und jedes Wort steht als Text in der Perle', () => {
@@ -84,6 +92,9 @@ describe('Perle zeigt die Antwort selbst, die Farbe hilft nur', () => {
       { art: 'artikel', wert: 'das' },
       { art: 'form', form: 'stern', farbe: 'blau' },
       { art: 'sammel', zeichen: 'gitter', wert: [1, 2, 3, 2, 3, 1, 3, 1, 2] },
+      { art: 'ausdruck', links: 7, zeichen: 'plus', rechts: 3 },
+      { art: 'groesse', wert: 15, einheit: 'cm' },
+      { art: 'stelle', nr: 3 },
     ];
     for (const a of neutral) expect(perlenBild(a).fuellung).toBe(NEUTRAL_PERLE);
     // nicht zu verwechseln mit der hellen Null
@@ -112,6 +123,21 @@ describe('Perle zeigt die Antwort selbst, die Farbe hilft nur', () => {
     expect(TINTE).toBe('#182218');
     expect(perlenBild({ art: 'zahl', wert: 3 }).inhalt).toMatchObject({ schrift: TINTE, saum: WEISS });
     expect(perlenBild({ art: 'zahl', wert: 7 }).inhalt).toMatchObject({ schrift: WEISS, saum: TINTE });
+  });
+
+  it('Aufgabe, Größe und Platz: kurzer Text auf der neutralen Perle (docs/FORMATE.md, Abschnitt 3, Regel 10)', () => {
+    const text = (a: Antwort) => {
+      const p = perlenBild(a);
+      return p.inhalt.typ === 'text' ? p.inhalt.text : null;
+    };
+    expect(text({ art: 'ausdruck', links: 7, zeichen: 'plus', rechts: 3 })).toBe('7 + 3');
+    expect(text({ art: 'ausdruck', links: 10, zeichen: 'minus', rechts: 7 })).toBe('10 − 7');
+    expect(text({ art: 'ausdruck', links: 3, zeichen: 'mal', rechts: 5 })).toBe('3 · 5');
+    expect(text({ art: 'ausdruck', links: 15, zeichen: 'geteilt', rechts: 5 })).toBe('15 : 5');
+    expect(text({ art: 'groesse', wert: 15, einheit: 'cm' })).toBe('15 cm');
+    // Platz: vorerst die Nummer des Platzes
+    expect(text({ art: 'stelle', nr: 3 })).toBe('3.');
+    expect(perlenBild({ art: 'stelle', nr: 3 }).fuellung).not.toBe(perlenBild({ art: 'zahl', wert: 3 }).fuellung);
   });
 
   it('Geld in deutscher Schreibweise', () => {
@@ -199,6 +225,14 @@ describe('Perle aus fünf Schichten (docs/STIL.md, Abschnitt 7)', () => {
     { art: 'zeit', stunde: 12, minute: 45 },
     { art: 'geld', cent: 1250 },
     { art: 'laenge', cm: 18 },
+    { art: 'ausdruck', links: 7, zeichen: 'plus', rechts: 3 },
+    { art: 'ausdruck', links: 10, zeichen: 'minus', rechts: 7 },
+    { art: 'ausdruck', links: 3, zeichen: 'mal', rechts: 5 },
+    { art: 'ausdruck', links: 15, zeichen: 'geteilt', rechts: 5 },
+    { art: 'groesse', wert: 15, einheit: 'cm' },
+    { art: 'groesse', wert: 15, einheit: 'kg' },
+    { art: 'stelle', nr: 3 },
+    { art: 'stelle', nr: 12 },
   ];
 
   it('Glanzlicht berührt die Schrift nicht (echte Umrisse aus Inter ExtraBold, mit Saum)', () => {
@@ -263,5 +297,22 @@ describe('Antwort als Wert', () => {
     expect(gleich({ art: 'form', form: 'kreis', farbe: 'rot' }, { farbe: 'rot', form: 'kreis', art: 'form' } as Antwort)).toBe(true);
     expect(gleich(null, null)).toBe(true);
     expect(gleich(null, { art: 'zahl', wert: 0 })).toBe(false);
+  });
+
+  it('gleich für Aufgabe, Größe und Platz', () => {
+    const plus: Antwort = { art: 'ausdruck', links: 7, zeichen: 'plus', rechts: 3 };
+    expect(gleich(plus, { rechts: 3, zeichen: 'plus', links: 7, art: 'ausdruck' } as Antwort)).toBe(true);
+    // Tauschaufgabe ist eine andere Antwort
+    expect(gleich(plus, { art: 'ausdruck', links: 3, zeichen: 'plus', rechts: 7 })).toBe(false);
+    expect(gleich(plus, { art: 'ausdruck', links: 7, zeichen: 'minus', rechts: 3 })).toBe(false);
+    const cm: Antwort = { art: 'groesse', wert: 15, einheit: 'cm' };
+    expect(gleich(cm, { einheit: 'cm', wert: 15, art: 'groesse' } as Antwort)).toBe(true);
+    expect(gleich(cm, { art: 'groesse', wert: 15, einheit: 'm' })).toBe(false);
+    expect(gleich(cm, { art: 'groesse', wert: 16, einheit: 'cm' })).toBe(false);
+    // Größe 15 cm ist nicht die Länge 15 cm eines anderen Formats
+    expect(gleich(cm, { art: 'laenge', cm: 15 })).toBe(false);
+    expect(gleich({ art: 'stelle', nr: 3 }, { art: 'stelle', nr: 3 })).toBe(true);
+    expect(gleich({ art: 'stelle', nr: 3 }, { art: 'stelle', nr: 4 })).toBe(false);
+    expect(gleich({ art: 'stelle', nr: 3 }, { art: 'zahl', wert: 3 })).toBe(false);
   });
 });

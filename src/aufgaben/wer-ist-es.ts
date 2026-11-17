@@ -154,24 +154,36 @@ function zeichne(w: WerIstEs, o: { hilfe: number; gewaehlt: Antwort | null; vorr
 
 export const WER_IST_ES: Format<WerIstEs> = {
   id: 'wer-ist-es',
+  nr: 29,
   version: 1,
-  auftrag: 'Wer ist es?',
+  bereich: 'logik',
+  faehigkeit: 'L2',
+  motor: 'auswahl',
+  klasse: 1,
+  lesen: 0,
+  braucht: [],
+  /** Druckblock kommt mit Etappe 8 */
+  druck: false,
+  auftrag: 'werIstEs',
   stufen: 3,
-  eingabe: 'bild',
+  /** hängt nicht vom Zahlenraum ab: liest die Einstellung nicht */
   erzeuge,
   loesungen,
+  eingabe: () => ({ art: 'bild' }),
   wahl: () => Array.from({ length: 6 }, (_, i) => ({ art: 'zahl', wert: i + 1 }) as Antwort),
   zeichne,
   schrittVerraet,
-  beispiel: () => ({
-    raupen: [
-      { hut: 'kein', brille: false },
-      { hut: 'rot', brille: false },
-      { hut: 'kein', brille: true },
-      { hut: 'blau', brille: false },
-      { hut: 'kein', brille: false },
-      { hut: 'gelb', brille: true },
-    ],
-    hinweise: [{ art: 'hut', farbe: 'blau', nicht: false }],
-  }),
+  beispiele: () => [
+    {
+      raupen: [
+        { hut: 'kein', brille: false },
+        { hut: 'rot', brille: false },
+        { hut: 'kein', brille: true },
+        { hut: 'blau', brille: false },
+        { hut: 'kein', brille: false },
+        { hut: 'gelb', brille: true },
+      ],
+      hinweise: [{ art: 'hut', farbe: 'blau', nicht: false }],
+    },
+  ],
 };

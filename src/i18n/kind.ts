@@ -28,8 +28,16 @@ export const KIND = {
   loeschen: 'Löschen',
   ton: 'Ton',
   neuerBuchstabe: 'Ein neuer Buchstabe!',
+  /** feste Aufträge der Formate; ein Format nennt nur den Schlüssel (docs/FORMATE.md, Abschnitt 3) */
+  auftrag: {
+    welcheZahlFehlt: 'Welche Zahl fehlt?',
+    wieGehtEsWeiter: 'Wie geht es weiter?',
+    werIstEs: 'Wer ist es?',
+  },
   /** Vorlesename für Screenreader */
   perleName(nr: number, inhalt: string | null): string {
     return inhalt ? `Aufgabe ${nr}: ${inhalt}` : `Aufgabe ${nr}: noch leer`;
   },
 } as const;
+
+export type AuftragSchluessel = keyof typeof KIND.auftrag;

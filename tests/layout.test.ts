@@ -2,9 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser, type Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { FORMATE } from '../src/aufgaben';
 import { neueSitzung, neuesProfil, PROBE_FORMATE, type Sitzung } from '../src/satz/sitzung';
 import { gleich, type Antwort } from '../src/perlen/antwort';
+import { KIND } from '../src/i18n/kind';
 
 /**
  * Satz im echten Browser: Telefon 360 px hoch und quer, Tablet hoch und quer; dazu der ganze Ablauf –
@@ -34,11 +36,15 @@ afterAll(async () => {
 
 const SAMEN = 20261115;
 
-/** Seite mit festem Satz; `gesehen` = Lernbeispiele schon gezeigt */
-async function oeffnen(w: number, h: number, o: { gesehen?: boolean; samen?: number } = {}): Promise<{ page: Page; sitzung: Sitzung }> {
+/** Seite mit festem Satz; `gesehen` = Lernbeispiele schon gezeigt; `gespeichert` = so liegt es schon im Speicher */
+async function oeffnen(
+  w: number,
+  h: number,
+  o: { gesehen?: boolean; samen?: number; gespeichert?: { sitzung: Sitzung; profil: unknown } } = {},
+): Promise<{ page: Page; sitzung: Sitzung }> {
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
-  const sitzung = neueSitzung(o.samen ?? SAMEN);
-  const profil = { ...neuesProfil(), ton: false, gesehen: o.gesehen === false ? [] : PROBE_FORMATE };
+  const sitzung = o.gespeichert?.sitzung ?? neueSitzung(o.samen ?? SAMEN);
+  const profil = o.gespeichert?.profil ?? { ...neuesProfil(), ton: false, gesehen: o.gesehen === false ? [] : PROBE_FORMATE };
   // Musterseite fasst den Speicher nicht an – sonst könnte die App beim ersten Laden einen eigenen Satz speichern
   await page.goto(url + '#/stil');
   await page.evaluate(
@@ -79,12 +85,12 @@ function falsch(s: Sitzung, i: number): Antwort {
 async function eingeben(page: Page, s: Sitzung, i: number, antwort: Antwort): Promise<void> {
   await page.click(`.perle[data-i="${i}"]`);
   const a = s.aufgaben[i];
-  const f = FORMATE[a.format];
-  if (f.eingabe === 'zahl' && antwort.art === 'zahl') {
+  const art = FORMATE[a.format].eingabe(a.bedingung).art;
+  if (art === 'zahl' && antwort.art === 'zahl') {
     // vorhandene Zahl löschen
     while (await page.isEnabled('[data-ziffer="x"]')) await page.click('[data-ziffer="x"]');
     for (const d of String(antwort.wert)) await page.click(`[data-ziffer="${d}"]`);
-  } else if (f.eingabe === 'wahl') {
+  } else if (art === 'wahl') {
     await page.click(`.wahl button[data-k="${a.wahl!.findIndex((w) => gleich(w, antwort))}"]`);
   } else {
     await page.click(`[data-wahl="${a.wahl!.findIndex((w) => gleich(w, antwort))}"]`);
@@ -177,32 +183,64 @@ describe('Ablauf eines Satzes', () => {
     await page.close();
   });
 
+  it('Satz aus Version 1 öffnet sich nach dem Update mit denselben Aufgaben und Antworten', async () => {
+    const v1 = JSON.parse(readFileSync(resolve(__dirname, 'fixtures/speicher-v1.json'), 'utf8'));
+    const { page } = await oeffnen(390, 800, { gespeichert: v1 });
+    const labels = await page.$$eval('.raupe-zeile.kind .perle', (els) => els.map((e) => e.getAttribute('aria-label')));
+    expect(labels).toEqual(['Aufgabe 1: Quadrat', 'Aufgabe 2: 3', 'Aufgabe 3: 2']);
+    // aktuelle Aufgabe: die Zahlenmauer aus Version 1, Hilfe 3 offen, gleiche Steine
+    expect(await page.getAttribute('.perle[data-i="1"]', 'aria-current')).toBe('step');
+    expect(await page.textContent('.auftrag')).toBe('Welche Zahl fehlt?');
+    const steine = await page.$$eval('.aufgabe-bild svg text', (els) => els.map((e) => e.textContent));
+    for (const z of [5, 1, 6, 2, 8]) expect(steine).toContain(String(z));
+    expect(steine).toContain('3');
+    expect(steine).toContain('? + 1 = 2');
+    // gold gehobene Blätter über Perle 1 und 3, über Perle 2 liegt das Blatt noch
+    const zu = await page.$$eval('.zwilling-perle', (els) => els.map((e) => !!e.querySelector('.blatt')));
+    expect(zu).toEqual([false, true, false]);
+    // gespeichert wird danach Version 2
+    await page.waitForTimeout(150);
+    const version = await page.evaluate(
+      () =>
+        new Promise((ok) => {
+          const req = indexedDB.open('denk-raupe', 1);
+          req.onsuccess = () => {
+            const g = req.result.transaction('kv').objectStore('kv').get('sitzung');
+            g.onsuccess = () => (req.result.close(), ok((g.result as { version: number }).version));
+          };
+        }),
+    );
+    expect(version).toBe(2);
+    await page.close();
+  });
+
   it("Lernbeispiel vor einem neuen Format: falsche Wahl → „Schau noch einmal“, richtige → „Los geht's“", async () => {
     const { page, sitzung } = await oeffnen(390, 800, { gesehen: false });
     expect(await page.textContent('.lern-titel')).toBe("So geht's");
     const f = FORMATE[sitzung.aufgaben[0].format];
-    const b = f.beispiel({} as never);
+    const b = f.beispiele({} as never)[0];
+    const art = f.eingabe(b).art;
     const richtig = f.loesungen(b)[0];
     const tippe = async (a: Antwort) => {
-      if (f.eingabe === 'zahl' && a.art === 'zahl') for (const d of String(a.wert)) await page.click(`[data-ziffer="${d}"]`);
+      if (art === 'zahl' && a.art === 'zahl') for (const d of String(a.wert)) await page.click(`[data-ziffer="${d}"]`);
       else {
         const { zufall } = await import('../src/core/zufall');
         const wahl = f.wahl!(b, zufall(1));
         const k = wahl.findIndex((w) => gleich(w, a));
-        await page.click(f.eingabe === 'wahl' ? `.wahl button[data-k="${k}"]` : `[data-wahl="${k}"]`);
+        await page.click(art === 'wahl' ? `.wahl button[data-k="${k}"]` : `[data-wahl="${k}"]`);
       }
     };
     const anders: Antwort = richtig.art === 'zahl' ? { art: 'zahl', wert: richtig.wert === 1 ? 2 : 1 } : { art: 'form', form: 'stern', farbe: 'gelb' };
-    if (f.eingabe !== 'wahl' || anders.art === 'zahl') {
+    if (art !== 'wahl' || anders.art === 'zahl') {
       await tippe(anders);
       expect(await page.textContent('.meldung')).toBe('Schau noch einmal.');
-      if (f.eingabe === 'zahl') await page.click('[data-ziffer="x"]');
+      if (art === 'zahl') await page.click('[data-ziffer="x"]');
     }
     await tippe(richtig);
     expect(await page.textContent('.meldung')).toBe('Genau so!');
     await page.click('.los');
     expect(await page.$('.lern')).toBeNull();
-    expect(await page.textContent('.auftrag')).toBe(f.auftrag);
+    expect(await page.textContent('.auftrag')).toBe(KIND.auftrag[f.auftrag]);
     await page.close();
   });
 

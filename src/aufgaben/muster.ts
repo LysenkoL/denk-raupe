@@ -106,19 +106,29 @@ function zeichne(m: Muster, o: { hilfe: number; gewaehlt: Antwort | null; vorrec
 
 export const MUSTER: Format<Muster> = {
   id: 'muster',
+  nr: 19,
   version: 1,
-  auftrag: 'Wie geht es weiter?',
+  bereich: 'muster',
+  faehigkeit: 'M1',
+  motor: 'reihe',
+  klasse: 1,
+  lesen: 0,
+  braucht: [],
+  /** Druckblock kommt mit Etappe 8 */
+  druck: false,
+  auftrag: 'wieGehtEsWeiter',
   stufen: 3,
-  eingabe: 'wahl',
+  /** hängt nicht vom Zahlenraum ab: liest die Einstellung nicht */
   erzeuge,
   loesungen,
+  eingabe: () => ({ art: 'wahl' }),
   wahl,
   zeichne,
-  beispiel: () => {
+  beispiele: () => {
     const u: Element[] = [
       { form: 'kreis', farbe: 'rot' },
       { form: 'quadrat', farbe: 'blau' },
     ];
-    return { reihe: [u[0], u[1], u[0], u[1], u[0]], periode: 2 };
+    return [{ reihe: [u[0], u[1], u[0], u[1], u[0]], periode: 2 }];
   },
 };
