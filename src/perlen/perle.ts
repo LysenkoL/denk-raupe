@@ -1,5 +1,5 @@
 import { FORM_FARBEN, HUNDERT_FARBE, NEUTRAL_PERLE, ZIFFER_FARBEN, kanteZu, schriftAuf } from '../design/farbe';
-import type { Antwort, Form, Sammelzeichen } from './antwort';
+import type { Antwort, Form, Rechenzeichen, Sammelzeichen } from './antwort';
 
 /**
  * Wie eine Perle aussieht – reine Beschreibung ohne SVG, damit sie testbar ist.
@@ -74,6 +74,13 @@ export function geld(cent: number): string {
   return rest === 0 ? `${euro} €` : `${euro},${String(rest).padStart(2, '0')} €`;
 }
 
+const RECHENZEICHEN: Record<Rechenzeichen, string> = { plus: '+', minus: '−', mal: '·', geteilt: ':' };
+
+/** kurze Aufgabe in deutscher Schreibweise: 7 + 3, 10 − 7, 3 · 5, 15 : 5 */
+export function ausdruck(links: number, zeichen: Rechenzeichen, rechts: number): string {
+  return `${links} ${RECHENZEICHEN[zeichen]} ${rechts}`;
+}
+
 export function perlenBild(a: Antwort): PerlenBild {
   switch (a.art) {
     case 'zahl': {
@@ -95,6 +102,15 @@ export function perlenBild(a: Antwort): PerlenBild {
       return text(geld(a.cent), NEUTRAL_PERLE, 0.72, geld(a.cent));
     case 'laenge':
       return text(`${a.cm} cm`, NEUTRAL_PERLE, 0.72, `${a.cm} cm`);
+    case 'ausdruck': {
+      const s = ausdruck(a.links, a.zeichen, a.rechts);
+      return text(s, NEUTRAL_PERLE, 0.72, s);
+    }
+    case 'groesse':
+      return text(`${a.wert} ${a.einheit}`, NEUTRAL_PERLE, 0.72, `${a.wert} ${a.einheit}`);
+    case 'stelle':
+      // vorerst die Nummer des Platzes („3.“); später, was auf dem Platz steht (docs/FORMATE.md, Abschnitt 3)
+      return text(`${a.nr}.`, NEUTRAL_PERLE, 0.9, `Platz ${a.nr}`);
     case 'form':
       return {
         breite: 2,

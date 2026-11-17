@@ -1,5 +1,6 @@
 import { FORMATE } from '../aufgaben';
-import { aufgabeAus, stimmt, type Aufgabe, type FormatId, type HilfeStufe } from '../aufgaben/format';
+import { aufgabeAus, stimmt, STANDARD_EINSTELLUNG, type Aufgabe, type Einstellung, type FormatId, type HilfeStufe } from '../aufgaben/format';
+import type { Mauer } from '../aufgaben/zahlenmauer';
 import { zufall } from '../core/zufall';
 import type { Antwort } from '../perlen/antwort';
 import { blaetter, fertig, neuerSatz, type Satz } from './vergleich';
@@ -10,7 +11,8 @@ import { blaetter, fertig, neuerSatz, type Satz } from './vergleich';
  * Wird nach jeder Änderung gespeichert und nach Verlassen, Drehen oder Update genau so wiederhergestellt.
  */
 export interface Sitzung {
-  version: 1;
+  /** 2: Aufgabe kennt ihren Zahlenraum, Zahlenmauer ihre Grenze (Umzug von 1: `ladeSitzung`) */
+  version: 2;
   samen: number;
   aufgaben: Aufgabe[];
   satz: Satz;
@@ -44,12 +46,13 @@ export function neuesProfil(): Profil {
 /** Probesatz (Etappe 3): je ein Zahlenmauer-, Wer-ist-es- und Muster-Aufgabe in zufälliger Reihenfolge */
 export const PROBE_FORMATE: FormatId[] = ['zahlenmauer', 'wer-ist-es', 'muster'];
 
-export function neueSitzung(samen: number): Sitzung {
+/** `e`: Einstellung der Eltern; bis es sie gibt (Aufgabe C3), der Standard */
+export function neueSitzung(samen: number, e: Einstellung = STANDARD_EINSTELLUNG): Sitzung {
   const z = zufall(samen);
   const ids = z.mischen(PROBE_FORMATE);
-  const aufgaben = ids.map((id, i) => aufgabeAus(FORMATE[id], (samen + i * 104729) >>> 0, z.ganz(1, 2)));
+  const aufgaben = ids.map((id, i) => aufgabeAus(FORMATE[id], (samen + i * 104729) >>> 0, z.ganz(1, 2), e));
   return {
-    version: 1,
+    version: 2,
     samen,
     aufgaben,
     satz: neuerSatz(aufgaben.length),
@@ -57,6 +60,37 @@ export function neueSitzung(samen: number): Sitzung {
     hilfeOffen: aufgaben.map(() => 0),
     gezaehlt: false,
   };
+}
+
+/** Sitzung in Version 1 (bis Aufgabe A2): Aufgaben ohne Zahlenraum, Zahlenmauer ohne Grenze */
+interface SitzungV1 extends Omit<Sitzung, 'version' | 'aufgaben'> {
+  version: 1;
+  aufgaben: Omit<Aufgabe, 'zahlenraum'>[];
+}
+
+/**
+ * Umzug 1 → 2. Version 1 kannte keinen Zahlenraum; ihre Aufgaben sind die von heute bis 20:
+ * Zahlenmauer Stufe 1 bis 10, sonst bis 20. Bedingung, Wahl, Version und Samen jeder Aufgabe
+ * und der ganze Zustand von Raupe und Zwilling bleiben, wie sie waren.
+ */
+function vonV1(s: SitzungV1): Sitzung {
+  const aufgaben: Aufgabe[] = s.aufgaben.map((a) => {
+    const bedingung = a.format === 'zahlenmauer' ? { ...(a.bedingung as Omit<Mauer, 'grenze'>), grenze: a.stufe === 1 ? 10 : 20 } : a.bedingung;
+    return { ...a, zahlenraum: 20, bedingung };
+  });
+  return { ...s, version: 2, aufgaben };
+}
+
+/**
+ * Gespeicherte Sitzung lesen, ältere Versionen umziehen. Unbekanntes (leer, kaputt, neuere Version) → null:
+ * dann beginnt ein neuer Satz.
+ */
+export function ladeSitzung(roh: unknown): Sitzung | null {
+  if (!roh || typeof roh !== 'object') return null;
+  const s = roh as { version?: unknown };
+  if (s.version === 2) return roh as Sitzung;
+  if (s.version === 1) return vonV1(roh as SitzungV1);
+  return null;
 }
 
 export function stimmtFuer(s: Sitzung) {

@@ -54,13 +54,13 @@ async function vorbereiten(page, gesehen = true) {
 async function eingeben(page, i, antwort) {
   await page.click(`.perle[data-i="${i}"]`);
   const a = sitzung.aufgaben[i];
-  const f = FORMATE[a.format];
-  if (f.eingabe === 'zahl') {
+  const art = FORMATE[a.format].eingabe(a.bedingung).art;
+  if (art === 'zahl') {
     while (await page.isEnabled('[data-ziffer="x"]')) await page.click('[data-ziffer="x"]');
     for (const d of String(antwort.wert)) await page.click(`[data-ziffer="${d}"]`);
   } else {
     const k = a.wahl.findIndex((w) => gleich(w, antwort));
-    await page.click(f.eingabe === 'wahl' ? `.wahl button[data-k="${k}"]` : `[data-wahl="${k}"]`);
+    await page.click(art === 'wahl' ? `.wahl button[data-k="${k}"]` : `[data-wahl="${k}"]`);
   }
 }
 

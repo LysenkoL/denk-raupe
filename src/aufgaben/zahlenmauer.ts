@@ -1,22 +1,42 @@
 import { TINTE } from '../design/farbe';
 import type { Antwort } from '../perlen/antwort';
-import type { Format } from './format';
+import type { Einstellung, Format, Zahlenraum } from './format';
 import type { Zufall } from '../core/zufall';
 
 /**
  * Zahlenmauer (Raster): jeder Stein = Summe der beiden Steine darunter; ein Stein fehlt.
- * Stufe 1: 3 Reihen bis 10, fehlender Stein oben oder in der Mitte (addieren).
- * Stufe 2: 3 Reihen bis 20, auch unten (ergänzen). Stufe 3: 4 Reihen bis 20, überall.
+ * Die Stufe bestimmt den Bau der Mauer, der Zahlenraum der Eltern die größte Zahl:
+ * Stufe 1: 3 Reihen, fehlender Stein oben oder in der Mitte (addieren);
+ *          Zahlen eine Stufe unter dem Zahlenraum (bis 20 → bis 10, bis 100 → bis 20, bis 10 bleibt bis 10).
+ * Stufe 2: 3 Reihen, fehlender Stein auch unten (ergänzen); Zahlen im ganzen Zahlenraum.
+ * Stufe 3: 4 Reihen, fehlender Stein überall; Zahlen im ganzen Zahlenraum.
+ * Bis 20 (Standard) sind die Mauern genau die von Version 1.
  */
 export interface Mauer {
   /** Reihen von unten; Stein (r, i) = Stein (r-1, i) + Stein (r-1, i+1) */
   reihen: number[][];
   /** fehlender Stein */
   fehlt: [number, number];
+  /** größte Zahl, die in dieser Mauer stehen darf (aus Stufe und Zahlenraum); bestimmt die Eingabe */
+  grenze: Zahlenraum;
 }
 
-const GRENZE = [0, 10, 20, 20];
 const HOEHE = [0, 3, 3, 4];
+
+/** größte Zahl der Mauer: Stufe 1 eine Stufe unter dem Zahlenraum, sonst der Zahlenraum selbst */
+export function grenzeFuer(stufe: number, zahlenraum: Zahlenraum): Zahlenraum {
+  if (stufe > 1) return zahlenraum;
+  return zahlenraum === 100 ? 20 : 10;
+}
+
+/**
+ * größte Zahl der unteren Reihe je Höhe und Grenze. Für 3 Reihen bis 10 und bis 20 und für 4 Reihen bis 20
+ * sind es die Werte von Version 1 – so bleiben die Mauern bis 20 gleich.
+ */
+const BASIS_MAX: Record<number, Record<Zahlenraum, number>> = {
+  3: { 10: 4, 20: 8, 100: 40 },
+  4: { 10: 3, 20: 4, 100: 20 },
+};
 
 function baue(basis: number[]): number[][] {
   const r = [basis];
@@ -27,16 +47,17 @@ function baue(basis: number[]): number[][] {
   return r;
 }
 
-function erzeuge(z: Zufall, stufe: number): Mauer {
+function erzeuge(z: Zufall, stufe: number, e: Einstellung): Mauer {
   const n = HOEHE[stufe];
-  const grenze = GRENZE[stufe];
+  const grenze = grenzeFuer(stufe, e.zahlenraum);
+  const max = BASIS_MAX[n][grenze];
   for (;;) {
-    const basis = Array.from({ length: n }, () => z.ganz(stufe === 1 ? 0 : 1, n === 4 ? 4 : stufe === 1 ? 4 : 8));
+    const basis = Array.from({ length: n }, () => z.ganz(stufe === 1 ? 0 : 1, max));
     const reihen = baue(basis);
     if (reihen[n - 1][0] > grenze || reihen[n - 1][0] < 4) continue;
     const plaetze: [number, number][] = [];
     reihen.forEach((reihe, r) => reihe.forEach((_, i) => (stufe > 1 || r > 0) && plaetze.push([r, i])));
-    return { reihen, fehlt: z.eins(plaetze) };
+    return { reihen, fehlt: z.eins(plaetze), grenze };
   }
 }
 
@@ -107,12 +128,22 @@ function zeichne(m: Mauer, o: { hilfe: number; gewaehlt: Antwort | null; vorrech
 
 export const ZAHLENMAUER: Format<Mauer> = {
   id: 'zahlenmauer',
-  version: 1,
-  auftrag: 'Welche Zahl fehlt?',
+  nr: 7,
+  /** 2: Zahlenraum kommt aus der Einstellung, Mauer kennt ihre Grenze */
+  version: 2,
+  bereich: 'zahlen',
+  faehigkeit: 'Z3',
+  motor: 'raster',
+  klasse: 1,
+  lesen: 0,
+  braucht: [],
+  /** Druckblock kommt mit Etappe 8 */
+  druck: false,
+  auftrag: 'welcheZahlFehlt',
   stufen: 3,
-  eingabe: 'zahl',
   erzeuge,
   loesungen,
+  eingabe: (m) => ({ art: 'zahl', max: m.grenze }),
   zeichne,
-  beispiel: () => ({ reihen: baue([1, 2]), fehlt: [1, 0] }),
+  beispiele: () => [{ reihen: baue([1, 2]), fehlt: [1, 0], grenze: 10 }],
 };

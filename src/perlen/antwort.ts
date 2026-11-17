@@ -8,6 +8,10 @@ export type Form = 'kreis' | 'quadrat' | 'dreieck' | 'raute' | 'stern';
 export type Artikel = 'der' | 'die' | 'das';
 /** Sammelantworten: Reihenfolge, Gitter, Paar, Bau … – die Perle zeigt ein Zeichen, groß auf Tipp */
 export type Sammelzeichen = 'reihe' | 'gitter' | 'paar' | 'bau' | 'ansicht' | 'satz';
+/** Rechenzeichen einer kurzen Aufgabe (Nr. 89, 92) */
+export type Rechenzeichen = 'plus' | 'minus' | 'mal' | 'geteilt';
+/** Einheit einer Größe (Nr. 104) */
+export type Einheit = 'mm' | 'cm' | 'm' | 'km' | 'g' | 'kg' | 'ml' | 'l';
 
 export type Antwort =
   | { art: 'zahl'; wert: number }
@@ -18,6 +22,12 @@ export type Antwort =
   | { art: 'zeit'; stunde: number; minute: number }
   | { art: 'geld'; cent: number }
   | { art: 'laenge'; cm: number }
+  /** kurze Aufgabe als Antwort: 7 + 3 (Nr. 89, 92); 7 + 3 und 3 + 7 sind verschiedene Antworten */
+  | { art: 'ausdruck'; links: number; zeichen: Rechenzeichen; rechts: number }
+  /** Größe mit Einheit: 15 cm (Nr. 104) */
+  | { art: 'groesse'; wert: number; einheit: Einheit }
+  /** Platz im Bild, gezählt ab 1 (Nr. 20, 95, 103) */
+  | { art: 'stelle'; nr: number }
   | { art: 'sammel'; zeichen: Sammelzeichen; wert: readonly (string | number)[] };
 
 /** Gleichheit nach Wert (für „Antwort geändert?“; ob sie stimmt, entscheidet allein die Aufgabe) */
