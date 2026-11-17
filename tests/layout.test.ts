@@ -40,7 +40,7 @@ const SAMEN = 20261115;
 async function oeffnen(
   w: number,
   h: number,
-  o: { gesehen?: boolean; samen?: number; gespeichert?: { sitzung: Sitzung; profil: unknown } } = {},
+  o: { gesehen?: boolean; samen?: number; gespeichert?: { sitzung: Sitzung; profil: unknown }; weitere?: Record<string, unknown> } = {},
 ): Promise<{ page: Page; sitzung: Sitzung }> {
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
   const sitzung = o.gespeichert?.sitzung ?? neueSitzung(o.samen ?? SAMEN);
@@ -48,7 +48,7 @@ async function oeffnen(
   // Musterseite fasst den Speicher nicht an – sonst könnte die App beim ersten Laden einen eigenen Satz speichern
   await page.goto(url + '#/stil');
   await page.evaluate(
-    ([s, p]) =>
+    ([s, p, weitere]) =>
       new Promise<void>((ok) => {
         const req = indexedDB.open('denk-raupe', 1);
         req.onupgradeneeded = () => req.result.createObjectStore('kv');
@@ -56,16 +56,32 @@ async function oeffnen(
           const tx = req.result.transaction('kv', 'readwrite');
           tx.objectStore('kv').put(s, 'sitzung');
           tx.objectStore('kv').put(p, 'profil');
+          for (const [k, w] of Object.entries(weitere)) tx.objectStore('kv').put(w, k);
           tx.oncomplete = () => (req.result.close(), ok());
         };
       }),
-    [sitzung, profil] as const,
+    [sitzung, profil, o.weitere ?? {}] as const,
   );
   await page.goto(url + '#/');
   await page.reload();
   await page.waitForSelector('.perle');
   await page.evaluate(() => document.fonts.ready);
   return { page, sitzung };
+}
+
+/** Wert aus dem Speicher der Seite (IndexedDB) */
+function gespeichert<T = unknown>(page: Page, schluessel: string): Promise<T> {
+  return page.evaluate(
+    (k) =>
+      new Promise((ok) => {
+        const req = indexedDB.open('denk-raupe', 1);
+        req.onsuccess = () => {
+          const g = req.result.transaction('kv').objectStore('kv').get(k);
+          g.onsuccess = () => (req.result.close(), ok(g.result));
+        };
+      }),
+    schluessel,
+  ) as Promise<T>;
 }
 
 function loesung(s: Sitzung, i: number): Antwort {
@@ -264,6 +280,65 @@ describe('Ablauf eines Satzes', () => {
     // das Blatt über der zurückgelegten Aufgabe bleibt liegen
     const zu = await page.$$eval('.zwilling-perle', (els) => els.map((e) => !!e.querySelector('.blatt')));
     expect(zu).toEqual([false, true, false]);
+    await page.close();
+  });
+
+  it('Historie: fertiger Satz kommt genau einmal hinein; neuer Satz und Neuladen löschen nichts', async () => {
+    const { page, sitzung } = await oeffnen(390, 800);
+    expect(await gespeichert(page, 'historie')).toBeUndefined();
+    for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
+    await vergleichen(page);
+    // nach dem ersten Vergleichen ist der Satz nicht fertig: noch nichts in der Historie
+    expect(await gespeichert(page, 'historie')).toBeUndefined();
+    await eingeben(page, sitzung, 1, loesung(sitzung, 1));
+    await vergleichen(page);
+    await page.waitForSelector('.ende');
+    await page.waitForTimeout(150);
+    type H = { version: number; eintraege: { ergebnis: string; samen: number; tag: string; falsch: Antwort[]; satz: number }[] };
+    const h1 = await gespeichert<H>(page, 'historie');
+    expect(h1.version).toBe(1);
+    expect(h1.eintraege.map((e) => e.ergebnis)).toEqual(['gold', 'selbst', 'gold']);
+    expect(h1.eintraege.map((e) => e.samen)).toEqual(sitzung.aufgaben.map((a) => a.samen));
+    expect(h1.eintraege[1].falsch).toEqual([falsch(sitzung, 1)]);
+    const heute = await page.evaluate(() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
+    expect(h1.eintraege.every((e) => e.tag === heute)).toBe(true);
+    // Satz und Profil sind zusammen mit der Historie gespeichert: „gezählt“ steht schon
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).gezaehlt).toBe(true);
+    // Neuladen auf dem Endbildschirm schreibt nichts doppelt
+    await page.reload();
+    await page.waitForSelector('.ende');
+    await page.waitForTimeout(150);
+    expect((await gespeichert<H>(page, 'historie')).eintraege).toHaveLength(3);
+    // neuer Satz: Historie bleibt
+    await page.click('.neuer-satz');
+    await page.waitForTimeout(150);
+    expect(await gespeichert<H>(page, 'historie')).toEqual(h1);
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).samen).not.toBe(sitzung.samen);
+    await page.close();
+  });
+
+  it('unbekannte neuere Version: Satz, Profil und Historie bleiben unangetastet unter „…-unbekannt“', async () => {
+    const satzNeu = { ...neueSitzung(SAMEN), version: 3, ausDerZukunft: true };
+    const profilNeu = { ...neuesProfil(), version: 2, blaetter: 99 };
+    const historieNeu = { version: 2, eintraege: [{ format: 'muster', ergebnis: 'gold' }] };
+    const { page } = await oeffnen(390, 800, { gespeichert: { sitzung: satzNeu as unknown as Sitzung, profil: profilNeu }, weitere: { historie: historieNeu } });
+    await page.waitForTimeout(200);
+    expect(await gespeichert(page, 'sitzung-unbekannt')).toEqual([satzNeu]);
+    expect(await gespeichert(page, 'profil-unbekannt')).toEqual([profilNeu]);
+    expect(await gespeichert(page, 'historie-unbekannt')).toEqual([historieNeu]);
+    // die App arbeitet mit neuen Daten weiter
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).version).toBe(2);
+    expect((await gespeichert<{ version: number; blaetter: number }>(page, 'profil')).blaetter).toBe(0);
+    expect(await page.$$eval('.raupe-zeile.kind .perle', (e) => e.length)).toBeGreaterThan(0);
+    // Neuladen: die Kopien bleiben, nichts doppelt
+    await page.reload();
+    await page.waitForSelector('.perle');
+    await page.waitForTimeout(150);
+    expect(await gespeichert(page, 'sitzung-unbekannt')).toEqual([satzNeu]);
+    expect(await gespeichert(page, 'profil-unbekannt')).toEqual([profilNeu]);
     await page.close();
   });
 });

@@ -7,9 +7,10 @@ import { szeneHtml } from '../satz/szene';
 import { FORMATE } from '../aufgaben';
 import { aufgabeAus, STANDARD_EINSTELLUNG, type Aufgabe, type Format, type HilfeStufe } from '../aufgaben/format';
 import { zufall, neuerSamen } from '../core/zufall';
-import { lesen, schreiben } from '../core/speicher';
+import { ladeGeschuetzt, schreibenMehrere } from '../core/speicher';
 import { fertigTon, heben, klick, rascheln, tonAn } from '../app/ton';
-import { abschliessen, ladeSitzung, neueSitzung, neuesProfil, stimmtFuer, type Profil, type Sitzung } from '../satz/sitzung';
+import { abschliessen, ladeProfil, ladeSitzung, neueSitzung, neuesProfil, stimmtFuer, type Profil, type Sitzung } from '../satz/sitzung';
+import { HISTORIE_SCHLUESSEL, historieLesen, type Historie } from '../satz/historie';
 import { aenderbar, blaetter, fertig, kannVergleichen, setzeAntwort, vergleiche, zuruecklegen } from '../satz/vergleich';
 
 /**
@@ -27,8 +28,10 @@ const warte = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 const lernAufgabe = <B>(f: Format<B>): B => f.beispiele(zufall(1))[0];
 
 export async function renderSatz(app: HTMLElement): Promise<void> {
-  let profil: Profil = (await lesen<Profil>('profil')) ?? neuesProfil();
-  let sitzung: Sitzung = ladeSitzung(await lesen<unknown>('sitzung')) ?? neueSitzung(neuerSamen());
+  // Unbekanntes (neuere Version, kaputt) bleibt unter „…-unbekannt“, bevor hier etwas überschrieben wird
+  let profil: Profil = (await ladeGeschuetzt('profil', ladeProfil)) ?? neuesProfil();
+  let sitzung: Sitzung = (await ladeGeschuetzt('sitzung', ladeSitzung)) ?? neueSitzung(neuerSamen());
+  let historie: Historie = await historieLesen();
   tonAn(profil.ton);
 
   // flüchtiger Zustand (wird nicht gespeichert)
@@ -52,9 +55,9 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   const panel = app.querySelector<HTMLElement>('.aufgabe')!;
   const knopf = app.querySelector<HTMLButtonElement>('.vergleichen')!;
 
-  const speichern = () => {
-    void schreiben('sitzung', sitzung);
-    void schreiben('profil', profil);
+  /** `mitHistorie`: nur beim Abschluss – die Historie wächst und wird nicht bei jedem Tippen neu geschrieben */
+  const speichern = (mitHistorie = false) => {
+    void schreibenMehrere(mitHistorie ? { [HISTORIE_SCHLUESSEL]: historie, sitzung, profil } : { sitzung, profil });
   };
   const satz = () => sitzung.satz;
   const ende = () => fertig(satz()) && !busy;
@@ -288,12 +291,13 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   });
 
   function beenden(): void {
-    const r = abschliessen(sitzung, profil);
+    const r = abschliessen(sitzung, profil, historie);
     sitzung = r.sitzung;
     profil = r.profil;
+    historie = r.historie;
     neuerBuchstabe = r.neuerBuchstabe;
     if (r.neuerBuchstabe !== null) fertigTon();
-    speichern();
+    speichern(true);
     alles();
   }
 

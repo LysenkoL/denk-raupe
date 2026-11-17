@@ -4,6 +4,7 @@ import type { Mauer } from '../aufgaben/zahlenmauer';
 import { zufall } from '../core/zufall';
 import type { Antwort } from '../perlen/antwort';
 import { blaetter, fertig, neuerSatz, type Satz } from './vergleich';
+import { anhaengen, type Historie } from './historie';
 
 /**
  * Ein laufender Satz mit allem, was gespeichert wird: jede Aufgabe ganz (Format, Version, Samen,
@@ -11,7 +12,11 @@ import { blaetter, fertig, neuerSatz, type Satz } from './vergleich';
  * Wird nach jeder Änderung gespeichert und nach Verlassen, Drehen oder Update genau so wiederhergestellt.
  */
 export interface Sitzung {
-  /** 2: Aufgabe kennt ihren Zahlenraum, Zahlenmauer ihre Grenze (Umzug von 1: `ladeSitzung`) */
+  /**
+   * 2: Aufgabe kennt ihren Zahlenraum, Zahlenmauer ihre Grenze (Umzug von 1: `ladeSitzung`).
+   * Seit A3 schreibt jede Perle zusätzlich `falsch` mit – ein optionales Feld, ältere Sätze bleiben
+   * gültig, daher keine neue Version.
+   */
   version: 2;
   samen: number;
   aufgaben: Aufgabe[];
@@ -41,6 +46,18 @@ export const GEHEIMWOERTER = ['TEICH', 'BERGE', 'STRAND'];
 
 export function neuesProfil(): Profil {
   return { version: 1, gesehen: [], blaetter: 0, saetze: 0, geheim: { wort: GEHEIMWOERTER[0], offen: [] }, ton: true };
+}
+
+/**
+ * Gespeichertes Profil lesen. Die Form ist seit Version 1 gleich (die Historie liegt in einem eigenen
+ * Speicher), daher kein Umzug: Version 1 bleibt, wie sie ist; fehlt ein Feld, kommt der Wert eines
+ * neuen Profils dazu. Nichts gespeichert, kaputt oder unbekannte (neuere) Version → null.
+ */
+export function ladeProfil(roh: unknown): Profil | null {
+  if (!roh || typeof roh !== 'object') return null;
+  const p = roh as Partial<Profil> & { version?: unknown };
+  if (p.version === 1) return { ...neuesProfil(), ...p } as Profil;
+  return null;
 }
 
 /** Probesatz (Etappe 3): je ein Zahlenmauer-, Wer-ist-es- und Muster-Aufgabe in zufälliger Reihenfolge */
@@ -83,7 +100,7 @@ function vonV1(s: SitzungV1): Sitzung {
 
 /**
  * Gespeicherte Sitzung lesen, ältere Versionen umziehen. Unbekanntes (leer, kaputt, neuere Version) → null:
- * dann beginnt ein neuer Satz.
+ * dann beginnt ein neuer Satz; das Gespeicherte bewahrt vorher `ladeGeschuetzt` unter `sitzung-unbekannt` auf.
  */
 export function ladeSitzung(roh: unknown): Sitzung | null {
   if (!roh || typeof roh !== 'object') return null;
@@ -97,9 +114,19 @@ export function stimmtFuer(s: Sitzung) {
   return (i: number, a: Antwort) => stimmt(FORMATE[s.aufgaben[i].format], s.aufgaben[i], a);
 }
 
-/** Satz fertig → Blätter in den Korb, ein Buchstabe des Geheimworts öffnet sich (einmal) */
-export function abschliessen(s: Sitzung, p: Profil, z = zufall(s.samen ^ 0x5bd1e995)): { sitzung: Sitzung; profil: Profil; neuerBuchstabe: number | null } {
-  if (!fertig(s.satz) || s.gezaehlt) return { sitzung: s, profil: p, neuerBuchstabe: null };
+/**
+ * Satz fertig → Blätter in den Korb, ein Buchstabe des Geheimworts öffnet sich, jede Aufgabe kommt in
+ * die Historie. Alles genau einmal je Satz (`gezaehlt`); die drei Teile werden zusammen gespeichert.
+ * `jetzt`: Zeitpunkt des Abschlusses (Tag in der Historie).
+ */
+export function abschliessen(
+  s: Sitzung,
+  p: Profil,
+  h: Historie,
+  jetzt: Date = new Date(),
+  z = zufall(s.samen ^ 0x5bd1e995),
+): { sitzung: Sitzung; profil: Profil; historie: Historie; neuerBuchstabe: number | null } {
+  if (!fertig(s.satz) || s.gezaehlt) return { sitzung: s, profil: p, historie: h, neuerBuchstabe: null };
   let geheim = p.geheim;
   if (geheim.offen.length >= geheim.wort.length) {
     const naechstes = GEHEIMWOERTER[(GEHEIMWOERTER.indexOf(geheim.wort) + 1) % GEHEIMWOERTER.length];
@@ -110,6 +137,7 @@ export function abschliessen(s: Sitzung, p: Profil, z = zufall(s.samen ^ 0x5bd1e
   return {
     sitzung: { ...s, gezaehlt: true },
     profil: { ...p, blaetter: p.blaetter + blaetter(s.satz).wert, saetze: p.saetze + 1, geheim: { ...geheim, offen: [...geheim.offen, neu] } },
+    historie: anhaengen(h, s.aufgaben, s.satz, jetzt),
     neuerBuchstabe: neu,
   };
 }
