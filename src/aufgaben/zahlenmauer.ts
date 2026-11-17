@@ -1,3 +1,4 @@
+import { TINTE } from '../design/farbe';
 import type { Antwort } from '../perlen/antwort';
 import type { Format } from './format';
 import type { Zufall } from '../core/zufall';
@@ -87,7 +88,7 @@ function zeichne(m: Mauer, o: { hilfe: number; gewaehlt: Antwort | null; vorrech
       const stroke = fehlt ? '#E8893A' : '#1B2033';
       s += `<rect x="${x + 2}" y="${y + 2}" width="${SW - 4}" height="${SH - 4}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${markiert(r, i) ? 4 : 2.5}"${fehlt ? ' stroke-dasharray="7 5"' : ''}/>`;
       let text = String(v);
-      let farbe = '#1F2421';
+      let farbe = TINTE;
       if (fehlt) {
         if (o.vorrechnen) text = String(v);
         else if (o.gewaehlt?.art === 'zahl') ((text = String(o.gewaehlt.wert)), (farbe = '#8A4B12'));
