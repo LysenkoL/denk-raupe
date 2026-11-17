@@ -1,5 +1,5 @@
 import { setSprache, t, type Key, type Sprache } from '../app/i18n';
-import { HUNDERT_FARBE, ZIFFER_FARBEN } from '../design/farbe';
+import { HUNDERT_FARBE, HUNDERT_KANTE, ZIFFER_FARBEN, ZIFFER_KANTEN } from '../design/farbe';
 import { KIND } from '../i18n/kind';
 import type { Antwort } from '../perlen/antwort';
 import { blattImg, kopfHtml, leerSvg, perleSvg } from '../perlen/maler';
@@ -65,8 +65,8 @@ export function renderStil(app: HTMLElement, params: URLSearchParams): void {
   if (sp === 'de' || sp === 'uk') setSprache(sp as Sprache);
 
   const ziffern = ZIFFER_FARBEN.map(
-    (c, n) => `<li><span class="farbfeld" style="background:${c}"></span><b>${n}</b><code>${c}</code></li>`,
-  ).join('') + `<li><span class="farbfeld" style="background:${HUNDERT_FARBE}"></span><b>100</b><code>${HUNDERT_FARBE}</code></li>`;
+    (c, n) => `<li><span class="farbfeld" style="background:${c};border-color:${ZIFFER_KANTEN[n]}"></span><b>${n}</b><code>${c}</code></li>`,
+  ).join('') + `<li><span class="farbfeld" style="background:${HUNDERT_FARBE};border-color:${HUNDERT_KANTE}"></span><b>100</b><code>${HUNDERT_FARBE}</code></li>`;
 
   const zahlen = Array.from({ length: 101 }, (_, n) => perle({ art: 'zahl', wert: n })).join('');
   const andere: Antwort[] = [

@@ -43,3 +43,58 @@ export function deltaE2000(a: string, b: string): number {
   const RT = -2 * Math.sqrt(Cbp ** 7 / (Cbp ** 7 + 25 ** 7)) * Math.sin(rad(60 * Math.exp(-(((hb - 275) / 25) ** 2))));
   return Math.sqrt((dL / SL) ** 2 + (dC / SC) ** 2 + (dH / SH) ** 2 + RT * (dC / SC) * (dH / SH));
 }
+
+/**
+ * Farbsehen mit Protanopie und Deuteranopie (docs/PLAN.md, Anhang A): sRGB → linear → Matrix → auf 0…1 begrenzen →
+ * Lab (D65); Abstand = euklidisch (ΔE76). Zwei Modelle je Störung.
+ */
+type Matrix = readonly [readonly [number, number, number], readonly [number, number, number], readonly [number, number, number]];
+export const SEHEN: Record<'protanopie' | 'deuteranopie', readonly [Matrix, Matrix]> = {
+  protanopie: [
+    [
+      [0.152286, 1.052583, -0.204868],
+      [0.114503, 0.786281, 0.099216],
+      [-0.003882, -0.048116, 1.051998],
+    ],
+    [
+      [0.11238, 0.88762, 0],
+      [0.11238, 0.88762, 0],
+      [0.00401, -0.00401, 1],
+    ],
+  ],
+  deuteranopie: [
+    [
+      [0.367322, 0.860646, -0.227968],
+      [0.280085, 0.672501, 0.047413],
+      [-0.01182, 0.04294, 0.968881],
+    ],
+    [
+      [0.29275, 0.70725, 0],
+      [0.29275, 0.70725, 0],
+      [-0.02234, 0.02234, 1],
+    ],
+  ],
+};
+
+function linear(h: string): [number, number, number] {
+  const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return [1, 3, 5].map((i) => lin(parseInt(h.slice(i, i + 2), 16) / 255)) as [number, number, number];
+}
+
+function labLinear([r, g, b]: readonly number[]): [number, number, number] {
+  const X = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+  const Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+  const Z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+  const t = (v: number) => (v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116);
+  return [116 * t(Y) - 16, 500 * (t(X) - t(Y)), 200 * (t(Y) - t(Z))];
+}
+
+/** ΔE76 zweier Farben, so wie sie mit der Matrix m gesehen werden */
+export function deltaE76Gesehen(a: string, b: string, m: Matrix): number {
+  const sieh = (h: string) => {
+    const c = linear(h);
+    return labLinear(m.map((z) => Math.min(1, Math.max(0, z[0] * c[0] + z[1] * c[1] + z[2] * c[2]))));
+  };
+  const [A, B] = [sieh(a), sieh(b)];
+  return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]);
+}

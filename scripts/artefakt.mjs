@@ -20,7 +20,7 @@ if (rest.length) throw new Error(`nicht eingebettet: ${rest.join(', ')}`);
 
 // Seiteninhalt ohne <html>/<head>/<body> (die Seite wird beim Veröffentlichen damit umschlossen)
 const html = `<title>Denk-Raupe Probe</title>
-<meta name="theme-color" content="#F4F8F2">
+<meta name="theme-color" content="#FDFBF4">
 <style>${css}</style>
 <div id="app"></div>
 <script type="module">${js.replace(/<\/script/gi, '<\\/script')}</script>

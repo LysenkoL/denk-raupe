@@ -1,3 +1,4 @@
+import { LATERNE, TINTE } from '../design/farbe';
 import { perlenBild } from '../perlen/perle';
 import { blattImg, kopfHtml, leerSvg, mulde, perleSvg, perlenBox, R } from '../perlen/maler';
 import { fertig, type Satz } from './vergleich';
@@ -47,7 +48,7 @@ export function einheiten(s: Satz): number {
   return s.perlen.reduce((n, _, i) => n + breite(s, i) / 2, 0);
 }
 
-const ZURUECK_MARKE = `<svg class="marke" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#FDEEDC" stroke="#1B2033" stroke-width="1.6"/><path d="M8 9.5h6.5a3.5 3.5 0 0 1 0 7H10" fill="none" stroke="#1B2033" stroke-width="2" stroke-linecap="round"/><path d="M10.5 6.5 7.5 9.5l3 3" fill="none" stroke="#1B2033" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ZURUECK_MARKE = `<svg class="marke" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="${LATERNE}" stroke="${TINTE}" stroke-width="1.6"/><path d="M8 9.5h6.5a3.5 3.5 0 0 1 0 7H10" fill="none" stroke="${TINTE}" stroke-width="2" stroke-linecap="round"/><path d="M10.5 6.5 7.5 9.5l3 3" fill="none" stroke="${TINTE}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 export function szeneHtml(s: Satz, o: SzenenOptionen = {}): string {
   const knopf = o.knoepfe ?? true;

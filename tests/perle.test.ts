@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { HUNDERT_FARBE, KONTUR, NEUTRAL_PERLE, ZIFFER_FARBEN, kontrast } from '../src/design/farbe';
+import { HUNDERT_FARBE, HUNDERT_KANTE, NEUTRAL_KANTE, NEUTRAL_PERLE, TINTE, WEISS, ZIFFER_FARBEN, ZIFFER_KANTEN, kontrast } from '../src/design/farbe';
 import { perlenBild, zahlFarben, geld } from '../src/perlen/perle';
+import { perleInhalt, perlenMasse, R, SAUM, TRENNRING_PX } from '../src/perlen/maler';
 import { gleich, type Antwort } from '../src/perlen/antwort';
 import { deltaE2000 } from './helpers/farbabstand';
+import { inSchrift, textUmriss } from './helpers/glyphen';
 
 describe('Ziffernfarben (docs/TZ.md)', () => {
   it('zehn feste Farben für 0–9, alle verschieden', () => {
-    expect(ZIFFER_FARBEN).toEqual(['#EEF1F4', '#E53935', '#FF8A00', '#FFE14D', '#8BD13B', '#178A3A', '#35C9F2', '#2A3FB8', '#FF9ACD', '#8D5524']);
+    expect(ZIFFER_FARBEN).toEqual(['#EEF1F4', '#EC003F', '#FE8100', '#FFFD4F', '#71E053', '#068846', '#42C4FF', '#2B289F', '#F598C6', '#7A3004']);
     expect(new Set(ZIFFER_FARBEN).size).toBe(10);
   });
 
@@ -16,8 +18,8 @@ describe('Ziffernfarben (docs/TZ.md)', () => {
         expect(deltaE2000(ZIFFER_FARBEN[i], ZIFFER_FARBEN[j]), `${i} und ${j}`).toBeGreaterThanOrEqual(20);
   });
 
-  it('die 100 hebt sich von jeder Ziffer ab', () => {
-    for (const c of ZIFFER_FARBEN) expect(deltaE2000(c, HUNDERT_FARBE), c).toBeGreaterThanOrEqual(12);
+  it('die 100 hebt sich von jeder Ziffer ab (wie die Ziffern untereinander, ΔE2000 ≥ 20)', () => {
+    for (const c of ZIFFER_FARBEN) expect(deltaE2000(c, HUNDERT_FARBE), c).toBeGreaterThanOrEqual(20);
   });
 
   it('einstellig: Perle in der Farbe der Ziffer, ohne Ring', () => {
@@ -25,15 +27,15 @@ describe('Ziffernfarben (docs/TZ.md)', () => {
   });
 
   it('zweistellig: Füllung = Einer, Ring = Zehner (Beispiele aus dem Brief)', () => {
-    expect(zahlFarben(14)).toEqual({ fuellung: '#8BD13B', ring: '#E53935' }); // hellgrün, roter Ring
-    expect(zahlFarben(10)).toEqual({ fuellung: '#EEF1F4', ring: '#E53935' }); // hell, roter Ring
-    expect(zahlFarben(47)).toEqual({ fuellung: '#2A3FB8', ring: '#8BD13B' }); // dunkelblau, hellgrüner Ring
-    expect(zahlFarben(99)).toEqual({ fuellung: '#8D5524', ring: '#8D5524' });
+    expect(zahlFarben(14)).toEqual({ fuellung: '#71E053', ring: '#EC003F' }); // hellgrün, roter Ring
+    expect(zahlFarben(10)).toEqual({ fuellung: '#EEF1F4', ring: '#EC003F' }); // hell, roter Ring
+    expect(zahlFarben(47)).toEqual({ fuellung: '#2B289F', ring: '#71E053' }); // dunkelblau, hellgrüner Ring
+    expect(zahlFarben(99)).toEqual({ fuellung: '#7A3004', ring: '#7A3004' });
   });
 
   it('100 ist lila, mehr gibt es nicht', () => {
     expect(zahlFarben(100)).toEqual({ fuellung: HUNDERT_FARBE, ring: null });
-    expect(HUNDERT_FARBE).toBe('#8338EC');
+    expect(HUNDERT_FARBE).toBe('#983AF1');
     expect(() => zahlFarben(101)).toThrow();
     expect(() => zahlFarben(-1)).toThrow();
     expect(() => zahlFarben(2.5)).toThrow();
@@ -66,11 +68,11 @@ describe('Perle zeigt die Antwort selbst, die Farbe hilft nur', () => {
     expect(new Set(bilder).size).toBe(101);
   });
 
-  it('Schrift ist auf jeder Füllung lesbar (großer Text: Kontrast ≥ 3, mit Saum ≥ 7)', () => {
+  it('Schrift ist auf jeder Füllung lesbar (Kontrast ≥ 4,5, mit Saum ≥ 7)', () => {
     for (const a of alle) {
       const p = perlenBild(a);
       if (p.inhalt.typ !== 'text') continue;
-      expect(kontrast(p.inhalt.schrift, p.fuellung), `${p.name} auf ${p.fuellung}`).toBeGreaterThanOrEqual(3);
+      expect(kontrast(p.inhalt.schrift, p.fuellung), `${p.name} auf ${p.fuellung}`).toBeGreaterThanOrEqual(4.5);
       expect(kontrast(p.inhalt.schrift, p.inhalt.saum)).toBeGreaterThanOrEqual(7);
     }
   });
@@ -91,7 +93,7 @@ describe('Perle zeigt die Antwort selbst, die Farbe hilft nur', () => {
   it('Form behält ihre eigene Farbe und Größe', () => {
     const gross = perlenBild({ art: 'form', form: 'kreis', farbe: 'rot' });
     const klein = perlenBild({ art: 'form', form: 'kreis', farbe: 'rot', klein: true });
-    expect(gross.inhalt).toMatchObject({ typ: 'form', form: 'kreis', farbe: '#FF4D6D', klein: false });
+    expect(gross.inhalt).toMatchObject({ typ: 'form', form: 'kreis', farbe: '#EC003F', klein: false });
     expect(klein.inhalt).toMatchObject({ klein: true });
   });
 
@@ -106,16 +108,149 @@ describe('Perle zeigt die Antwort selbst, die Farbe hilft nur', () => {
     if (lang.inhalt.typ === 'text') expect(lang.inhalt.maxBreite).not.toBeNull();
   });
 
-  it('Text dunkel mit weißem Saum, wo es lesbar ist; der dunkle Umriss ist der der Lese-Raupe', () => {
-    expect(KONTUR).toBe('#1B2033');
-    const p = perlenBild({ art: 'zahl', wert: 3 });
-    expect(p.inhalt).toMatchObject({ schrift: KONTUR, saum: '#FFFFFF' });
+  it('Text in Tinte mit weißem Saum, wo es lesbar ist, sonst weiß mit Saum in Tinte', () => {
+    expect(TINTE).toBe('#182218');
+    expect(perlenBild({ art: 'zahl', wert: 3 }).inhalt).toMatchObject({ schrift: TINTE, saum: WEISS });
+    expect(perlenBild({ art: 'zahl', wert: 7 }).inhalt).toMatchObject({ schrift: WEISS, saum: TINTE });
   });
 
   it('Geld in deutscher Schreibweise', () => {
     expect(geld(250)).toBe('2,50 €');
     expect(geld(300)).toBe('3 €');
     expect(geld(5)).toBe('0,05 €');
+  });
+});
+
+describe('Perle aus fünf Schichten (docs/STIL.md, Abschnitt 7)', () => {
+  /** Rechtecke (Kapseln) einer Perle mit ihren Attributen, in Zeichenreihenfolge */
+  const kapseln = (svg: string) =>
+    [...svg.matchAll(/<rect ([^>]*)\/>/g)].map((m) => {
+      const a = Object.fromEntries([...m[1].matchAll(/([\w-]+)="([^"]*)"/g)].map((x) => [x[1], x[2]]));
+      return { ...a, x: +a.x, y: +a.y, width: +a.width, height: +a.height } as Record<string, string> & { x: number; y: number; width: number; height: number };
+    });
+
+  it('Kante: Kreis in Kantenfarbe, tiefer als die Perle; darunter ein warmer Schatten', () => {
+    for (const [n, kante] of [[3, ZIFFER_KANTEN[3]], [47, ZIFFER_KANTEN[4]], [100, HUNDERT_KANTE]] as const) {
+      const p = perlenBild({ art: 'zahl', wert: n });
+      expect(p.kante).toBe(kante);
+      const r = kapseln(perleInhalt(p));
+      const k = r.find((x) => x.fill === kante)!;
+      const koerper = perlenMasse(p).koerper;
+      expect(k.y).toBeGreaterThan(koerper.y);
+      expect(k.width).toBe(koerper.w);
+      expect(r.indexOf(k)).toBeGreaterThan(0);
+      expect(r.slice(0, r.indexOf(k)).every((x) => x.fill === 'rgb(70, 50, 20)')).toBe(true);
+    }
+    expect(perlenBild({ art: 'wort', wert: 'Haus' }).kante).toBe(NEUTRAL_KANTE);
+  });
+
+  it('kein dunkler Umriss: einstellige Zahlen, Wörter, Formen haben keine Kontur um die Perle', () => {
+    const ohne: Antwort[] = [
+      ...Array.from({ length: 10 }, (_, n) => ({ art: 'zahl', wert: n }) as Antwort),
+      { art: 'zahl', wert: 100 },
+      { art: 'wort', wert: 'Schmetterling' },
+      { art: 'form', form: 'stern', farbe: 'gelb' },
+    ];
+    for (const a of ohne) for (const r of kapseln(perleInhalt(perlenBild(a)))) expect(r.stroke, JSON.stringify(a)).toBeUndefined();
+  });
+
+  it('zweistellig: Ring in Zehnerfarbe mit hellem Bogen, Trennring in Tinte 2,5 px um den Kern in Einerfarbe', () => {
+    for (let n = 10; n <= 99; n++) {
+      const p = perlenBild({ art: 'zahl', wert: n });
+      const svg = perleInhalt(p);
+      const r = kapseln(svg);
+      const m = perlenMasse(p);
+      const ring = r.find((x) => x.fill === p.ring && x.y === m.koerper.y)!;
+      expect(ring, `${n}`).toBeDefined();
+      expect(svg).toMatch(/<path d="M[^"]*A[^"]*" fill="none" stroke="#FFFFFF"/);
+      const trenn = r.filter((x) => x.stroke);
+      expect(trenn).toHaveLength(1);
+      expect(trenn[0]).toMatchObject({ fill: 'none', stroke: TINTE, 'stroke-width': String(TRENNRING_PX), 'vector-effect': 'non-scaling-stroke' });
+      expect([trenn[0].x, trenn[0].y, trenn[0].width]).toEqual([m.kern.x, m.kern.y, m.kern.w]);
+      // Kern in Einerfarbe liegt innerhalb des Rings und wird nach ihm gezeichnet
+      const kern = r.find((x) => x.fill === p.fuellung && x.width < ring.width && x.y === m.kern.y)!;
+      expect(kern, `${n}`).toBeDefined();
+      expect(r.indexOf(kern)).toBeGreaterThan(r.indexOf(ring));
+      expect(r.indexOf(trenn[0])).toBeGreaterThan(r.indexOf(kern));
+    }
+  });
+
+  it('Kern: Sichelschatten unten im Kantenton, Glanzlicht oben links', () => {
+    for (const n of [0, 5, 47, 100]) {
+      const p = perlenBild({ art: 'zahl', wert: n });
+      const m = perlenMasse(p);
+      // heller Kern oben bündig, unten kürzer: darunter bleibt die Sichel
+      expect(m.hell.y).toBe(m.kern.y);
+      expect(m.hell.y + m.hell.h).toBeLessThan(m.kern.y + m.kern.h);
+      const mitteX = m.kern.x + m.kern.h / 2;
+      const mitteY = m.kern.y + m.kern.h / 2;
+      expect(m.glanz.cx).toBeLessThan(mitteX);
+      expect(m.glanz.cy).toBeLessThan(mitteY);
+      expect(perleInhalt(p)).toMatch(/<ellipse [^>]*fill="#FFFFFF"/);
+    }
+  });
+
+  // alles, was als Text in einer Perle stehen kann – auch breite Buchstaben und Umlaute
+  const texte: Antwort[] = [
+    ...Array.from({ length: 101 }, (_, n) => ({ art: 'zahl', wert: n }) as Antwort),
+    ...[...'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜabcdefghijklmnopqrstuvwxyzäöüß'].map((w) => ({ art: 'buchstabe', wert: w }) as Antwort),
+    ...(['der', 'die', 'das'] as const).map((w) => ({ art: 'artikel', wert: w }) as Antwort),
+    ...['Haus', 'Maus', 'Äpfel', 'Wolke', 'Schmetterling'].map((w) => ({ art: 'wort', wert: w }) as Antwort),
+    { art: 'zeit', stunde: 12, minute: 45 },
+    { art: 'geld', cent: 1250 },
+    { art: 'laenge', cm: 18 },
+  ];
+
+  it('Glanzlicht berührt die Schrift nicht (echte Umrisse aus Inter ExtraBold, mit Saum)', () => {
+    // Prüfung der Prüfung: ein Punkt im Strich der 8 liegt in der Schrift, die Mitte der 0 nicht
+    const acht = textUmriss('8', 50, 0, 0);
+    expect(inSchrift(acht, [0, -18])).toBe(true);
+    expect(inSchrift(textUmriss('0', 50, 0, 0), [0, -18])).toBe(false);
+    for (const a of texte) {
+      const p = perlenBild(a);
+      if (p.inhalt.typ !== 'text') continue;
+      const m = perlenMasse(p);
+      const fs = R * p.inhalt.groesse;
+      const umriss = textUmriss(p.inhalt.text, fs, m.textX, m.textY, p.inhalt.maxBreite ? p.inhalt.maxBreite * R : null);
+      const g = m.glanz;
+      const w = (g.winkel * Math.PI) / 180;
+      const rand: [number, number][] = Array.from({ length: 720 }, (_, t) => {
+        const u = (t * Math.PI) / 360;
+        const ex = g.rx * Math.cos(u);
+        const ey = g.ry * Math.sin(u);
+        return [g.cx + ex * Math.cos(w) - ey * Math.sin(w), g.cy + ex * Math.sin(w) + ey * Math.cos(w)];
+      });
+      // Abstand jedes Umrisspunktes zum Glanz muss größer sein als der halbe Saum
+      let abstand = Infinity;
+      for (const l of umriss)
+        for (const [px, py] of l) {
+          if (Math.hypot(px - g.cx, py - g.cy) > g.rx + 20) continue;
+          const lx = (px - g.cx) * Math.cos(w) + (py - g.cy) * Math.sin(w);
+          const ly = -(px - g.cx) * Math.sin(w) + (py - g.cy) * Math.cos(w);
+          if ((lx / g.rx) ** 2 + (ly / g.ry) ** 2 <= 1) abstand = -1;
+          else for (const [qx, qy] of rand) abstand = Math.min(abstand, Math.hypot(px - qx, py - qy));
+        }
+      expect(inSchrift(umriss, [g.cx, g.cy]), p.name).toBe(false);
+      expect(abstand, p.name).toBeGreaterThan((fs * SAUM) / 2);
+    }
+  });
+
+  it('Schrift steht auf der einfarbigen Fläche: über dem Sichelschatten', () => {
+    for (const a of texte) {
+      const p = perlenBild(a);
+      if (p.inhalt.typ !== 'text') continue;
+      const m = perlenMasse(p);
+      const fs = R * p.inhalt.groesse;
+      const umriss = textUmriss(p.inhalt.text, fs, m.textX, m.textY, p.inhalt.maxBreite ? p.inhalt.maxBreite * R : null);
+      const unten = Math.max(...umriss.flat().map(([, y]) => y)) + (fs * SAUM) / 2;
+      // tiefster Punkt der Schrift liegt über dem tiefsten Punkt des hellen Kerns (in der Mitte)
+      expect(unten, p.name).toBeLessThan(m.hell.y + m.hell.h);
+    }
+  });
+
+  it('dieselbe Perle überall: das Bild hängt nur von der Antwort ab', () => {
+    const a: Antwort = { art: 'zahl', wert: 47 };
+    expect(perleInhalt(perlenBild(a))).toBe(perleInhalt(perlenBild(a)));
   });
 });
 

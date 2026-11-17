@@ -1,3 +1,4 @@
+import { FORM_FARBEN, TINTE, type FormFarbe } from '../design/farbe';
 import type { Antwort } from '../perlen/antwort';
 import type { Format } from './format';
 import type { Zufall } from '../core/zufall';
@@ -8,7 +9,9 @@ import type { Zufall } from '../core/zufall';
  * Stufe 3: zwei Hinweise, einer davon durchgestrichen („kein …“).
  * Antwort = Nummer der Raupe. Der Löser zählt, welche Raupen zu ALLEN Hinweisen passen.
  */
-export type Hut = 'kein' | 'rot' | 'blau' | 'gelb';
+/** Hutfarben: eine Auswahl der Formfarben, damit sie dieselbe Farbprüfung bestehen wie die Palette */
+export const HUT_FARBEN = ['rot', 'blau', 'gelb'] as const satisfies readonly FormFarbe[];
+export type Hut = 'kein' | (typeof HUT_FARBEN)[number];
 export interface Raupe {
   hut: Hut;
   brille: boolean;
@@ -24,7 +27,10 @@ export interface WerIstEs {
   hinweise: Hinweis[];
 }
 
-const HUT_FARBE: Record<Exclude<Hut, 'kein'>, string> = { rot: '#E53935', blau: '#3A86FF', gelb: '#FFD23F' };
+/** Farbe eines Hutes – immer aus den Formfarben, nie hier im Format festgelegt */
+export function hutFarbe(h: Exclude<Hut, 'kein'>): string {
+  return FORM_FARBEN[h];
+}
 
 export function passt(r: Raupe, h: Hinweis): boolean {
   const ja = h.art === 'hut' ? r.hut === h.farbe : h.art === 'hut-da' ? r.hut !== 'kein' : r.brille;
@@ -32,7 +38,7 @@ export function passt(r: Raupe, h: Hinweis): boolean {
 }
 
 function zufallsRaupe(z: Zufall): Raupe {
-  return { hut: z.eins<Hut>(['kein', 'rot', 'blau', 'gelb']), brille: z.zahl() < 0.5 };
+  return { hut: z.eins<Hut>(['kein', ...HUT_FARBEN]), brille: z.zahl() < 0.5 };
 }
 
 function hinweiseFuer(r: Raupe, z: Zufall, negativ: boolean): Hinweis[] {
@@ -42,7 +48,7 @@ function hinweiseFuer(r: Raupe, z: Zufall, negativ: boolean): Hinweis[] {
   if (negativ) {
     if (r.hut === 'kein') moeglich.push({ art: 'hut-da', nicht: true });
     if (!r.brille) moeglich.push({ art: 'brille', nicht: true });
-    for (const f of ['rot', 'blau', 'gelb'] as const) if (r.hut !== f) moeglich.push({ art: 'hut', farbe: f, nicht: true });
+    for (const f of HUT_FARBEN) if (r.hut !== f) moeglich.push({ art: 'hut', farbe: f, nicht: true });
   }
   return z.mischen(moeglich);
 }
@@ -81,7 +87,7 @@ export function schrittVerraet(w: WerIstEs): boolean {
 
 function hut(x: number, y: number, s: number, h: Hut, grau = false): string {
   if (h === 'kein') return '';
-  const c = grau ? '#B8C2BC' : HUT_FARBE[h];
+  const c = grau ? '#B8C2BC' : hutFarbe(h);
   return (
     `<ellipse cx="${x}" cy="${y}" rx="${s * 1.05}" ry="${s * 0.22}" fill="${c}" stroke="#1B2033" stroke-width="2.5"/>` +
     `<path d="M${x - s * 0.62} ${y} Q${x - s * 0.62} ${y - s * 0.95} ${x} ${y - s * 0.95} Q${x + s * 0.62} ${y - s * 0.95} ${x + s * 0.62} ${y} Z" fill="${c}" stroke="#1B2033" stroke-width="2.5" stroke-linejoin="round"/>`
@@ -140,7 +146,7 @@ function zeichne(w: WerIstEs, o: { hilfe: number; gewaehlt: Antwort | null; vorr
     s += `<g class="wahl-ziel" data-wahl="${i}" role="button" tabindex="0" aria-label="Raupe ${i + 1}" opacity="${blass ? 0.25 : 1}">`;
     s += `<rect x="${cx - 80}" y="${cy - 52}" width="${SPALTE - 6}" height="${ZEILE - 6}" rx="16" fill="${gewaehlt || loesung ? '#FDEEDC' : 'transparent'}" stroke="${gewaehlt || loesung ? '#E8893A' : 'transparent'}" stroke-width="4"/>`;
     s += raupe(cx, cy - 2, r);
-    s += `<text x="${cx - 24}" y="${cy + 47}" text-anchor="middle" font-size="22" font-weight="800" fill="#1F2421">${i + 1}</text>`;
+    s += `<text x="${cx - 24}" y="${cy + 47}" text-anchor="middle" font-size="22" font-weight="800" fill="${TINTE}">${i + 1}</text>`;
     s += `</g>`;
   });
   return `<svg class="aufgabe-svg" viewBox="0 0 ${W} ${H}" role="group" aria-label="Wer ist es?">${s}</svg>`;
