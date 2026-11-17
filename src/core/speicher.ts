@@ -39,18 +39,58 @@ export async function lesen<T>(schluessel: string): Promise<T | undefined> {
   });
 }
 
-export async function schreiben(schluessel: string, wert: unknown): Promise<void> {
-  fluechtig.set(schluessel, wert);
+export function schreiben(schluessel: string, wert: unknown): Promise<void> {
+  return schreibenMehrere({ [schluessel]: wert });
+}
+
+/**
+ * Mehrere Schlüssel in EINEM Schritt schreiben (eine Transaktion: alle oder keiner).
+ * So landen die Einträge der Historie nie ohne das Zeichen „Satz schon gezählt“ und umgekehrt.
+ */
+export async function schreibenMehrere(werte: Record<string, unknown>): Promise<void> {
+  const paare = Object.entries(werte);
+  for (const [k, w] of paare) fluechtig.set(k, w);
   const db = await oeffnen();
   if (!db) return;
   await new Promise<void>((ok) => {
     try {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(wert, schluessel);
+      const store = tx.objectStore(STORE);
+      for (const [k, w] of paare) store.put(w, k);
       tx.oncomplete = () => ok();
       tx.onerror = () => ok();
+      tx.onabort = () => ok();
     } catch {
       ok();
     }
   });
+}
+
+/** Schlüssel, unter dem Daten, die diese Version nicht lesen kann, unangetastet aufbewahrt werden */
+export const unbekanntSchluessel = (schluessel: string): string => `${schluessel}-unbekannt`;
+
+/**
+ * Liste der aufbewahrten Kopien um `roh` ergänzen. Was schon da ist, bleibt (auch ein einzelner Wert,
+ * der keine Liste ist); dieselbe Kopie kommt nicht zweimal hinein.
+ */
+export function aufbewahren(kopien: unknown, roh: unknown): unknown[] {
+  const liste = kopien === undefined || kopien === null ? [] : Array.isArray(kopien) ? kopien : [kopien];
+  const text = JSON.stringify(roh);
+  return liste.some((k) => JSON.stringify(k) === text) ? liste : [...liste, roh];
+}
+
+/**
+ * Gespeichertes lesen und mit `lade` prüfen bzw. umziehen. Kann `lade` den Wert nicht lesen (neuere,
+ * unbekannte Version oder kaputt), wird er zuerst unverändert unter `…-unbekannt` gesichert; erst danach
+ * fängt die App unter dem eigentlichen Schlüssel neu an. So gehen Antworten und Blätter nie verloren
+ * (docs/TZ.md, „Интерфейс и надёжность“). Nichts gespeichert → null, ohne Kopie.
+ */
+export async function ladeGeschuetzt<T>(schluessel: string, lade: (roh: unknown) => T | null): Promise<T | null> {
+  const roh = await lesen<unknown>(schluessel);
+  const wert = lade(roh);
+  if (wert === null && roh !== undefined && roh !== null) {
+    const k = unbekanntSchluessel(schluessel);
+    await schreiben(k, aufbewahren(await lesen<unknown>(k), roh));
+  }
+  return wert;
 }

@@ -19,6 +19,12 @@ export interface PerlenZustand {
   geprueft: Antwort | null;
   /** wie oft eine geänderte Antwort nicht gepasst hat (für den Schwierigkeitsgrad, nie für das Kind) */
   fehlversuche: number;
+  /**
+   * Die Antworten, die nicht gepasst haben, in der Reihenfolge der Prüfungen – nur Prüfungen, bei denen
+   * sich die Antwort dieser Perle seit der letzten Prüfung geändert hat (wie `fehlversuche`).
+   * Fehlt bei Sätzen, die vor Aufgabe A3 begonnen wurden: deren frühere Fehlantworten sind unbekannt.
+   */
+  falsch?: Antwort[];
 }
 
 export interface Satz {
@@ -32,7 +38,7 @@ export type Stimmt = (index: number, antwort: Antwort) => boolean;
 export function neuerSatz(anzahl: number): Satz {
   if (!Number.isInteger(anzahl) || anzahl < 1) throw new Error(`ungültige Anzahl Aufgaben: ${anzahl}`);
   return {
-    perlen: Array.from({ length: anzahl }, () => ({ antwort: null, blatt: 'zu', zurueck: false, geprueft: null, fehlversuche: 0 })),
+    perlen: Array.from({ length: anzahl }, () => ({ antwort: null, blatt: 'zu', zurueck: false, geprueft: null, fehlversuche: 0, falsch: [] })),
     runden: 0,
   };
 }
@@ -80,7 +86,8 @@ export function vergleiche(s: Satz, stimmt: Stimmt): Ergebnis {
     }
     bleiben.push(i);
     const neu = !gleich(a, p.geprueft);
-    return { ...p, geprueft: a, fehlversuche: p.fehlversuche + (neu ? 1 : 0) };
+    if (!neu) return { ...p, geprueft: a };
+    return { ...p, geprueft: a, fehlversuche: p.fehlversuche + 1, falsch: [...(p.falsch ?? []), a] };
   });
   return { satz: { perlen, runden: s.runden + (wiederholung ? 0 : 1) }, gehoben, bleiben, wiederholung };
 }
