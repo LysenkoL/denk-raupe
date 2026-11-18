@@ -106,7 +106,7 @@ export interface Format<B> {
   mehrere?: boolean;
 
   // показ
-  zeichne(b: B, o: { hilfe: 0 | 2 | 3; gewaehlt: Antwort | null; vorrechnen?: boolean }): string;
+  zeichne(b: B, o: { hilfe: 0 | 2 | 3; gewaehlt: Antwort | null; vorrechnen?: boolean; aehnlich?: boolean }): string; // aehnlich: шаг помощи на похожем задании показывается целиком
   schrittVerraet?(b: B): boolean;
   beispiele(z: Zufall): B[];  // 2–3 задания учебного примера, от простого к обычному
   druckBlock?(b: B): string;  // блок для листа A4; обязателен при druck: true
