@@ -150,7 +150,9 @@ svg text { font-family: var(--font); font-feature-settings: var(--font-features)
   .vorne { position: relative; left: auto; bottom: auto; flex: none; margin-bottom: calc(var(--b) * 0.2); margin-right: calc(var(--b) * -0.12); }
   .raupe-zeile.kind { padding-top: max(0px, calc(var(--tipp) + var(--s3) - var(--b) * 0.7)); }
   .raupe-zeile.zwilling { padding-top: 0; }
-  .zwilling-reihe { margin-top: 0; }
+  .zwilling-reihe { position: relative; margin-top: -1.1em; }
+  /* breit: der Korb steht am Ende des Zwillings auf dem Ast, die Unterschrift bleibt darunter */
+  .zwilling-reihe .korb-figur { position: absolute; left: calc(100% + var(--s4)); bottom: calc(1.3em + var(--b) * 0.08); }
   .raupe-zeile::before { left: 0; }
 }
 .figur-svg, .figur-bild { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -217,11 +219,12 @@ button.zwilling-perle { cursor: pointer; touch-action: manipulation; }
 .tisch > * { flex-shrink: 0; min-width: 0; }
 /* Zone 2: Frage auf einem Brettchen */
 .frage-brett {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s2) var(--s3); flex-wrap: wrap;
   background: var(--maserung), var(--holz); border-radius: var(--rund-m);
   box-shadow: 0 var(--kante-knopf) 0 var(--holz-kante), var(--schatten-weich);
   padding: var(--s3) var(--s4); margin-bottom: var(--kante-knopf);
 }
+.frage-brett .auftrag { flex: 1 1 8em; min-width: 0; }
 .auftrag { margin: 0; font-size: var(--t-frage); font-weight: var(--gewicht-frage); line-height: 1.2; letter-spacing: var(--sperrung-wort); text-wrap: balance; }
 .frage-brett .so-gehts { margin-bottom: var(--kante-perle); }
 .lern-titel {
@@ -261,7 +264,9 @@ button.zwilling-perle { cursor: pointer; touch-action: manipulation; }
   border-radius: var(--rund-l); padding: var(--s3);
   box-shadow: inset 0 3px 8px var(--schatten), inset 0 -2px 0 rgba(255, 255, 255, 0.5), 0 2px 0 rgba(255, 255, 255, 0.6);
 }
-.tisch.ohne-eingabe .lotte:not(:has(.hinweis, .meldung:not(:empty))) { display: none; }
+.tisch.ohne-eingabe .lotte:not(:has(.hinweis)) { display: none; }
+/* Nachricht nach dem Vergleichen: auf dem Brettchen unter der Frage, wo das Kind zuerst hinschaut */
+.frage-brett .meldung { flex: 1 0 100%; order: 5; color: var(--tinte); }
 .meldung { margin: 0; font-size: var(--t-text); font-weight: var(--gewicht-text); min-height: 0; }
 .meldung:empty { display: none; }
 .lotte .lern-weiter, .lotte .los { align-self: stretch; }
@@ -429,8 +434,9 @@ button.zwilling-perle { cursor: pointer; touch-action: manipulation; }
   .tisch > .lotte { grid-area: lotte; }
   .tisch.ohne-eingabe { grid-template-areas: 'frage frage' 'feld lotte'; }
   .ast-zone { padding: var(--s3) var(--s5) var(--s3); }
-  .buehne { --b-max: min(72px, calc((100dvh - 560px) / 3.2)); }
-  .aufgabe-svg { max-height: min(420px, calc(100dvh - 440px)); }
+  .buehne { --b-max: min(72px, calc((100dvh - 600px) / 3)); }
+  .frage-brett { padding: var(--s2) var(--s4); }
+  .aufgabe-svg { max-height: min(420px, calc(100dvh - 545px)); }
   .ziffern button { --z: 60px; }
   .ende { padding-top: var(--s3); }
 }

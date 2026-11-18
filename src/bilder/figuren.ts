@@ -43,7 +43,6 @@ function augen(a: Ausdruck): string {
     `<circle cx="${x + dx}" cy="${y + dy}" r="${a === 'staunt' ? 5.6 : 6.2}" fill="${TINTE}"/><circle cx="${x + dx - 2.4}" cy="${y + dy - 2.6}" r="2.1" fill="${WEISS}"/>`;
   const lid = (x: number) => `<ellipse class="lid" cx="${x}" cy="${y}" rx="11" ry="${ry + 1}" fill="${F.raupe}"/>`;
   let s = weiss(lx) + weiss(rx) + `<g class="pupillen">${pupille(lx)}${pupille(rx)}</g>` + lid(lx) + lid(rx);
-  if (a === 'denkt') s += `<path d="M${rx - 8} ${y - 17}Q${rx} ${y - 22} ${rx + 9} ${y - 16}" fill="none" stroke="${F['raupe-kante']}" stroke-width="3.4" stroke-linecap="round"/>`;
   return s;
 }
 

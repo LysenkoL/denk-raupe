@@ -115,6 +115,13 @@ for (const [name, w, h] of GERAETE) {
   await lernTippen(page, schritte[1], false);
   await page.screenshot({ path: `screenshots/${name}-lernbeispiel-falsch.png` });
   await vorbereiten(page);
+  // jede Aufgabe des Satzes, wie das Kind sie zuerst sieht
+  for (let i = 0; i < sitzung.aufgaben.length; i++) {
+    await page.click(`.perle[data-i="${i}"]`);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `screenshots/${name}-aufgabe-${sitzung.aufgaben[i].format}.png` });
+  }
   await eingeben(page, 0, loesung(0));
   await page.screenshot({ path: `screenshots/${name}-teil.png` });
   // Zahl in den Plätzen Z und E: zweistellig, Zehner gewählt
@@ -127,6 +134,7 @@ for (const [name, w, h] of GERAETE) {
   await eingeben(page, 2, loesung(2));
   await page.click('.vergleichen');
   await page.waitForTimeout(2500);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `screenshots/${name}-geprueft.png` });
   await page.click('.hilfe-knopf');
   // Stufe 1 öffnet das Lernbeispiel, „Los geht's“ führt zurück; Stufe 2 zeigt das Zeichen „So geht's“
@@ -135,8 +143,10 @@ for (const [name, w, h] of GERAETE) {
   await page.screenshot({ path: `screenshots/${name}-hilfe.png`, fullPage: true });
   await eingeben(page, 1, loesung(1));
   await page.click('.vergleichen');
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `screenshots/${name}-fertig.png` });
+  // Blätter fliegen in den Korb, dann das Ende: Korb, Buchstabe, Kacheln
+  await page.waitForSelector('.ende');
+  await page.waitForTimeout(3000);
+  await page.screenshot({ path: `screenshots/${name}-fertig.png`, fullPage: true });
   // Hilfe auf dem Bild, Stufen 2 und 3, jedes Format
   for (const [bild, s] of HILFE_BILDER) {
     await vorbereiten(page, true, s);

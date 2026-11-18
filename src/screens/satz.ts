@@ -247,7 +247,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   }
 
   /** Brettchen mit der Frage (Zone 2); `zeichen`: „So geht's“ als Lesezeichen daneben */
-  const frageHtml = (text: string, zeichen: string, weiter = '') => `<div class="frage-brett"><h1 class="auftrag">${text}</h1>${zeichen}${weiter}</div>`;
+  const frageHtml = (text: string, zeichen: string, weiter = '', nachricht: string | null = null) =>
+    `<div class="frage-brett"><h1 class="auftrag">${text}</h1>${zeichen}${weiter}${nachricht === null ? '' : `<p class="meldung">${nachricht}</p>`}</div>`;
 
   /** Arbeitsfeld auf Papier (Zone 3) */
   function feldHtml(bild: string, o: { tippbar: boolean; mitGeist: boolean }): string {
@@ -302,7 +303,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const soGehts = !gesperrt && offen >= 2 ? `<button class="leise-knopf so-gehts" type="button">${KIND.soGehts}</button>` : '';
     const eingabe = gesperrt ? '' : eingabeHtml(a, p.antwort, gesperrt);
     panel.innerHTML = `<div class="tisch${eingabe ? '' : ' ohne-eingabe'}">
-      ${frageHtml(KIND.auftrag[f.auftrag], soGehts, sitzung.aufgaben.length > 1 ? `<button class="leise-knopf weiter" type="button" aria-label="${KIND.weiter}"><span class="weiter-text">${KIND.weiter}</span>${PFEIL}</button>` : '')}
+      ${frageHtml(KIND.auftrag[f.auftrag], soGehts, sitzung.aufgaben.length > 1 ? `<button class="leise-knopf weiter" type="button" aria-label="${KIND.weiter}"><span class="weiter-text">${KIND.weiter}</span>${PFEIL}</button>` : '', meldung)}
       <div class="feld">
         ${feldHtml(f.zeichne(a.bedingung, { hilfe: gesperrt ? 0 : bildHilfe, gewaehlt: p.antwort }), { tippbar: f.eingabe(a.bedingung).art === 'bild' && !gesperrt, mitGeist: false })}
         ${gesperrt ? '' : hilfeHtml(a, offen)}
@@ -310,7 +311,6 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       <div class="lotte">
         ${eingabe}
         ${p.zurueck ? `<p class="hinweis">${KIND.wartet}</p>` : ''}
-        <p class="meldung">${meldung}</p>
       </div>
     </div>`;
     gesetzt = null;
