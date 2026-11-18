@@ -188,6 +188,13 @@ describe('Löschen', () => {
     expect(wertVon(schritt(q, z(2), 20))).toBe(12);
   });
 
+  it('gewählter Platz leer (Wahl ist von selbst weitergegangen): die zuletzt getippte Ziffer', () => {
+    // E, 4 → die Wahl steht auf dem leeren Z; Löschen nimmt die 4
+    const p = tippe(20, platz(E), z(4), loeschen);
+    expect(p.stellen).toEqual([null, null]);
+    expect(p.gewaehlt).toBe(Z);
+  });
+
   it('bis 100: H aus 100 löschen ergibt 0 (Null in Z bei belegtem E)', () => {
     const p = tippe(100, z(1), z(0), z(0), platz(0), loeschen);
     expect(p.stellen).toEqual([null, null, 0]);

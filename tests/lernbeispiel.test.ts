@@ -131,6 +131,18 @@ describe('Rückmeldung bei Zahlen mit zwei Stellen', () => {
     expect(lernPruefen(f, b, { art: 'zahl', wert: 2 })).toBe('falsch');
     expect(lernPruefen(f, b, { art: 'zahl', wert: 10 })).toBe('richtig');
   });
+
+  it('Plätze in jeder Reihenfolge: 1 und 4 auf dem Weg zu 14 sind offen, 3 und 41 falsch', () => {
+    const f = FORMATE.zahlenmauer;
+    const a = aufgabeAus(f, 0, 1);
+    const m: Mauer = { reihen: [[6, 8], [14]], fehlt: [1, 0], grenze: 20 };
+    const b = { ...a, bedingung: m };
+    expect(lernPruefen(f, b, { art: 'zahl', wert: 1 })).toBe('offen');
+    expect(lernPruefen(f, b, { art: 'zahl', wert: 4 })).toBe('offen');
+    expect(lernPruefen(f, b, { art: 'zahl', wert: 3 })).toBe('falsch');
+    expect(lernPruefen(f, b, { art: 'zahl', wert: 41 })).toBe('falsch');
+    expect(lernPruefen(f, b, { art: 'zahl', wert: 14 })).toBe('richtig');
+  });
 });
 
 /** wie das Kind: alle richtig außer `ausser`; dort die erste falsche Antwort */

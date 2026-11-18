@@ -11,8 +11,9 @@
  *   den anderen Platz (Z oder E), wenn er leer ist, sonst ist nichts mehr gewählt. Eine Ziffer, mit der die
  *   Zahl größer als `max` würde, ändert nichts. Tipp auf den schon gewählten Platz lässt ihn gewählt
  *   (sonst würde „Platz E, 4, Platz Z, 1“ zu 41).
- * - Löschen leert den gewählten Platz; ohne Wahl den Platz der zuletzt getippten Ziffer (sonst die
- *   rechteste Ziffer). Die anderen Ziffern bleiben, wo sie sind.
+ * - Löschen leert den gewählten Platz; ohne Wahl (oder wenn der gewählte Platz leer ist, etwa weil die Wahl
+ *   von selbst weitergegangen ist) den Platz der zuletzt getippten Ziffer, sonst die rechteste Ziffer.
+ *   Die anderen Ziffern bleiben, wo sie sind; die Wahl bleibt.
  * - Eine führende Null verschwindet, sobald rechts davon eine Ziffer steht: 0 in Z und 4 in E ist 4.
  *
  * Die Antwort ist der Wert der Plätze (`wertVon`); die Plätze selbst werden nicht gespeichert.
@@ -105,8 +106,7 @@ export function schritt(p: Plaetze, h: Handlung, max: number): Plaetze {
   }
 
   if (h.art === 'loeschen') {
-    if (p.gewaehlt !== null) {
-      if (p.stellen[p.gewaehlt] === null) return p;
+    if (p.gewaehlt !== null && p.stellen[p.gewaehlt] !== null) {
       const stellen = [...p.stellen];
       stellen[p.gewaehlt] = null;
       return { ...p, stellen: ordnen(stellen), zuletzt: null };

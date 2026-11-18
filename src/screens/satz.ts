@@ -22,6 +22,7 @@ import {
   type Sitzung,
 } from '../satz/sitzung';
 import { HISTORIE_SCHLUESSEL, historieLesen, type Historie } from '../satz/historie';
+import { ausWert, schritt, stellenwerte, wertVon, type Handlung, type Plaetze } from '../satz/zahleingabe';
 import { aenderbar, blaetter, fertig, kannVergleichen, setzeAntwort, vergleiche, zuruecklegen } from '../satz/vergleich';
 
 /**
@@ -50,6 +51,12 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   let meldung = '';
   let busy = false;
   let neuerBuchstabe: number | null = null;
+  /**
+   * Plätze der Zahleingabe zur offenen Aufgabe (oder zum Schritt des Lernbeispiels). Nicht gespeichert:
+   * nach Neuladen, anderer Perle oder geänderter Antwort entstehen sie aus der gespeicherten Zahl neu.
+   * Nur so bleibt eine halbe Zahl (Z belegt, E leer) stehen, solange das Kind an dieser Aufgabe ist.
+   */
+  let plaetze: { wo: string; p: Plaetze } | null = null;
 
   app.innerHTML = `<main class="satz">
     <section class="buehne-wrap" aria-label="${KIND.deineRaupe}"><div class="buehne-platz"></div>
@@ -91,6 +98,15 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     sitzung = st ? { ...rest, lernbeispiel: st } : rest;
   }
 
+  /** wo die Zahl gerade eingegeben wird: Aufgabe im Satz oder Schritt im Lernbeispiel */
+  const eingabeOrt = () => (lernOffen() ? `${sitzung.samen}:lern:${aufgabe().format}:${lernSchritt().k}` : `${sitzung.samen}:${aktuell()}`);
+  /** Plätze zur gerade gezeigten Antwort; passen die gemerkten nicht mehr dazu, aus der Zahl neu */
+  function plaetzeZu(antwort: Antwort | null, max: number): Plaetze {
+    const wert = antwort?.art === 'zahl' ? antwort.wert : null;
+    if (plaetze && plaetze.wo === eingabeOrt() && wertVon(plaetze.p) === wert && plaetze.p.stellen.length === stellenwerte(max).length) return plaetze.p;
+    return ausWert(wert, max);
+  }
+
   /** ähnliche Aufgabe für Hilfe 3/4: gleiches Format, gleiche Stufe, anderer Samen */
   const aehnlich = (a: Aufgabe) => aufgabeAus(FORMATE[a.format], (a.samen + 1_000_003) >>> 0, a.stufe, { zahlenraum: a.zahlenraum });
 
@@ -104,10 +120,26 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   function eingabeHtml(a: Aufgabe, antwort: Antwort | null, gesperrt: boolean): string {
     const f = FORMATE[a.format];
     const dis = gesperrt ? ' disabled' : '';
-    const art = f.eingabe(a.bedingung).art;
-    if (art === 'zahl') {
+    const e = f.eingabe(a.bedingung);
+    const art = e.art;
+    if (e.art === 'zahl') {
+      // Plätze über den Ziffern: Zehner links, Einer rechts; ihr Aussehen hängt nie davon ab, ob die Zahl stimmt
+      const p = plaetzeZu(antwort, e.max);
+      const plaetzeHtml = stellenwerte(e.max)
+        .map((sw, k) => {
+          const d = p.stellen[k];
+          const st = KIND.stelle[sw];
+          return `<button type="button" class="platz" data-platz="${k}" aria-label="${st.name}" aria-describedby="platz-${k}" aria-pressed="${p.gewaehlt === k}"${dis}>
+            <span class="platz-zeichen" aria-hidden="true">${st.zeichen}</span>
+            <span class="nest${d === null ? ' leer' : ''}">${d === null ? '' : perleSvg(perlenBild({ art: 'zahl', wert: d }))}</span>
+            <span id="platz-${k}" hidden>${d === null ? KIND.platzLeer : d}</span></button>`;
+        })
+        .join('');
       const ziffern = Array.from({ length: 10 }, (_, d) => `<button type="button" data-ziffer="${d}" aria-label="${d}"${dis}>${perleSvg(perlenBild({ art: 'zahl', wert: d }))}</button>`).join('');
-      return `<div class="ziffern" role="group" aria-label="Zahl eingeben">${ziffern}<button type="button" class="loeschen" data-ziffer="x" aria-label="${KIND.loeschen}"${dis || (antwort ? '' : ' disabled')}>⌫</button></div>`;
+      const nichtsDa = p.stellen.every((d) => d === null);
+      return `<div class="zahl-eingabe" role="group" aria-label="${KIND.zahlEingeben}">
+        <div class="plaetze" data-plaetze="${p.stellen.length}">${plaetzeHtml}</div>
+        <div class="ziffern">${ziffern}<button type="button" class="loeschen" data-ziffer="x" aria-label="${KIND.loeschen}"${dis || (nichtsDa ? ' disabled' : '')}>⌫</button></div></div>`;
     }
     if (art === 'wahl')
       return `<div class="wahl" role="group">${a.wahl!.map((w, k) => `<button type="button" data-k="${k}" aria-pressed="${gleich(antwort, w)}" aria-label="${perlenBild(w).name}"${dis}>${perleSvg(perlenBild(w))}</button>`).join('')}</div>`;
@@ -260,17 +292,27 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const f = format();
     const wahlListe = lern ? lernSchritt().a.wahl : aufgabe().wahl;
 
+    // Zahl: Ziffer, Platz oder Löschen ändert die Plätze; die Antwort ist ihr Wert (src/satz/zahleingabe.ts)
     const ziffer = t.closest<HTMLButtonElement>('[data-ziffer]');
-    if (ziffer && !ziffer.disabled) {
+    const platz = t.closest<HTMLButtonElement>('[data-platz]');
+    const zahlKnopf = ziffer ?? platz;
+    if (zahlKnopf && !zahlKnopf.disabled) {
+      const a = lern ? lernSchritt().a : aufgabe();
+      const e = f.eingabe(a.bedingung);
+      if (e.art !== 'zahl') return;
       const alt = aktuelleAntwort();
-      const altText = alt?.art === 'zahl' ? String(alt.wert) : '';
-      if (ziffer.dataset.ziffer === 'x') {
-        const rest = altText.slice(0, -1);
-        return eingabe(rest ? { art: 'zahl', wert: Number(rest) } : null);
-      }
-      let neu = Number(altText + ziffer.dataset.ziffer);
-      if (altText === '0' || neu > 100) neu = Number(ziffer.dataset.ziffer);
-      return eingabe({ art: 'zahl', wert: neu });
+      const h: Handlung = platz
+        ? { art: 'platz', platz: Number(platz.dataset.platz) }
+        : ziffer!.dataset.ziffer === 'x'
+          ? { art: 'loeschen' }
+          : { art: 'ziffer', ziffer: Number(ziffer!.dataset.ziffer) };
+      const p = schritt(plaetzeZu(alt, e.max), h, e.max);
+      plaetze = { wo: eingabeOrt(), p };
+      const wert = wertVon(p);
+      const neu: Antwort | null = wert === null ? null : { art: 'zahl', wert };
+      // nur Wahl oder halbe Zahl geändert: neu zeichnen, an der Antwort ändert sich nichts
+      if (gleich(neu, alt)) return zeichneAufgabe();
+      return eingabe(neu);
     }
     const w = t.closest<HTMLButtonElement>('.wahl button');
     if (w && !w.disabled && wahlListe) return eingabe(wahlListe[Number(w.dataset.k)]);

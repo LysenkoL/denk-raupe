@@ -187,6 +187,37 @@ svg text { font-family: var(--font); font-feature-settings: var(--font-features)
 .ziffern .loeschen { border-radius: var(--rund-m); background: var(--holzknopf); border: var(--linie) solid var(--holzknopf-kante); font-size: 24px; color: var(--tinte); }
 .ziffern .loeschen:disabled { opacity: .4; }
 .ziffern button:disabled:not(.loeschen) { opacity: .45; }
+/*
+ * Plätze der Zahl über den Ziffern (docs/STIL.md, Abschnitt 7, „Места Z и E“): Mulden in einem Holztablett,
+ * Zeichen H, Z, E ins Holz gebrannt; Zehner links, Einer rechts. Gewählter Platz: doppelte Linie
+ * (Papiersaum innen, --fokus außen). Wie sie aussehen, hängt nie davon ab, ob die Zahl stimmt.
+ */
+.zahl-eingabe { display: flex; flex-direction: column; align-items: center; gap: var(--s3); }
+.plaetze {
+  display: flex; justify-content: center; gap: var(--s2);
+  padding: var(--s2) var(--s4) var(--s3); border-radius: var(--rund-m);
+  background: var(--holz); border: var(--linie) solid var(--holz-kante); border-bottom-width: var(--kante-knopf);
+  box-shadow: var(--schatten-tisch);
+}
+.platz {
+  min-width: var(--tipp); padding: 0 var(--s1); border: 0; background: none; border-radius: var(--rund-s);
+  display: flex; flex-direction: column; align-items: center; gap: var(--s1); touch-action: manipulation;
+}
+.platz-zeichen { font-size: var(--t-klein); font-weight: 800; line-height: 1.2; color: var(--tinte-leise); }
+/* Mulde: Innenschatten, leer gestrichelt; belegt gleich groß, die Ziffernperle sitzt darin */
+.nest {
+  width: var(--tipp); height: var(--tipp); border-radius: 50%; padding: 3px;
+  background: var(--holz); border: var(--linie) solid var(--holz-kante);
+  box-shadow: inset 0 3px 6px var(--schatten);
+  display: flex; align-items: center; justify-content: center;
+}
+.nest.leer { border-style: dashed; }
+.nest .perle-svg { width: 100%; height: 100%; display: block; }
+.platz[aria-pressed='true'] .nest {
+  box-shadow: inset 0 3px 6px var(--schatten), 0 0 0 var(--fokus-saum) var(--papier), 0 0 0 calc(var(--fokus-saum) + var(--fokus-linie)) var(--fokus);
+}
+.platz:disabled { cursor: default; }
+.platz:focus-visible { outline-offset: 0; }
 .hilfe-box { background: var(--laterne); border-radius: var(--rund-m); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
 .hilfe-box .aufgabe-svg { max-height: 200px; }
 .hilfe-box .spaeter { align-self: flex-start; }

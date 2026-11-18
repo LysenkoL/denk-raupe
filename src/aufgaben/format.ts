@@ -176,13 +176,19 @@ export function lernbeispiel<B>(f: Format<B>): Aufgabe<B>[] {
 
 /**
  * Sofortige Rückmeldung im Lernbeispiel (nur dort – im Satz gibt es keine bis zum Vergleichen):
- * richtig; falsch; offen = noch nichts oder eine Zahl, die erst halb getippt ist (1 auf dem Weg zu 10).
+ * richtig; falsch; offen = noch nichts oder eine Zahl, die erst halb eingegeben ist. Die Plätze lassen sich
+ * in jeder Reihenfolge füllen (src/satz/zahleingabe.ts): 1 auf dem Weg zu 14 (getippt, gleich wird
+ * geschoben) und 4 auf dem Weg zu 14 (erst E, dann Z) sind beide offen.
  */
 export function lernPruefen<B>(f: Format<B>, a: Aufgabe<B>, antwort: Antwort | null): 'richtig' | 'falsch' | 'offen' {
   if (!antwort) return 'offen';
   const l = f.loesungen(a.bedingung)[0];
   if (gleich(l, antwort)) return 'richtig';
-  if (antwort.art === 'zahl' && l.art === 'zahl' && String(l.wert).startsWith(String(antwort.wert))) return 'offen';
+  if (antwort.art === 'zahl' && l.art === 'zahl') {
+    const ziel = String(l.wert);
+    const da = String(antwort.wert);
+    if (da.length < ziel.length && (ziel.startsWith(da) || ziel.endsWith(da))) return 'offen';
+  }
   return 'falsch';
 }
 
