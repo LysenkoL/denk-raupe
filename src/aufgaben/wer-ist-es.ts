@@ -173,17 +173,23 @@ export const WER_IST_ES: Format<WerIstEs> = {
   wahl: () => Array.from({ length: 6 }, (_, i) => ({ art: 'zahl', wert: i + 1 }) as Antwort),
   zeichne,
   schrittVerraet,
-  beispiele: () => [
-    {
-      raupen: [
-        { hut: 'kein', brille: false },
-        { hut: 'rot', brille: false },
-        { hut: 'kein', brille: true },
-        { hut: 'blau', brille: false },
-        { hut: 'kein', brille: false },
-        { hut: 'gelb', brille: true },
-      ],
-      hinweise: [{ art: 'hut', farbe: 'blau', nicht: false }],
-    },
-  ],
+  /**
+   * Lernbeispiel: immer ein Hut-Hinweis; es wächst die Zahl der anderen Raupen mit Hut, die man
+   * ausschließen muss: (1) nur eine Raupe hat überhaupt einen Hut; (2) drei Hüte in drei Farben;
+   * (3) gewöhnliche Aufgabe der Stufe 1 – vier Hüte, Brillen dazwischen.
+   */
+  beispiele: () => {
+    const r = (hut: Hut, brille = false): Raupe => ({ hut, brille });
+    return [
+      { raupen: [r('kein'), r('kein'), r('rot'), r('kein'), r('kein'), r('kein')], hinweise: [{ art: 'hut', farbe: 'rot', nicht: false }] },
+      {
+        raupen: [r('kein'), r('rot'), r('kein', true), r('blau'), r('kein'), r('gelb', true)],
+        hinweise: [{ art: 'hut', farbe: 'blau', nicht: false }],
+      },
+      {
+        raupen: [r('rot', true), r('kein'), r('blau', true), r('gelb'), r('rot'), r('kein', true)],
+        hinweise: [{ art: 'hut', farbe: 'gelb', nicht: false }],
+      },
+    ];
+  },
 };

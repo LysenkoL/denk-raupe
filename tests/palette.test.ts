@@ -98,8 +98,9 @@ describe('Formfarben: Teilmenge der Palette', () => {
   it('Wer ist es?: Hutfarben kommen aus den Formfarben', () => {
     for (const h of HUT_FARBEN) expect(hutFarbe(h)).toBe(FORM_FARBEN[h]);
     // gezeichnete Hüte (Krempe = Ellipse) haben genau diese Farben
-    const b = WER_IST_ES.beispiele({} as never)[0];
-    const svg = WER_IST_ES.zeichne(b, { hilfe: 0, gewaehlt: null });
+    const svg = WER_IST_ES.beispiele({} as never)
+      .map((b) => WER_IST_ES.zeichne(b, { hilfe: 0, gewaehlt: null }))
+      .join('');
     const huete = new Set([...svg.matchAll(/<ellipse [^>]*fill="(#[0-9A-Fa-f]{6})"/g)].map((m) => m[1]));
     expect([...huete].sort()).toEqual(HUT_FARBEN.map((h) => FORM_FARBEN[h]).sort());
   });

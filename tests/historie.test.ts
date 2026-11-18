@@ -285,18 +285,22 @@ describe('Historie lesen', () => {
 });
 
 describe('Profil: Umzug von Version 1', () => {
-  it('das Profil aus Version 1 öffnet sich mit denselben Werten', () => {
+  it('das Profil aus Version 1 öffnet sich mit denselben Werten (seit A4 als Version 2, „gesehen“ → bekannt)', () => {
     const p = ladeProfil(structuredClone(v1.profil))!;
-    expect(p).toEqual(v1.profil);
-    expect(p.version).toBe(1);
+    const { gesehen: _g, version: _v, ...gleich } = v1.profil;
+    expect(p).toMatchObject(gleich);
+    expect(p.formate).toEqual({ zahlenmauer: 'bekannt', muster: 'bekannt' });
+    expect(p.version).toBe(2);
   });
 
   it('fehlt ein Feld, kommt der Wert eines neuen Profils dazu; Unbekanntes → null', () => {
     const { ton: _ton, ...ohneTon } = v1.profil;
-    expect(ladeProfil(ohneTon)).toEqual({ ...v1.profil, ton: true });
+    expect(ladeProfil(ohneTon)).toEqual({ ...ladeProfil(v1.profil), ton: true });
+    const { formate: _f, ...ohneFormate } = ladeProfil(v1.profil)!;
+    expect(ladeProfil(ohneFormate)!.formate).toEqual({});
     expect(ladeProfil(undefined)).toBeNull();
     expect(ladeProfil('kaputt')).toBeNull();
-    expect(ladeProfil({ ...v1.profil, version: 2 })).toBeNull();
+    expect(ladeProfil({ ...v1.profil, version: 3 })).toBeNull();
   });
 });
 
