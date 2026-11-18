@@ -5,6 +5,7 @@ import { zufall } from '../core/zufall';
 import type { Antwort } from '../perlen/antwort';
 import { blaetter, fertig, neuerSatz, type Satz } from './vergleich';
 import { anhaengen, type Eintrag, type Historie } from './historie';
+import { pulsAnfang, type PulsZustand } from './hilfe';
 
 /**
  * Ein laufender Satz mit allem, was gespeichert wird: jede Aufgabe ganz (Format, Version, Samen,
@@ -33,6 +34,12 @@ export interface Sitzung {
    * Zwilling oder Historie.
    */
   lernbeispiel?: LernZustand;
+  /**
+   * Hilfeknopf gegen Durchprobieren, je Perle (src/satz/hilfe.ts): ab welcher Fehlantwort neu gezählt wird,
+   * ob er gepulst hat und ob das Kind ihn dann gedrückt hat. Seit A6; ein Satz von vorher bekommt ihn
+   * beim Laden (`ladeSitzung`) – daher keine neue Version.
+   */
+  puls: PulsZustand[];
 }
 
 export interface LernZustand {
@@ -137,11 +144,12 @@ export function neueSitzung(samen: number, e: Einstellung = STANDARD_EINSTELLUNG
     aktuell: 0,
     hilfeOffen: aufgaben.map(() => 0),
     gezaehlt: false,
+    puls: aufgaben.map(() => ({ marke: 0, puls: false, hilfeNachPuls: false })),
   };
 }
 
 /** Sitzung in Version 1 (bis Aufgabe A2): Aufgaben ohne Zahlenraum, Zahlenmauer ohne Grenze */
-interface SitzungV1 extends Omit<Sitzung, 'version' | 'aufgaben'> {
+interface SitzungV1 extends Omit<Sitzung, 'version' | 'aufgaben' | 'puls'> {
   version: 1;
   aufgaben: Omit<Aufgabe, 'zahlenraum'>[];
 }
@@ -151,12 +159,21 @@ interface SitzungV1 extends Omit<Sitzung, 'version' | 'aufgaben'> {
  * Zahlenmauer Stufe 1 bis 10, sonst bis 20. Bedingung, Wahl, Version und Samen jeder Aufgabe
  * und der ganze Zustand von Raupe und Zwilling bleiben, wie sie waren.
  */
-function vonV1(s: SitzungV1): Sitzung {
+function vonV1(s: SitzungV1): Omit<Sitzung, 'puls'> {
   const aufgaben: Aufgabe[] = s.aufgaben.map((a) => {
     const bedingung = a.format === 'zahlenmauer' ? { ...(a.bedingung as Omit<Mauer, 'grenze'>), grenze: a.stufe === 1 ? 10 : 20 } : a.bedingung;
     return { ...a, zahlenraum: 20, bedingung };
   });
   return { ...s, version: 2, aufgaben };
+}
+
+/**
+ * Satz von vor A6 (oder aus Version 1) ohne Puls des Hilfeknopfs: jede Perle bekommt ihn (`pulsAnfang`).
+ * Alles andere bleibt, wie es war; ein Satz mit Puls bleibt dasselbe Objekt.
+ */
+function mitPuls(s: Omit<Sitzung, 'puls'> & { puls?: unknown }): Sitzung {
+  if (Array.isArray(s.puls) && s.puls.length === s.satz.perlen.length) return s as Sitzung;
+  return { ...s, puls: s.satz.perlen.map((_, i) => pulsAnfang(s, i)) };
 }
 
 /**
@@ -166,8 +183,8 @@ function vonV1(s: SitzungV1): Sitzung {
 export function ladeSitzung(roh: unknown): Sitzung | null {
   if (!roh || typeof roh !== 'object') return null;
   const s = roh as { version?: unknown };
-  if (s.version === 2) return roh as Sitzung;
-  if (s.version === 1) return vonV1(roh as SitzungV1);
+  if (s.version === 2) return mitPuls(roh as Sitzung);
+  if (s.version === 1) return mitPuls(vonV1(roh as SitzungV1));
   return null;
 }
 
@@ -196,7 +213,7 @@ export function abschliessen(
   }
   const zu = [...geheim.wort].map((_, i) => i).filter((i) => !geheim.offen.includes(i));
   const neu = z.eins(zu);
-  const historie = anhaengen(h, s.aufgaben, s.satz, jetzt);
+  const historie = anhaengen(h, s.aufgaben, s.satz, jetzt, s.puls);
   const formate = kenntnisNachSatz(p.formate, historie.eintraege.slice(h.eintraege.length));
   return {
     sitzung: { ...s, gezaehlt: true },

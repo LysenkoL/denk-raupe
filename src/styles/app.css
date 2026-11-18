@@ -171,6 +171,26 @@ svg text { font-family: var(--font); font-feature-settings: var(--font-features)
 .aufgabe-kopf .auftrag { flex: 1; min-width: 0; padding-top: 6px; }
 .hilfe-knopf { min-height: 48px; padding: 0 var(--s3); font-size: 16px; flex: none; }
 .hilfe-knopf:disabled { opacity: .45; cursor: default; }
+/*
+ * Hilfeknopf gegen Durchprobieren (A6, docs/STIL.md, Abschnitt 7 „Помощь“): die Laterne leuchtet und
+ * glimmt sanft auf und ab – kein Blinken. `--puls-phase` setzt der Bildschirm nach der Uhr, damit
+ * Neuzeichnen den Puls nicht von vorn beginnt. Ohne Bewegung: dieselbe Laterne mit fester Doppelumrandung.
+ * Endgültiges Aussehen: Aufgabe A9.
+ */
+.hilfe-knopf[data-puls] {
+  background: var(--laterne); border-color: var(--laterne-kante);
+  animation: hilfe-puls var(--puls) ease-in-out var(--puls-phase, 0ms) infinite;
+}
+@keyframes hilfe-puls {
+  0%, 100% { scale: 1; box-shadow: 0 0 0 0 transparent; }
+  50% { scale: 1.05; box-shadow: 0 0 0 6px color-mix(in srgb, var(--laterne-kante) 60%, transparent), 0 0 18px 8px var(--laterne); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hilfe-knopf[data-puls] {
+    animation: none;
+    box-shadow: 0 0 0 var(--fokus-saum) var(--papier), 0 0 0 calc(var(--fokus-saum) + var(--fokus-linie)) var(--fokus);
+  }
+}
 .aufgabe-svg { display: block; width: 100%; height: auto; max-height: min(300px, 42dvh); }
 .aufgabe-bild.tippbar [data-wahl] { cursor: pointer; }
 .aufgabe-bild [data-wahl]:focus-visible { outline: none; }

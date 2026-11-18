@@ -106,6 +106,8 @@
   --kurz: 160ms;
   --mittel: 320ms;
   --heben: 450ms;
+  /* ein Puls des Hilfeknopfs gegen Durchprobieren: langsam, kein Blinken (wie PULS_MS in src/screens/satz.ts) */
+  --puls: 1700ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

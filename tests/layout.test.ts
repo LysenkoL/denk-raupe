@@ -38,13 +38,16 @@ afterAll(async () => {
 
 const SAMEN = 20261115;
 
-/** Seite mit festem Satz; `formate` = Kenntnis im Profil (Standard: alle bekannt); `gespeichert` = so liegt es schon im Speicher */
+/**
+ * Seite mit festem Satz; `formate` = Kenntnis im Profil (Standard: alle bekannt); `gespeichert` = so liegt es schon im Speicher;
+ * `bewegung` = ohne „weniger Bewegung“ (Standard: mit, damit nichts wartet)
+ */
 async function oeffnen(
   w: number,
   h: number,
-  o: { formate?: Profil['formate']; samen?: number; gespeichert?: { sitzung: Sitzung; profil: unknown }; weitere?: Record<string, unknown> } = {},
+  o: { formate?: Profil['formate']; samen?: number; gespeichert?: { sitzung: Sitzung; profil: unknown }; weitere?: Record<string, unknown>; bewegung?: boolean } = {},
 ): Promise<{ page: Page; sitzung: Sitzung }> {
-  const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+  const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: o.bewegung ? 'no-preference' : 'reduce' });
   const sitzung = o.gespeichert?.sitzung ?? neueSitzung(o.samen ?? SAMEN);
   const alleBekannt = Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt']));
   const profil = o.gespeichert?.profil ?? { ...neuesProfil(), ton: false, formate: o.formate ?? alleBekannt };
@@ -512,6 +515,151 @@ describe('Ablauf eines Satzes', () => {
     await page.waitForTimeout(150);
     expect(await gespeichert(page, 'sitzung-unbekannt')).toEqual([satzNeu]);
     expect(await gespeichert(page, 'profil-unbekannt')).toEqual([profilNeu]);
+    await page.close();
+  });
+});
+
+describe('Hilfeknopf gegen Durchprobieren (A6)', () => {
+  /** k-te falsche Zahl der Mauer: Lösung + 1 + k */
+  const falschK = (s: Sitzung, i: number, k: number): Antwort => {
+    const l = loesung(s, i);
+    return { art: 'zahl', wert: l.art === 'zahl' ? l.wert + 1 + k : 1 + k };
+  };
+  const pulst = async (page: Page) => (await page.getAttribute('.hilfe-knopf', 'data-puls')) === 'ja';
+  type H = { eintraege: { puls?: boolean; hilfeNachPuls?: boolean; ergebnis: string }[] };
+  type P = { marke: number; puls: boolean; hilfeNachPuls: boolean };
+
+  it('erst nach zwei verschiedenen Fehlprüfungen; Wiederholung und Vergleichen ohne Änderung zählen nicht; Hilfe beendet es; Historie', async () => {
+    const { page, sitzung } = await oeffnen(390, 900);
+    const i = sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+    // vor dem ersten Vergleichen: nie
+    for (let j = 0; j < 3; j++) await eingeben(page, sitzung, j, j === i ? falschK(sitzung, i, 0) : loesung(sitzung, j));
+    await page.click(`.perle[data-i="${i}"]`);
+    expect(await pulst(page)).toBe(false);
+    await vergleichen(page);
+    // eine Fehlprüfung: nein
+    expect(await page.getAttribute(`.perle[data-i="${i}"]`, 'aria-current')).toBe('step');
+    expect(await pulst(page)).toBe(false);
+    // nochmal Vergleichen ohne Änderung: nein
+    await vergleichen(page);
+    expect(await page.textContent('.meldung')).toBe(KIND.nichtsGeaendert);
+    expect(await pulst(page)).toBe(false);
+    // geändert und zurück zur selben Fehlantwort: nein
+    await eingeben(page, sitzung, i, falschK(sitzung, i, 1));
+    await eingeben(page, sitzung, i, falschK(sitzung, i, 0));
+    await vergleichen(page);
+    expect(await pulst(page)).toBe(false);
+    // zweite, andere Fehlantwort: ja – die Hilfe öffnet sich nicht von selbst
+    await eingeben(page, sitzung, i, falschK(sitzung, i, 1));
+    await vergleichen(page);
+    expect(await pulst(page)).toBe(true);
+    expect(await page.$('.hilfe-box')).toBeNull();
+    expect(await page.textContent('.hilfe-knopf')).toContain(KIND.hilfe);
+    // Tippen zeichnet neu, der Puls bleibt
+    await page.click('[data-ziffer="x"]');
+    expect(await pulst(page)).toBe(true);
+    await eingeben(page, sitzung, i, falschK(sitzung, i, 1));
+    // nach Neuladen: derselbe Zustand
+    await page.waitForTimeout(150);
+    await page.reload();
+    await page.waitForSelector('.hilfe-knopf');
+    expect(await pulst(page)).toBe(true);
+    expect((await gespeichert<Sitzung & { puls: P[] }>(page, 'sitzung')).puls[i]).toEqual({ marke: 0, puls: true, hilfeNachPuls: false });
+    // Hilfe gedrückt: Stufe 1 (Lernbeispiel), zurück – kein Puls mehr
+    await page.click('.hilfe-knopf');
+    await page.click('.los');
+    expect(await pulst(page)).toBe(false);
+    await page.waitForTimeout(150);
+    expect((await gespeichert<Sitzung & { puls: P[] }>(page, 'sitzung')).puls[i]).toEqual({ marke: 2, puls: true, hilfeNachPuls: true });
+    // nach Neuladen weiter kein Puls
+    await page.reload();
+    await page.waitForSelector('.hilfe-knopf');
+    expect(await pulst(page)).toBe(false);
+    // gelöst → Historie: gepulst und danach Hilfe genommen; die anderen nicht
+    await eingeben(page, sitzung, i, loesung(sitzung, i));
+    await vergleichen(page);
+    await page.waitForSelector('.ende');
+    await page.waitForTimeout(150);
+    const h = await gespeichert<H>(page, 'historie');
+    expect(h.eintraege.map((e) => [e.puls, e.hilfeNachPuls])).toEqual([0, 1, 2].map((j) => (j === i ? [true, true] : [false, false])));
+    expect(h.eintraege[i].ergebnis).toBe('selbst');
+    await page.close();
+  });
+
+  it('gepulst, ohne Hilfe gelöst → Historie: Puls ja, Hilfe danach nein', async () => {
+    const { page, sitzung } = await oeffnen(390, 900);
+    const i = sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+    for (let j = 0; j < 3; j++) await eingeben(page, sitzung, j, j === i ? falschK(sitzung, i, 0) : loesung(sitzung, j));
+    await vergleichen(page);
+    await eingeben(page, sitzung, i, falschK(sitzung, i, 1));
+    await vergleichen(page);
+    expect(await pulst(page)).toBe(true);
+    await eingeben(page, sitzung, i, loesung(sitzung, i));
+    await vergleichen(page);
+    await page.waitForSelector('.ende');
+    await page.waitForTimeout(150);
+    const e = (await gespeichert<H>(page, 'historie')).eintraege[i];
+    expect([e.puls, e.hilfeNachPuls]).toEqual([true, false]);
+    await page.close();
+  });
+
+  it('alle Stufen offen: kein Puls, auch nach weiteren Fehlprüfungen', async () => {
+    const { page, sitzung } = await oeffnen(390, 900);
+    const i = sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+    for (let j = 0; j < 3; j++) await eingeben(page, sitzung, j, j === i ? falschK(sitzung, i, 0) : loesung(sitzung, j));
+    await vergleichen(page);
+    await page.click('.hilfe-knopf');
+    await page.click('.los');
+    for (let k = 2; k <= 4; k++) await page.click('.hilfe-knopf');
+    expect(await page.isDisabled('.hilfe-knopf')).toBe(true);
+    for (const k of [1, 2, 3]) {
+      await eingeben(page, sitzung, i, falschK(sitzung, i, k));
+      await vergleichen(page);
+    }
+    expect(await pulst(page)).toBe(false);
+    await page.close();
+  });
+
+  it('mit Bewegung: sanfter Puls um 1,7 s; „weniger Bewegung“: keine Animation, feste Doppelumrandung', async () => {
+    const { page, sitzung } = await oeffnen(360, 800, { bewegung: true });
+    const i = sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+    for (let j = 0; j < 3; j++) await eingeben(page, sitzung, j, j === i ? falschK(sitzung, i, 0) : loesung(sitzung, j));
+    await vergleichen(page);
+    await eingeben(page, sitzung, i, falschK(sitzung, i, 1));
+    await vergleichen(page);
+    await page.waitForSelector('.hilfe-knopf[data-puls]');
+    const stil = () =>
+      page.$eval('.hilfe-knopf', (b) => {
+        const c = getComputedStyle(b);
+        return { name: c.animationName, dauer: c.animationDuration, wdh: c.animationIterationCount, schatten: c.boxShadow, hintergrund: c.backgroundColor };
+      });
+    const an = await stil();
+    expect(an.name).toBe('hilfe-puls');
+    expect(parseFloat(an.dauer)).toBeGreaterThanOrEqual(1.6);
+    expect(parseFloat(an.dauer)).toBeLessThanOrEqual(1.8);
+    expect(an.wdh).toBe('infinite');
+    // auch beim größten Ausschlag kein waagerechtes Scrollen (Telefon 360 px)
+    for (let t = 0; t < 4; t++) {
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.waitForTimeout(450);
+    }
+    // Laterne
+    expect(an.hintergrund).toBe('rgb(255, 233, 168)');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const aus = await stil();
+    expect(aus.name).toBe('none');
+    // fester Saum in Papier und Linie in Fokus-Blau (docs/STIL.md, Abschnitt 4)
+    expect(aus.schatten).toContain('rgb(253, 251, 244)');
+    expect(aus.schatten).toContain('rgb(43, 40, 159)');
+    expect(aus.hintergrund).toBe('rgb(255, 233, 168)');
+    // derselbe Zustand wie mit Bewegung
+    expect(await pulst(page)).toBe(true);
+    // ohne Puls: keine Umrandung, keine Animation
+    await page.click('.hilfe-knopf');
+    await page.click('.los');
+    const ruhig = await stil();
+    expect(ruhig.name).toBe('none');
+    expect(ruhig.schatten).toBe('none');
     await page.close();
   });
 });

@@ -125,7 +125,7 @@ describe('Historie: Ausgang jeder Aufgabe', () => {
   it('Eintrag ist knapp: nur Aufgabe + Lösungsweg, nichts doppelt', () => {
     const e = abschluss(pruefe(alleRichtig(neueSitzung(SAMEN)))).historie.eintraege[0];
     expect(Object.keys(e).sort()).toEqual(
-      ['antwort', 'bedingung', 'falsch', 'format', 'gleicherFehler', 'hilfe', 'nr', 'rateChance', 'samen', 'satz', 'stufe', 'tag', 'version', 'wahl', 'zahlenraum', 'ergebnis'].sort(),
+      ['antwort', 'bedingung', 'falsch', 'format', 'gleicherFehler', 'hilfe', 'nr', 'rateChance', 'samen', 'satz', 'stufe', 'tag', 'version', 'wahl', 'zahlenraum', 'ergebnis', 'puls', 'hilfeNachPuls'].sort(),
     );
   });
 });
