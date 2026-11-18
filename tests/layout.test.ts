@@ -4,8 +4,9 @@ import { createServer, type ViteDevServer } from 'vite';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { FORMATE } from '../src/aufgaben';
-import { aufgabeAus, lernbeispiel, type Aufgabe, type Zahlenraum } from '../src/aufgaben/format';
-import type { Mauer } from '../src/aufgaben/zahlenmauer';
+import { aufgabeAus, lernbeispiel, stimmt, type Aufgabe, type FormatId, type HilfeStufe, type Zahlenraum } from '../src/aufgaben/format';
+import { hilfePunkte, type Mauer } from '../src/aufgaben/zahlenmauer';
+import { setzeAntwort, vergleiche } from '../src/satz/vergleich';
 import { neueSitzung, neuesProfil, PROBE_FORMATE, type Profil, type Sitzung } from '../src/satz/sitzung';
 import { gleich, type Antwort } from '../src/perlen/antwort';
 import { KIND } from '../src/i18n/kind';
@@ -201,6 +202,87 @@ for (const [name, w, h] of GERAETE) {
       const k = (await page.locator('.vergleichen').boundingBox())!;
       expect(k.height).toBeGreaterThanOrEqual(56);
       expect(k.y + k.height).toBeLessThanOrEqual(h + 1);
+      await page.close();
+    });
+  });
+}
+
+/**
+ * Satz nach dem ersten Vergleichen: im Format `id` ist Hilfe `hilfe` offen, seine Antwort wieder leer (Bild mit „?“).
+ * `samen`: andere Aufgabe desselben Formats (z. B. eine Mauer mit vielen Punkten).
+ */
+function satzMitHilfe(id: FormatId, stufe: number, hilfe: HilfeStufe, zahlenraum: Zahlenraum = 20, samen?: number): Sitzung {
+  const s = neueSitzung(SAMEN);
+  const i = s.aufgaben.findIndex((a) => a.format === id);
+  const aufgaben = s.aufgaben.map((a, j) => (j === i ? aufgabeAus(FORMATE[id], samen ?? a.samen, stufe, { zahlenraum }) : a));
+  const daneben = (a: Aufgabe): Antwort => {
+    const l = FORMATE[a.format].loesungen(a.bedingung)[0];
+    return a.wahl ? a.wahl.find((w) => !gleich(w, l))! : { art: 'zahl', wert: l.art === 'zahl' ? (l.wert + 1) % 100 : 1 };
+  };
+  const voll = aufgaben.reduce((satz, a, j) => setzeAntwort(satz, j, daneben(a)), s.satz);
+  const geprueft = vergleiche(voll, (j, antwort) => stimmt(FORMATE[aufgaben[j].format], aufgaben[j], antwort)).satz;
+  return { ...s, aufgaben, satz: setzeAntwort(geprueft, i, null), aktuell: i, hilfeOffen: aufgaben.map((_, j) => (j === i ? hilfe : 0)) };
+}
+
+/** Samen einer Mauer bis 100 (Stufe 2) mit mindestens 60 Punkten in Hilfe 3: das größte Punktefeld auf dem Bildschirm */
+function vollePunkte(): number {
+  for (let s = 1; ; s++) if (hilfePunkte(aufgabeAus(FORMATE.zahlenmauer, s, 2, { zahlenraum: 100 }).bedingung as Mauer).length >= 60) return aufgabeAus(FORMATE.zahlenmauer, s, 2, { zahlenraum: 100 }).samen;
+}
+
+/** Hilfe auf dem Bild je Format: [Name, Format, Stufe, Hilfe, Zahlenraum, Samen] */
+const HILFE_FAELLE: [string, FormatId, number, HilfeStufe, Zahlenraum, number?][] = [
+  ...PROBE_FORMATE.flatMap((id) => ([2, 3] as const).map((hilfe) => [`${id}, Hilfe ${hilfe}`, id, 2, hilfe, 20] as [string, FormatId, number, HilfeStufe, Zahlenraum])),
+  ['wer-ist-es Stufe 1, Hilfe 3 an der ähnlichen Aufgabe', 'wer-ist-es', 1, 3, 20],
+  ['zahlenmauer bis 100, Hilfe 3 mit vielen Punkten', 'zahlenmauer', 2, 3, 100, vollePunkte()],
+];
+
+for (const [name, w, h] of GERAETE) {
+  describe(`Hilfe auf dem Bild: ${name} (${w}×${h})`, () => {
+    it.each(HILFE_FAELLE)('%s: alles im Bild, nichts ragt hinaus, Punkte groß genug', async (_, id, stufe, hilfe, zahlenraum, samen) => {
+      const { page } = await oeffnen(w, h, { gespeichert: { sitzung: satzMitHilfe(id, stufe, hilfe, zahlenraum, samen), profil: bekanntesProfil() } });
+      const m = await page.evaluate(() => {
+        const box = (el: Element) => {
+          const r = el.getBoundingClientRect();
+          return { l: r.left, r: r.right, w: r.width, h: r.height };
+        };
+        const eigen = document.querySelector('.aufgabe > .aufgabe-bild svg')!;
+        const kasten = document.querySelector('.hilfe-box svg');
+        return {
+          scrollW: document.documentElement.scrollWidth,
+          eigen: box(eigen),
+          kasten: kasten ? box(kasten) : null,
+          teil: [...eigen.querySelectorAll('[data-hilfe="teil"]')].map(box),
+          schrittEigen: eigen.querySelectorAll('[data-hilfe="schritt"]').length,
+          schrittKasten: kasten ? kasten.querySelectorAll('[data-hilfe="schritt"]').length : 0,
+          punkte: [...eigen.querySelectorAll('[data-punkt]')].map(box),
+          hilfeKnopf: box(document.querySelector('.hilfe-knopf')!),
+        };
+      });
+      expect(m.scrollW).toBeLessThanOrEqual(w);
+      expect(m.eigen.l).toBeGreaterThanOrEqual(0);
+      expect(m.eigen.r).toBeLessThanOrEqual(w);
+      // Stufe 2 (auch in Stufe 3 enthalten): der hervorgehobene Teil liegt sichtbar im Bild
+      expect(m.teil.length).toBeGreaterThan(0);
+      for (const t of m.teil) {
+        expect(t.w).toBeGreaterThan(10);
+        expect(t.l).toBeGreaterThanOrEqual(m.eigen.l - 1);
+        expect(t.r).toBeLessThanOrEqual(m.eigen.r + 1);
+      }
+      if (hilfe === 3 && id === 'wer-ist-es' && stufe === 1) {
+        // der Schritt verriete die eigene Lösung: an der eigenen Aufgabe nichts, im Kasten an der ähnlichen
+        expect(m.schrittEigen).toBe(0);
+        expect(m.kasten).not.toBeNull();
+        expect(m.schrittKasten).toBeGreaterThan(0);
+        expect(m.kasten!.r).toBeLessThanOrEqual(w);
+      } else if (hilfe === 3) {
+        expect(m.schrittEigen).toBeGreaterThan(0);
+        expect(m.kasten).toBeNull();
+      } else expect(m.schrittEigen).toBe(0);
+      // Punkte der Zahlenmauer: zu sehen und zu zählen. Bis 20 (zwei Reihen) mindestens 7 px; bis 100 (bis zu zehn
+      // Reihen) auf dem quer gehaltenen Telefon kleiner, weil das Bild dort nur 42 % der Höhe bekommt (Bildschirm: A9)
+      for (const p of m.punkte) expect(Math.min(p.w, p.h)).toBeGreaterThanOrEqual(zahlenraum === 100 ? 5 : 7);
+      if (id === 'zahlenmauer' && hilfe === 3) expect(m.punkte.length).toBeGreaterThan(0);
+      expect(m.hilfeKnopf.h).toBeGreaterThanOrEqual(48);
       await page.close();
     });
   });
@@ -934,6 +1016,13 @@ describe('Musterseite', () => {
       await page.waitForSelector('h1');
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
       expect(await page.textContent('h1')).toBe(sp === 'de' ? 'Designsystem' : 'Дизайн-система');
+      // Formate: jedes mit Bild ohne Hilfe, Hilfe 2 und 3 und den Texten für Eltern in der gewählten Sprache
+      const formate = await page.$$eval('.format-probe', (els) => els.map((e) => ({ id: e.getAttribute('data-format'), bilder: e.querySelectorAll('svg').length, text: e.textContent })));
+      expect(formate.map((f) => f.id).sort()).toEqual([...PROBE_FORMATE].sort());
+      for (const f of formate) {
+        expect(f.bilder).toBe(3);
+        expect(f.text).toMatch(sp === 'de' ? /So helfen Sie/ : /Як допомогти/);
+      }
       await page.close();
     }
   });
