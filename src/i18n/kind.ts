@@ -26,6 +26,15 @@ export const KIND = {
   wartet: 'Diese Aufgabe wartet auf später. Du kannst sie jetzt lösen.',
   neuerSatz: 'Neuer Satz',
   loeschen: 'Löschen',
+  /** Zahl eingeben: Gruppe der Ziffernperlen und Plätze (für Screenreader) */
+  zahlEingeben: 'Zahl eingeben',
+  /** Plätze der Zahl, Zehner links, Einer rechts: Zeichen auf dem Holz und Name zum Vorlesen */
+  stelle: {
+    H: { zeichen: 'H', name: 'Hunderter' },
+    Z: { zeichen: 'Z', name: 'Zehner' },
+    E: { zeichen: 'E', name: 'Einer' },
+  },
+  platzLeer: 'leer',
   ton: 'Ton',
   neuerBuchstabe: 'Ein neuer Buchstabe!',
   /** feste Aufträge der Formate; ein Format nennt nur den Schlüssel (docs/FORMATE.md, Abschnitt 3) */

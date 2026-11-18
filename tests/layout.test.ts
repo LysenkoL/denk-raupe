@@ -4,7 +4,8 @@ import { createServer, type ViteDevServer } from 'vite';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { FORMATE } from '../src/aufgaben';
-import { lernbeispiel, type Aufgabe } from '../src/aufgaben/format';
+import { aufgabeAus, lernbeispiel, type Aufgabe, type Zahlenraum } from '../src/aufgaben/format';
+import type { Mauer } from '../src/aufgaben/zahlenmauer';
 import { neueSitzung, neuesProfil, PROBE_FORMATE, type Profil, type Sitzung } from '../src/satz/sitzung';
 import { gleich, type Antwort } from '../src/perlen/antwort';
 import { KIND } from '../src/i18n/kind';
@@ -70,6 +71,29 @@ async function oeffnen(
   await page.evaluate(() => document.fonts.ready);
   return { page, sitzung };
 }
+
+const bekanntesProfil = () => ({ ...neuesProfil(), ton: false, formate: Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) });
+
+/** fester Satz, dessen Zahlenmauer eine andere größte Zahl hat (Stufe 2: Grenze = Zahlenraum) */
+function satzMitMauer(stufe: number, zahlenraum: Zahlenraum): { sitzung: Sitzung; i: number } {
+  const s = neueSitzung(SAMEN);
+  const i = s.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+  const aufgaben = s.aufgaben.map((a, j) => (j === i ? aufgabeAus(FORMATE.zahlenmauer, a.samen, stufe, { zahlenraum }) : a));
+  return { sitzung: { ...s, aufgaben }, i };
+}
+
+/** Plätze der Zahleingabe: Name zum Vorlesen, Inhalt (Ziffer oder „leer“), gewählt */
+function plaetzeLesen(page: Page, wo = '') {
+  return page.$$eval(`${wo} .platz`, (els) =>
+    els.map((e) => ({
+      name: e.getAttribute('aria-label'),
+      inhalt: document.getElementById(e.getAttribute('aria-describedby')!)!.textContent,
+      gewaehlt: e.getAttribute('aria-pressed') === 'true',
+    })),
+  );
+}
+const inhalte = async (page: Page, wo = '') => (await plaetzeLesen(page, wo)).map((p) => p.inhalt);
+const perleText = (page: Page, i: number) => page.getAttribute(`.perle[data-i="${i}"]`, 'aria-label');
 
 /** Wert aus dem Speicher der Seite (IndexedDB) */
 function gespeichert<T = unknown>(page: Page, schluessel: string): Promise<T> {
@@ -159,6 +183,7 @@ for (const [name, w, h] of GERAETE) {
           kopfRechts: Math.max(...koepfe.map((r) => r.right)),
           buehneRechts: box(document.querySelector('.buehne-wrap')!).right,
           ziffern: [...document.querySelectorAll('[data-ziffer]')].map((e) => box(e).height),
+          plaetze: [...document.querySelectorAll('.platz, .nest')].map((e) => ({ w: box(e).width, h: box(e).height })),
         };
       });
       expect(m.scrollW).toBeLessThanOrEqual(w);
@@ -166,7 +191,10 @@ for (const [name, w, h] of GERAETE) {
       m.kind.forEach((p, i) => expect(Math.abs(p.x - m.zw[i].x), `Perle ${i + 1}`).toBeLessThan(1));
       for (const p of m.kind) expect(p.h).toBeGreaterThanOrEqual(48);
       expect(m.kopfRechts).toBeLessThanOrEqual(m.buehneRechts + 1);
-      for (const z of m.ziffern) expect(z).toBeGreaterThanOrEqual(44);
+      for (const z of m.ziffern) expect(z).toBeGreaterThanOrEqual(48);
+      // Zahlenmauer offen: zwei Plätze (Mulde und ganzer Platz) mindestens 48 px
+      expect(m.plaetze).toHaveLength(4);
+      for (const p of m.plaetze) expect(Math.min(p.w, p.h)).toBeGreaterThanOrEqual(48);
       const k = (await page.locator('.vergleichen').boundingBox())!;
       expect(k.height).toBeGreaterThanOrEqual(56);
       expect(k.y + k.height).toBeLessThanOrEqual(h + 1);
@@ -176,15 +204,27 @@ for (const [name, w, h] of GERAETE) {
 }
 
 describe('Ablauf eines Satzes', () => {
-  it('Zahl mit Ziffernperlen: 1 dann 4 ergibt 14, Löschen nimmt die letzte Ziffer', async () => {
-    const { page, sitzung } = await oeffnen(390, 800);
-    const i = sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+  it('Zahl mit Ziffernperlen: 1 dann 4 ergibt 14 (Z und E), Löschen nimmt die letzte Ziffer und lässt die 1 in Z', async () => {
+    const { sitzung, i } = satzMitMauer(2, 20);
+    const { page } = await oeffnen(390, 800, { gespeichert: { sitzung, profil: bekanntesProfil() } });
     await page.click(`.perle[data-i="${i}"]`);
+    expect((await plaetzeLesen(page)).map((p) => p.name)).toEqual(['Zehner', 'Einer']);
+    expect(await page.$$eval('.platz-zeichen', (e) => e.map((x) => x.textContent))).toEqual(['Z', 'E']);
     await page.click('[data-ziffer="1"]');
+    expect(await inhalte(page)).toEqual(['leer', '1']);
+    expect(await perleText(page, i)).toContain(': 1');
     await page.click('[data-ziffer="4"]');
-    expect(await page.getAttribute(`.perle[data-i="${i}"]`, 'aria-label')).toContain(': 14');
+    expect(await inhalte(page)).toEqual(['1', '4']);
+    expect(await perleText(page, i)).toContain(': 14');
+    // Löschen ohne Wahl: die 4 geht, die 1 bleibt Zehner; ohne Einer gibt es noch keine Zahl
     await page.click('[data-ziffer="x"]');
-    expect(await page.getAttribute(`.perle[data-i="${i}"]`, 'aria-label')).toContain(': 1');
+    expect(await inhalte(page)).toEqual(['1', 'leer']);
+    expect(await perleText(page, i)).toContain('noch leer');
+    await page.click('[data-ziffer="5"]');
+    expect(await perleText(page, i)).toContain(': 15');
+    // gespeichert wird nur die Zahl
+    await page.waitForTimeout(150);
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).satz.perlen[i].antwort).toEqual({ art: 'zahl', wert: 15 });
     await page.close();
   });
 
@@ -472,6 +512,192 @@ describe('Ablauf eines Satzes', () => {
     await page.waitForTimeout(150);
     expect(await gespeichert(page, 'sitzung-unbekannt')).toEqual([satzNeu]);
     expect(await gespeichert(page, 'profil-unbekannt')).toEqual([profilNeu]);
+    await page.close();
+  });
+});
+
+describe('Zahl in Plätzen (A5)', () => {
+  it('Platz E, 4, Platz Z, 1 ergeben 14; eine Ziffer ersetzen; Löschen mit Wahl; Null in Z', async () => {
+    const { sitzung, i } = satzMitMauer(2, 100);
+    const { page } = await oeffnen(390, 800, { gespeichert: { sitzung, profil: bekanntesProfil() } });
+    await page.click(`.perle[data-i="${i}"]`);
+    expect((await plaetzeLesen(page)).map((p) => p.name)).toEqual(['Hunderter', 'Zehner', 'Einer']);
+    await page.click('.platz[data-platz="2"]');
+    expect((await plaetzeLesen(page)).map((p) => p.gewaehlt)).toEqual([false, false, true]);
+    await page.click('[data-ziffer="4"]');
+    // E belegt, Z leer → die Wahl geht auf Z
+    expect(await plaetzeLesen(page)).toEqual([
+      { name: 'Hunderter', inhalt: 'leer', gewaehlt: false },
+      { name: 'Zehner', inhalt: 'leer', gewaehlt: true },
+      { name: 'Einer', inhalt: '4', gewaehlt: false },
+    ]);
+    await page.click('.platz[data-platz="1"]');
+    await page.click('[data-ziffer="1"]');
+    expect(await inhalte(page)).toEqual(['leer', '1', '4']);
+    expect(await perleText(page, i)).toContain(': 14');
+    expect((await plaetzeLesen(page)).every((p) => !p.gewaehlt)).toBe(true);
+    // eine Ziffer ersetzen: 14 → Platz Z, 2 → 24
+    await page.click('.platz[data-platz="1"]');
+    await page.click('[data-ziffer="2"]');
+    expect(await perleText(page, i)).toContain(': 24');
+    // Löschen mit Wahl: nur dieser Platz
+    await page.click('.platz[data-platz="2"]');
+    await page.click('[data-ziffer="x"]');
+    expect(await inhalte(page)).toEqual(['leer', '2', 'leer']);
+    expect(await perleText(page, i)).toContain('noch leer');
+    await page.click('[data-ziffer="7"]');
+    expect(await perleText(page, i)).toContain(': 27');
+    // Null in Z bei belegtem E: einstellige Zahl
+    await page.click('.platz[data-platz="1"]');
+    await page.click('[data-ziffer="0"]');
+    expect(await inhalte(page)).toEqual(['leer', 'leer', '7']);
+    expect(await perleText(page, i)).toMatch(/: 7$/);
+    await page.close();
+  });
+
+  it('bis 100: 1, 0, 0 ergibt 100; über 100 geht nicht; die dritte Ziffer beginnt neu', async () => {
+    const { sitzung, i } = satzMitMauer(2, 100);
+    const { page } = await oeffnen(390, 800, { gespeichert: { sitzung, profil: bekanntesProfil() } });
+    await page.click(`.perle[data-i="${i}"]`);
+    for (const d of '100') await page.click(`[data-ziffer="${d}"]`);
+    expect(await inhalte(page)).toEqual(['1', '0', '0']);
+    expect(await perleText(page, i)).toContain(': 100');
+    for (const d of '234') await page.click(`[data-ziffer="${d}"]`);
+    expect(await inhalte(page)).toEqual(['leer', 'leer', '4']);
+    // H nimmt nur, was 100 nicht übersteigt
+    await page.click('.platz[data-platz="0"]');
+    await page.click('[data-ziffer="2"]');
+    expect(await inhalte(page)).toEqual(['leer', 'leer', '4']);
+    await page.close();
+
+    // Standard-Satz (bis 20): zwei Plätze, die dritte Ziffer beginnt neu
+    const s = await oeffnen(390, 800);
+    const j = s.sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+    await s.page.click(`.perle[data-i="${j}"]`);
+    expect(await s.page.$$eval('.platz', (e) => e.length)).toBe(2);
+    for (const d of '101') await s.page.click(`[data-ziffer="${d}"]`);
+    expect(await inhalte(s.page)).toEqual(['leer', '1']);
+    expect(await perleText(s.page, j)).toMatch(/: 1$/);
+    await s.page.close();
+  });
+
+  it('harte Regel 7: Zahlenmauer Stufe 1 bis 20 (Mauer bis 10) nimmt jede Zahl 0–99, Feld immer gleich', async () => {
+    const { sitzung, i } = satzMitMauer(1, 20);
+    expect((sitzung.aufgaben[i].bedingung as Mauer).grenze).toBe(10);
+    const { page } = await oeffnen(390, 800, { gespeichert: { sitzung, profil: bekanntesProfil() } });
+    await page.click(`.perle[data-i="${i}"]`);
+    expect((await plaetzeLesen(page)).map((p) => p.name)).toEqual(['Zehner', 'Einer']);
+    for (const w of ['12', '19', '99', '57']) {
+      for (const d of w) await page.click(`[data-ziffer="${d}"]`);
+      expect(await perleText(page, i)).toMatch(new RegExp(`: ${w}$`));
+      expect(await inhalte(page)).toEqual([...w]);
+      // die nächste Zahl beginnt mit der dritten Ziffer neu
+    }
+    // auch über die Plätze: Platz Z, 9 → 97
+    await page.click('.platz[data-platz="0"]');
+    await page.click('[data-ziffer="9"]');
+    expect(await perleText(page, i)).toMatch(/: 97$/);
+    // eine andere Mauer (Stufe 3 bis 100) hat dieselben zwei Plätze bei „bis 20“
+    const andere = satzMitMauer(3, 20);
+    expect((andere.sitzung.aufgaben[andere.i].bedingung as Mauer).grenze).toBe(20);
+    expect(FORMATE.zahlenmauer.eingabe(andere.sitzung.aufgaben[andere.i].bedingung as Mauer)).toEqual(FORMATE.zahlenmauer.eingabe(sitzung.aufgaben[i].bedingung as Mauer));
+    await page.close();
+  });
+
+  it('nach Neuladen steht die Zahl wieder in den Plätzen, nichts gewählt', async () => {
+    const { sitzung, i } = satzMitMauer(2, 100);
+    const { page } = await oeffnen(390, 800, { gespeichert: { sitzung, profil: bekanntesProfil() } });
+    await page.click(`.perle[data-i="${i}"]`);
+    await page.click('[data-ziffer="1"]');
+    await page.click('[data-ziffer="4"]');
+    await page.click('.platz[data-platz="1"]');
+    await page.waitForTimeout(150);
+    await page.reload();
+    await page.waitForSelector('.platz');
+    expect(await plaetzeLesen(page)).toEqual([
+      { name: 'Hunderter', inhalt: 'leer', gewaehlt: false },
+      { name: 'Zehner', inhalt: '1', gewaehlt: false },
+      { name: 'Einer', inhalt: '4', gewaehlt: false },
+    ]);
+    // weiter wie vorher: Platz Z, 2 → 24
+    await page.click('.platz[data-platz="1"]');
+    await page.click('[data-ziffer="2"]');
+    expect(await perleText(page, i)).toContain(': 24');
+    await page.close();
+  });
+
+  it('Lernbeispiel: Plätze auch dort; nach Neuladen steht die Zahl wieder darin', async () => {
+    const { page, sitzung } = await oeffnen(390, 800, { formate: {} });
+    const i = sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+    await page.click(`.perle[data-i="${i}"]`);
+    const a0 = lernbeispiel(FORMATE.zahlenmauer)[0];
+    const l0 = lernRichtig(a0);
+    if (l0.art !== 'zahl') throw new Error('Zahlenmauer ohne Zahl');
+    expect((await plaetzeLesen(page, '.lern')).map((p) => p.name)).toEqual(['Zehner', 'Einer']);
+    // erst Platz E wählen, dann die Ziffer
+    await page.click('.lern .platz[data-platz="1"]');
+    await page.click(`.lern [data-ziffer="${l0.wert}"]`);
+    expect(await page.textContent('.lern .meldung')).toBe(KIND.genau);
+    expect(await inhalte(page, '.lern')).toEqual(['leer', String(l0.wert)]);
+    await page.waitForTimeout(150);
+    await page.reload();
+    await page.waitForSelector('.lern');
+    expect(await inhalte(page, '.lern')).toEqual(['leer', String(l0.wert)]);
+    expect(await page.textContent('.lern .meldung')).toBe(KIND.genau);
+    // gelöst: Plätze und Ziffern gesperrt
+    expect(await page.isDisabled('.lern .platz[data-platz="0"]')).toBe(true);
+    await page.close();
+  });
+
+  it('die Plätze sehen bei richtiger und falscher Zahl gleich aus', async () => {
+    const { page, sitzung } = await oeffnen(390, 800);
+    const i = sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+    const l = loesung(sitzung, i);
+    const f = falsch(sitzung, i);
+    if (l.art !== 'zahl' || f.art !== 'zahl') throw new Error('Zahlenmauer ohne Zahl');
+    expect(String(l.wert)).toHaveLength(String(f.wert).length);
+    const aussehen = () =>
+      page.$$eval('.plaetze, .platz, .platz-zeichen, .nest', (els) =>
+        els.map((e) => {
+          const st = getComputedStyle(e);
+          return [e.className, e.getAttribute('aria-pressed'), st.borderStyle, st.borderColor, st.boxShadow, st.backgroundColor, st.opacity, e.getBoundingClientRect().width].join('|');
+        }),
+      );
+    await eingeben(page, sitzung, i, l);
+    const richtig = await aussehen();
+    await eingeben(page, sitzung, i, f);
+    expect(await aussehen()).toEqual(richtig);
+    await page.close();
+  });
+
+  it('Telefon 360 px, bis 100: drei Plätze über den Ziffern, alles ≥ 48 px, kein waagerechtes Scrollen', async () => {
+    const { sitzung, i } = satzMitMauer(2, 100);
+    const { page } = await oeffnen(360, 640, { gespeichert: { sitzung, profil: bekanntesProfil() } });
+    await page.click(`.perle[data-i="${i}"]`);
+    for (const d of '100') await page.click(`[data-ziffer="${d}"]`);
+    await page.click('.platz[data-platz="1"]');
+    const m = await page.evaluate(() => {
+      const box = (e: Element) => e.getBoundingClientRect();
+      return {
+        scrollW: document.documentElement.scrollWidth,
+        plaetze: [...document.querySelectorAll('.platz')].map(box),
+        nester: [...document.querySelectorAll('.nest')].map(box),
+        ziffern: [...document.querySelectorAll('[data-ziffer]')].map(box),
+      };
+    });
+    expect(m.scrollW).toBeLessThanOrEqual(360);
+    expect(m.plaetze).toHaveLength(3);
+    for (const b of [...m.plaetze, ...m.nester, ...m.ziffern]) {
+      expect(Math.min(b.width, b.height)).toBeGreaterThanOrEqual(48);
+      expect(b.left).toBeGreaterThanOrEqual(0);
+      expect(b.right).toBeLessThanOrEqual(360);
+    }
+    // Ziffernperlen in Zeilen, nicht untereinander: höchstens drei Reihen
+    expect(new Set(m.ziffern.map((b) => Math.round(b.top))).size).toBeLessThanOrEqual(3);
+    // Zehner links von den Einern, Plätze über den Ziffern
+    expect(m.plaetze[0].x).toBeLessThan(m.plaetze[1].x);
+    expect(m.plaetze[1].x).toBeLessThan(m.plaetze[2].x);
+    expect(Math.max(...m.plaetze.map((b) => b.bottom))).toBeLessThanOrEqual(Math.min(...m.ziffern.map((b) => b.top)));
     await page.close();
   });
 });

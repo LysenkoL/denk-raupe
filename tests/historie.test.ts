@@ -167,7 +167,7 @@ describe('Historie: Ratechance und Gewicht', () => {
     expect(rateChance({ art: 'wahl' }, w(3))).toBe(1 / 3);
     expect(rateChance({ art: 'bild' }, w(6))).toBe(1 / 6);
     expect(rateChance({ art: 'bild', mehrfach: true }, w(6))).toBe(0);
-    expect(rateChance({ art: 'zahl', max: 20 }, null)).toBe(0);
+    expect(rateChance({ art: 'zahl' }, null)).toBe(0);
     expect(rateChance({ art: 'zeit' }, null)).toBe(0);
     expect(rateChance({ art: 'geld', maxCent: 100 }, null)).toBe(0);
     for (const art of ['raster', 'reihe', 'paare', 'weg', 'bau'] as const) expect(rateChance({ art }, null)).toBe(0);

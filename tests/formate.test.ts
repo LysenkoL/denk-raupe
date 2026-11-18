@@ -123,8 +123,22 @@ describe('Pass jedes Formats (docs/FORMATE.md, Abschnitte 2, 3 und 6)', () => {
       const a = aufgabeAus(f, 7 * stufe, stufe);
       const e = f.eingabe(a.bedingung);
       expect(EINGABEN).toContain(e.art);
-      if (e.art === 'zahl') expect(Number.isInteger(e.max) && e.max >= 1 && e.max <= 100).toBe(true);
+      if (e.art === 'zahl') expect(e.einstellig === undefined || e.einstellig === true).toBe(true);
       if (e.art === 'wahl' || e.art === 'bild') expect(a.wahl?.length).toBeGreaterThan(1);
+    }
+  });
+
+  it('harte Regel 7: das Zahlenfeld ist bei allen Aufgaben eines Formats gleich (verrät nichts über die Antwort)', () => {
+    for (const id of IDS) {
+      const f = FORMATE[id];
+      const felder = new Set<string>();
+      for (const zahlenraum of ZAHLENRAEUME)
+        for (let stufe = 1; stufe <= f.stufen; stufe++)
+          for (let s = 0; s < 200; s++) {
+            const e = f.eingabe(aufgabeAus(f, s * 31 + stufe, stufe, { zahlenraum }).bedingung);
+            if (e.art === 'zahl') felder.add(JSON.stringify(e));
+          }
+      expect(felder.size, id).toBeLessThanOrEqual(1);
     }
   });
 
@@ -170,7 +184,8 @@ describe('Zahlenraum', () => {
           const a = aufgabeAus(f, s * 7, stufe, { zahlenraum });
           const m = a.bedingung as Mauer;
           expect(m.grenze).toBe(grenzeFuer(stufe, zahlenraum));
-          expect(f.eingabe(m)).toEqual({ art: 'zahl', max: m.grenze });
+          // das Feld hängt nicht von der Grenze ab (harte Regel 7)
+          expect(f.eingabe(m)).toEqual({ art: 'zahl' });
           const alle = m.reihen.flat();
           expect(Math.max(...alle)).toBeLessThanOrEqual(m.grenze);
           groesste = Math.max(groesste, ...alle);

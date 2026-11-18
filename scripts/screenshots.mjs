@@ -92,6 +92,12 @@ for (const [name, w, h] of GERAETE) {
   await vorbereiten(page);
   await eingeben(page, 0, loesung(0));
   await page.screenshot({ path: `screenshots/${name}-teil.png` });
+  // Zahl in den Plätzen Z und E: zweistellig, Zehner gewählt
+  const mauer = sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
+  await page.click(`.perle[data-i="${mauer}"]`);
+  for (const d of '10') await page.click(`[data-ziffer="${d}"]`);
+  await page.click('.platz[data-platz="0"]');
+  await page.screenshot({ path: `screenshots/${name}-zahl.png`, fullPage: true });
   await eingeben(page, 1, falsch(1));
   await eingeben(page, 2, loesung(2));
   await page.click('.vergleichen');
