@@ -459,6 +459,80 @@ describe('Ablauf eines Satzes', () => {
     await page.close();
   });
 
+  it('zurückgelegte Aufgabe kommt im nächsten Satz wieder: dasselbe Bild, kein Zeichen; gelöst → gewöhnliches Blatt', async () => {
+    const { page, sitzung } = await oeffnen(390, 900);
+    const id = sitzung.aufgaben[1].format;
+    /** Bild der Aufgabe und die Wahl darunter, wie das Kind sie sieht */
+    const ansicht = async () => [await page.innerHTML('.aufgabe-bild'), (await page.$('.wahl')) ? await page.innerHTML('.wahl') : ''];
+    await page.click('.perle[data-i="1"]');
+    const vorher = await ansicht();
+    for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
+    await vergleichen(page);
+    await page.waitForTimeout(1500);
+    // Hilfe bis zur ähnlichen Aufgabe (Stufe 1 öffnet das Lernbeispiel), dann „Später“
+    while (!(await page.$('.spaeter'))) {
+      await page.click('.hilfe-knopf');
+      if (await page.$('.los')) await page.click('.los');
+    }
+    await page.click('.spaeter');
+    await page.waitForSelector('.ende');
+    await page.waitForTimeout(150);
+    expect((await gespeichert<Profil>(page, 'profil')).zurueckgelegt).toHaveLength(1);
+    // Neuladen auf dem Endbildschirm: die Reihe bleibt, nichts doppelt
+    await page.reload();
+    await page.waitForSelector('.ende');
+    await page.waitForTimeout(150);
+    const p1 = await gespeichert<Profil>(page, 'profil');
+    expect(p1.zurueckgelegt).toHaveLength(1);
+    expect(p1.blaetter).toBe(4);
+
+    await page.click('.neuer-satz');
+    await page.waitForTimeout(150);
+    const neu = await gespeichert<Sitzung>(page, 'sitzung');
+    const j = neu.aufgaben.findIndex((a) => a.format === id);
+    expect(neu.aufgaben[j].bedingung).toEqual(sitzung.aufgaben[1].bedingung);
+    expect(neu.aufgaben[j].wahl).toEqual(sitzung.aufgaben[1].wahl);
+    expect(neu.aufgaben[j].samen).toBe(sitzung.aufgaben[1].samen);
+    // Neuladen mitten im Satz: die zurückgekehrte Aufgabe bleibt
+    await page.reload();
+    await page.waitForSelector('.perle');
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).aufgaben[j]).toEqual(neu.aufgaben[j]);
+    // vorher das Lernbeispiel (Format „nochmal“), dann die Aufgabe genau wie damals – ohne eigenes Zeichen
+    await page.click(`.perle[data-i="${j}"]`);
+    for (const [k, a] of lernbeispiel(FORMATE[id]).entries()) {
+      if (k > 0) await page.click('.lern-weiter');
+      await lernTippen(page, a, lernRichtig(a));
+    }
+    await page.click('.los');
+    expect(await ansicht()).toEqual(vorher);
+    expect(await page.$('.aufgabe .hinweis')).toBeNull();
+    expect(await page.textContent('.hilfe-knopf')).toBe(KIND.hilfe);
+    expect(await page.textContent('.meldung')).toBe('');
+
+    for (let i = 0; i < 3; i++) await eingeben(page, neu, i, loesung(neu, i));
+    await vergleichen(page);
+    await page.waitForSelector('.ende');
+    await page.waitForTimeout(150);
+    // zwei goldene Blätter und ein gewöhnliches für die zurückgekehrte Aufgabe
+    const korb = await page.$$eval('.korb img', (els) => els.map((e) => e.getAttribute('src')));
+    expect(korb).toHaveLength(3);
+    expect(new Set(korb).size).toBe(2);
+    expect(korb.filter((s) => s === korb[0])).toHaveLength(2);
+    const s2 = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(s2.satz.perlen.map((p) => p.blatt)).toEqual(neu.aufgaben.map((_, i) => (i === j ? 'gehoben' : 'gold')));
+    const p2 = await gespeichert<Profil>(page, 'profil');
+    expect(p2.zurueckgelegt).toEqual([]);
+    expect(p2.blaetter).toBe(4 + 5);
+    const h = await gespeichert<{ eintraege: { ergebnis: string; zurueckAus?: unknown }[] }>(page, 'historie');
+    expect(h.eintraege.map((e) => e.ergebnis)).toEqual(['gold', 'zurueck', 'gold', ...neu.aufgaben.map((_, i) => (i === j ? 'hilfe' : 'gold'))]);
+    expect(h.eintraege[3 + j].zurueckAus).toEqual({ satz: 0, nr: 1 });
+    // der Satz danach ist wieder ganz neu
+    await page.click('.neuer-satz');
+    await page.waitForTimeout(150);
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).zurueckAus).toBeUndefined();
+    await page.close();
+  });
+
   it('Historie: fertiger Satz kommt genau einmal hinein; neuer Satz und Neuladen löschen nichts', async () => {
     const { page, sitzung } = await oeffnen(390, 800);
     expect(await gespeichert(page, 'historie')).toBeUndefined();
