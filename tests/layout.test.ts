@@ -141,8 +141,14 @@ async function eingeben(page: Page, s: Sitzung, i: number, antwort: Antwort): Pr
   } else {
     await page.click(`[data-wahl="${a.wahl!.findIndex((w) => gleich(w, antwort))}"]`);
   }
-  // abgebrochene Animationen (Bildschirm neu gezeichnet) zählen als fertig
-  await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => null))));
+  await bewegungFertig(page);
+}
+
+/** endliche Animationen abwarten (abgebrochene zählen als fertig; Blinzeln und Fühler laufen immer) */
+async function bewegungFertig(page: Page): Promise<void> {
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().filter((x) => x.effect?.getTiming().iterations !== Infinity).map((x) => x.finished.catch(() => null))),
+  );
 }
 
 /** Hilfe Stufe 2 auf dem Bild: der hervorgehobene Teil ist markiert (in allen drei Formaten, src/aufgaben/format.ts) */
@@ -166,7 +172,10 @@ async function lernTippen(page: Page, a: Aufgabe, antwort: Antwort): Promise<voi
 
 async function vergleichen(page: Page): Promise<void> {
   await page.click('.vergleichen');
+  // mit Bewegung fliegen die Blätter erst noch in den Korb: so lange ist der Satz „beschäftigt“
+  await page.waitForFunction(() => document.querySelector('.satz')?.getAttribute('aria-busy') === 'false');
   await page.waitForFunction(() => document.querySelector('.ende') || !document.querySelector('.vergleichen')!.hasAttribute('disabled') || document.querySelector('.meldung')?.textContent);
+  await bewegungFertig(page);
   await page.waitForTimeout(200);
 }
 
@@ -179,13 +188,15 @@ for (const [name, w, h] of GERAETE) {
         const box = (el: Element) => el.getBoundingClientRect();
         const kind = [...document.querySelectorAll('.raupe-zeile.kind .perle')].map(box);
         const zw = [...document.querySelectorAll('.raupe-zeile.zwilling .zwilling-perle')].map(box);
-        const koepfe = [...document.querySelectorAll('.kopf')].map(box);
+        const koepfe = [...document.querySelectorAll('.vorne')].map(box);
         return {
           scrollW: document.documentElement.scrollWidth,
           kind: kind.map((r) => ({ x: r.x + r.width / 2, y: r.y, h: r.height })),
           zw: zw.map((r) => ({ x: r.x + r.width / 2 })),
           kopfRechts: Math.max(...koepfe.map((r) => r.right)),
-          buehneRechts: box(document.querySelector('.buehne-wrap')!).right,
+          buehneRechts: box(document.querySelector('.ast-zone')!).right,
+          buehneLinks: box(document.querySelector('.ast-zone')!).left,
+          kopfLinks: Math.min(...koepfe.map((r) => r.left)),
           ziffern: [...document.querySelectorAll('[data-ziffer]')].map((e) => box(e).height),
           plaetze: [...document.querySelectorAll('.platz, .nest')].map((e) => ({ w: box(e).width, h: box(e).height })),
         };
@@ -194,7 +205,9 @@ for (const [name, w, h] of GERAETE) {
       for (const p of m.kind) expect(Math.abs(p.y - m.kind[0].y)).toBeLessThan(1);
       m.kind.forEach((p, i) => expect(Math.abs(p.x - m.zw[i].x), `Perle ${i + 1}`).toBeLessThan(1));
       for (const p of m.kind) expect(p.h).toBeGreaterThanOrEqual(48);
+      // Vorderteile von Raupe und Zwilling bleiben auf dem Ast
       expect(m.kopfRechts).toBeLessThanOrEqual(m.buehneRechts + 1);
+      expect(m.kopfLinks).toBeGreaterThanOrEqual(m.buehneLinks - 1);
       for (const z of m.ziffern) expect(z).toBeGreaterThanOrEqual(48);
       // Zahlenmauer offen: zwei Plätze (Mulde und ganzer Platz) mindestens 48 px
       expect(m.plaetze).toHaveLength(4);
@@ -245,7 +258,7 @@ for (const [name, w, h] of GERAETE) {
           const r = el.getBoundingClientRect();
           return { l: r.left, r: r.right, w: r.width, h: r.height };
         };
-        const eigen = document.querySelector('.aufgabe > .aufgabe-bild svg')!;
+        const eigen = document.querySelector('.aufgabe .feld > .aufgabe-bild svg')!;
         const kasten = document.querySelector('.hilfe-box svg');
         return {
           scrollW: document.documentElement.scrollWidth,
@@ -497,11 +510,14 @@ describe('Ablauf eines Satzes', () => {
   it('Hilfe: vor dem Vergleichen zwei Stufen, danach bis zur ähnlichen Aufgabe; „Später“ legt zurück', async () => {
     const { page, sitzung } = await oeffnen(390, 900);
     await page.click('.perle[data-i="1"]');
-    // Stufe 1: das Lernbeispiel auf Wunsch; zurück steht sein letzter Schritt vorgerechnet in der Hilfe
+    // Stufe 1: das Lernbeispiel auf Wunsch; zurück bleibt nichts davon stehen – kein vorgerechnetes Beispiel,
+    // noch kein Zeichen „So geht's“ (das kommt erst ab Stufe 2; A9, „Убрать попутно“)
     await page.click('.hilfe-knopf');
     expect(await page.textContent('.lern-titel')).toBe("So geht's");
     await page.click('.los');
-    expect(await page.textContent('.hilfe-box')).toContain("So geht's");
+    expect(await page.$('.hilfe-box')).toBeNull();
+    expect(await page.$('.so-gehts')).toBeNull();
+    expect(await page.innerHTML('.aufgabe')).not.toContain("So geht's");
     await page.click('.hilfe-knopf');
     expect(await page.isDisabled('.hilfe-knopf')).toBe(true);
     for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
@@ -598,10 +614,11 @@ describe('Ablauf eines Satzes', () => {
     await page.waitForSelector('.ende');
     await page.waitForTimeout(150);
     // zwei goldene Blätter und ein gewöhnliches für die zurückgekehrte Aufgabe
-    const korb = await page.$$eval('.korb img', (els) => els.map((e) => e.getAttribute('src')));
-    expect(korb).toHaveLength(3);
-    expect(new Set(korb).size).toBe(2);
-    expect(korb.filter((s) => s === korb[0])).toHaveLength(2);
+    const korb = await page.$$eval('.korb [data-blatt]', (els) => els.map((e) => [e.getAttribute('data-blatt'), e.innerHTML.replace(/id="[^"]*"|url\(#[^)]*\)/g, '')]));
+    expect(korb.map(([art]) => art)).toEqual(['gold', 'gold', 'normal']);
+    // golden sieht anders aus als gewöhnlich (Farbe und Adern), zwei goldene gleich
+    expect(korb[0][1]).toBe(korb[1][1]);
+    expect(korb[2][1]).not.toBe(korb[0][1]);
     const s2 = await gespeichert<Sitzung>(page, 'sitzung');
     expect(s2.satz.perlen.map((p) => p.blatt)).toEqual(neu.aufgaben.map((_, i) => (i === j ? 'gehoben' : 'gold')));
     const p2 = await gespeichert<Profil>(page, 'profil');
@@ -812,12 +829,13 @@ describe('Hilfeknopf gegen Durchprobieren (A6)', () => {
     expect(aus.hintergrund).toBe('rgb(255, 233, 168)');
     // derselbe Zustand wie mit Bewegung
     expect(await pulst(page)).toBe(true);
-    // ohne Puls: keine Umrandung, keine Animation
+    // ohne Puls: keine Umrandung, keine Animation – nur die Holzkante und der weiche Schatten der Laterne
     await page.click('.hilfe-knopf');
     await page.click('.los');
     const ruhig = await stil();
     expect(ruhig.name).toBe('none');
-    expect(ruhig.schatten).toBe('none');
+    expect(ruhig.schatten).not.toContain('rgb(43, 40, 159)');
+    expect(ruhig.schatten).not.toContain('rgb(253, 251, 244)');
     await page.close();
   });
 });
@@ -1025,5 +1043,176 @@ describe('Musterseite', () => {
       }
       await page.close();
     }
+  });
+});
+
+/**
+ * docs/STIL.md, Abschnitt 14 (A9), im Browser: Tippflächen, kein waagerechtes Scrollen, keine dünnen Ränder und
+ * keine dunklen Umrisse am Ast, keine alten Bilder; ohne Bewegung derselbe Zustand; beim Vergleichen zeigt kein
+ * Bild, was unter einem Blatt liegt, das liegen bleibt.
+ */
+describe('Stil (A9)', () => {
+  /** Prüfungen am gerade gezeigten Bildschirm */
+  const pruefen = (page: Page) =>
+    page.evaluate(() => {
+      const fehler: string[] = [];
+      const sichtbar = (e: Element) => {
+        const r = e.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden';
+      };
+      // Tippflächen ≥ 48 px: Knöpfe und die Fische im Bild (Kasten der ähnlichen Aufgabe ist nur Bild)
+      for (const e of document.querySelectorAll('.satz button, .satz [data-wahl]')) {
+        if (!sichtbar(e) || e.closest('.hilfe-box')) continue;
+        const r = e.getBoundingClientRect();
+        if (Math.min(r.width, r.height) < 47.5) fehler.push(`klein: ${typeof e.className === 'string' ? e.className : e.tagName} ${Math.round(r.width)}×${Math.round(r.height)}`);
+      }
+      // keine Ränder dünner als 2 px
+      for (const e of document.querySelectorAll('.satz *')) {
+        const c = getComputedStyle(e);
+        for (const s of ['Top', 'Right', 'Bottom', 'Left'] as const) {
+          const w = parseFloat(c[`border${s}Width`]);
+          if (c[`border${s}Style`] !== 'none' && w > 0 && w < 2) fehler.push(`dünner Rand: ${String(e.className)}`);
+        }
+      }
+      // keine alten Bilder, überhaupt kein Rasterbild auf dem Satz-Bildschirm (bis K1)
+      for (const img of document.querySelectorAll('img')) fehler.push(`Bild: ${img.getAttribute('src')}`);
+      // am Ast kein dunkler Strich an Figuren, Blättern, Korb und Marken (die Perle hat ihre fünf Schichten:
+      // Trennring und Saum der Ziffer gehören dazu, Formen auf der Perle sind Figuren einer Aufgabe)
+      const dunkel = (farbe: string) => {
+        const m = farbe.match(/\d+(\.\d+)?/g);
+        if (!m || farbe === 'none') return false;
+        const [r, g, b] = m.slice(0, 3).map((v) => Number(v) / 255).map((s) => (s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4));
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.05;
+      };
+      for (const e of document.querySelectorAll('.ast-zone svg:not(.perle-svg) *, .werkzeug svg *')) {
+        const c = getComputedStyle(e);
+        if (c.stroke !== 'none' && dunkel(c.stroke)) fehler.push(`dunkler Strich am Ast: ${e.tagName}`);
+      }
+      return { fehler, scrollW: document.documentElement.scrollWidth };
+    });
+
+  for (const [name, w, h] of GERAETE) {
+    it(`${name}: jede Aufgabe, nach dem Vergleichen und am Ende – Tippflächen, Ränder, Striche, Bilder`, async () => {
+      const { page, sitzung } = await oeffnen(w, h);
+      for (let i = 0; i < sitzung.aufgaben.length; i++) {
+        await page.click(`.perle[data-i="${i}"]`);
+        const p = await pruefen(page);
+        expect(p.fehler, `Aufgabe ${i + 1}`).toEqual([]);
+        expect(p.scrollW).toBeLessThanOrEqual(w);
+      }
+      for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
+      await vergleichen(page);
+      const nach = await pruefen(page);
+      expect(nach.fehler).toEqual([]);
+      expect(nach.scrollW).toBeLessThanOrEqual(w);
+      // das liegen gebliebene Blatt ist selbst eine Tippfläche zur Aufgabe
+      expect(await page.$$eval('.zwilling-perle[data-i]', (e) => e.map((x) => x.getAttribute('data-i')))).toEqual(['1']);
+      await eingeben(page, sitzung, 1, loesung(sitzung, 1));
+      await vergleichen(page);
+      await page.waitForSelector('.ende');
+      const ende = await pruefen(page);
+      expect(ende.fehler).toEqual([]);
+      expect(ende.scrollW).toBeLessThanOrEqual(w);
+      expect(await page.$$eval('.kachel', (e) => e.length)).toBe(3);
+      await page.close();
+    });
+  }
+
+  /** was das Kind sieht, ohne Klassen der Bewegung */
+  const zustand = (page: Page) =>
+    page.evaluate(() => ({
+      blaetter: [...document.querySelectorAll('.zwilling .zwilling-perle')].map((e) => [!!e.querySelector('.blatt'), !!e.querySelector('.tipp-marke'), !!e.querySelector('.perle-svg')]),
+      korb: [...document.querySelectorAll('.korb-schild')].map((e) => e.textContent),
+      aktuell: document.querySelector('.perle[aria-current]')?.getAttribute('data-i') ?? null,
+      meldung: document.querySelector('.meldung')?.textContent ?? null,
+      hilfe: !!document.querySelector('.hilfe-knopf'),
+      vergleichen: document.querySelector('.vergleichen')?.hasAttribute('disabled'),
+      ende: !!document.querySelector('.ende'),
+      inKorb: [...document.querySelectorAll('.korb [data-blatt]')].map((e) => e.getAttribute('data-blatt')),
+      geheim: [...document.querySelectorAll('.geheim span')].map((e) => e.className.replace(/\s+/g, ' ').trim()),
+      kacheln: [...document.querySelectorAll('.kachel')].map((e) => e.textContent),
+      sichtbar: [...document.querySelectorAll('.zwilling .blatt')].map((e) => getComputedStyle(e).visibility),
+    }));
+
+  it('„weniger Bewegung“: nach Vergleichen und am Ende derselbe Zustand wie mit Bewegung', async () => {
+    const ablauf = async (bewegung: boolean) => {
+      const { page, sitzung } = await oeffnen(390, 900, { bewegung });
+      for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
+      await vergleichen(page);
+      const geprueft = await zustand(page);
+      await eingeben(page, sitzung, 1, loesung(sitzung, 1));
+      await vergleichen(page);
+      await page.waitForSelector('.ende');
+      await bewegungFertig(page);
+      const fertig = await zustand(page);
+      await page.close();
+      return { geprueft, fertig };
+    };
+    const mit = await ablauf(true);
+    const ohne = await ablauf(false);
+    expect(ohne).toEqual(mit);
+    // und der Zustand stimmt: nur über Perle 2 liegt das Blatt, mit Marke; 2 goldene Blätter zählen 4
+    expect(ohne.geprueft.blaetter).toEqual([
+      [false, false, true],
+      [true, true, false],
+      [false, false, true],
+    ]);
+    expect(ohne.geprueft.korb).toEqual(['4']);
+    expect(ohne.fertig.inKorb).toEqual(['gold', 'gold', 'normal']);
+  });
+
+  it('Vergleichen mit Bewegung: kein Bild zeigt, was unter dem Blatt liegt, das liegen bleibt; gehobene zeigen die Perle', async () => {
+    const { page, sitzung } = await oeffnen(390, 900, { bewegung: true });
+    for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
+    // jedes Bild mitschreiben: bei jeder Änderung am Ast und in jedem Frame
+    await page.evaluate(() => {
+      const w = window as unknown as { bilder: string[][]; laeuft: boolean };
+      w.bilder = [];
+      w.laeuft = true;
+      const nimm = () =>
+        w.bilder.push([...document.querySelectorAll('.zwilling .zwilling-perle')].map((e) => (e.querySelector('.perle-svg') ? 'perle' : '') + (e.querySelector('.blatt') ? '+blatt' : '')));
+      new MutationObserver(nimm).observe(document.querySelector('.buehne-platz')!, { subtree: true, childList: true, attributes: true });
+      const frame = () => {
+        nimm();
+        if (w.laeuft) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+    await vergleichen(page);
+    const bilder = await page.evaluate(() => {
+      const w = window as unknown as { bilder: string[][]; laeuft: boolean };
+      w.laeuft = false;
+      return w.bilder;
+    });
+    expect(bilder.length).toBeGreaterThan(10);
+    // Perle 2 (falsch) liegt in keinem Bild offen
+    for (const b of bilder) expect(b[1]).not.toContain('perle');
+    // Perle 1 und 3 lagen erst unter dem Blatt, am Ende sind sie offen
+    expect(bilder.some((b) => b[0] === '+blatt' && b[2] === '+blatt')).toBe(true);
+    expect(bilder.at(-1)).toEqual(['perle', '+blatt', 'perle']);
+    await page.close();
+  });
+
+  it('Ende: drei Kacheln; Welt und Pause sind Zwischenseiten mit „Zurück“, ein neuer Satz startet nie von selbst', async () => {
+    const { page, sitzung } = await oeffnen(390, 900);
+    for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, loesung(sitzung, i));
+    await vergleichen(page);
+    await page.waitForSelector('.ende');
+    expect(await page.$$eval('.kachel', (e) => e.map((x) => x.textContent))).toEqual([KIND.welt, KIND.neuerSatz, KIND.pause]);
+    await page.waitForTimeout(150);
+    const samen = (await gespeichert<Sitzung>(page, 'sitzung')).samen;
+    await page.click('.kachel.welt');
+    await page.waitForSelector('.platzhalter');
+    expect(await page.textContent('.platzhalter-text')).toBe(KIND.weltBald);
+    await page.click('.platzhalter .btn');
+    await page.waitForSelector('.ende');
+    await page.click('.kachel.pause');
+    await page.waitForSelector('.platzhalter');
+    expect(await page.textContent('.platzhalter-text')).toBe(KIND.bisBald);
+    await page.click('.platzhalter .btn');
+    await page.waitForSelector('.ende');
+    // nichts davon hat einen neuen Satz begonnen
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).samen).toBe(samen);
+    await page.close();
   });
 });

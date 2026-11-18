@@ -319,7 +319,10 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   function zeichneKnopf(): void {
     knopf.disabled = busy || lernOffen() || !kannVergleichen(satz());
     unten.hidden = ende();
-    app.querySelector('.satz')!.classList.toggle('am-ende', ende());
+    const wurzel = app.querySelector('.satz')!;
+    wurzel.classList.toggle('am-ende', ende());
+    // während die Blätter fliegen: nichts antippen (das Ergebnis ist schon gespeichert)
+    wurzel.setAttribute('aria-busy', String(busy));
   }
 
   function alles(): void {

@@ -105,7 +105,7 @@ function hut(x: number, y: number, s: number, h: Hut, grau = false): string {
     `<ellipse cx="${x}" cy="${y + s * 0.07}" rx="${s * 1.05}" ry="${s * 0.24}" fill="${k}"/>` +
     `<path d="M${x - s * 0.6} ${y} Q${x - s * 0.62} ${y - s * 0.95} ${x} ${y - s * 0.95} Q${x + s * 0.62} ${y - s * 0.95} ${x + s * 0.6} ${y} Z" fill="${c}"/>` +
     `<path d="M${x - s * 0.6} ${y} Q${x} ${y + s * 0.12} ${x + s * 0.6} ${y} L${x + s * 0.58} ${y - s * 0.22} Q${x} ${y - s * 0.1} ${x - s * 0.58} ${y - s * 0.22} Z" fill="${k}"/>` +
-    `<ellipse cx="${x}" cy="${y - s * 0.02}" rx="${s * 1.02}" ry="${s * 0.2}" fill="${c}"/>` +
+    `<ellipse data-hut="" cx="${x}" cy="${y - s * 0.02}" rx="${s * 1.02}" ry="${s * 0.2}" fill="${c}"/>` +
     `<ellipse cx="${x - s * 0.26}" cy="${y - s * 0.66}" rx="${s * 0.16}" ry="${s * 0.09}" fill="${WEISS}" opacity="0.55" transform="rotate(-30 ${x - s * 0.26} ${y - s * 0.66})"/>`
   );
 }

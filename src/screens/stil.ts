@@ -155,7 +155,7 @@ export function renderStil(app: HTMLElement, params: URLSearchParams): void {
       </div>
     </section>
     <section><h2>${t('stil.satz')}</h2>
-      ${zustaende().map(([titel, html]) => `<figure class="zustand"><figcaption>${titel}</figcaption><div class="buehne-wrap">${html}</div></figure>`).join('')}
+      ${zustaende().map(([titel, html]) => `<figure class="zustand"><figcaption>${titel}</figcaption><div class="ast-zone">${html}</div></figure>`).join('')}
     </section>
     <section><h2>${t('stil.formate')}</h2><p class="hinweis">${t('stil.formateText')}</p>${formate()}</section>
     <section><h2>${t('stil.knoepfe')}</h2>

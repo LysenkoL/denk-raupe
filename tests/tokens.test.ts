@@ -52,7 +52,8 @@ describe('Designsystem: CSS und TypeScript gleich', () => {
   });
 
   it('Bewegung lässt sich abschalten', () => {
-    expect(css).toMatch(/prefers-reduced-motion: reduce/);
+    // die Spalte „без анимаций“ steht in app.css: keine Animation, kein Übergang
+    expect(stilCss).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\*, ::before, ::after \{ animation: none !important; transition: none !important; \}/);
   });
 });
 

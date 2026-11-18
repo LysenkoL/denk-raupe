@@ -30,7 +30,8 @@ function augen(a: Ausdruck): string {
   const y = 48;
   if (a === 'freude') {
     // zufriedene Bögen statt offener Augen
-    const bogen = (x: number) => `<path d="M${x - 9} ${y + 3}Q${x} ${y - 9} ${x + 9} ${y + 3}" fill="none" stroke="${TINTE}" stroke-width="4.2" stroke-linecap="round"/>`;
+    // geschlossene, frohe Augen als gefüllte Sichel (kein Strich, kein Umriss)
+    const bogen = (x: number) => `<path d="M${x - 10} ${y + 4}Q${x} ${y - 11} ${x + 10} ${y + 4}Q${x + 10} ${y + 6.5} ${x + 7.5} ${y + 5.5}Q${x} ${y - 3} ${x - 7.5} ${y + 5.5}Q${x - 10} ${y + 6.5} ${x - 10} ${y + 4}Z" fill="${TINTE}"/>`;
     return bogen(lx) + bogen(rx);
   }
   const ry = a === 'staunt' ? 13 : 11.5;
@@ -192,13 +193,7 @@ export function zurueckMarkeSvg(): string {
 /** Laterne mit Glühwürmchen (Hilfeknopf): Glas in --laterne, Rahmen in Holz */
 export function laterneSvg(): string {
   const g = id('glas');
-  return `<svg class="laterne-svg" viewBox="0 0 40 40" aria-hidden="true"><defs><radialGradient id="${g}" cx="0.5" cy="0.55" r="0.6"><stop offset="0" stop-color="${mix(LATERNE, WEISS, 0.6)}"/><stop offset="1" stop-color="${LATERNE}"/></radialGradient></defs>
-    <path d="M14 7Q20 1 26 7" fill="none" stroke="${F['ast-kante']}" stroke-width="3" stroke-linecap="round"/>
-    <rect x="11" y="8" width="18" height="5" rx="2.5" fill="${F['ast-kante']}"/>
-    <rect x="12" y="12" width="16" height="19" rx="6" fill="url(#${g})"/>
-    <rect x="12" y="12" width="16" height="19" rx="6" fill="none" stroke="${F.ast}" stroke-width="2.6"/>
-    <rect x="11" y="30" width="18" height="5" rx="2.5" fill="${F['ast-kante']}"/>
-    <circle class="gluehwurm" cx="20" cy="22" r="3.2" fill="${F['blatt-gold-kante']}"/><circle cx="19" cy="21" r="1.3" fill="${WEISS}"/></svg>`;
+  return `<svg class="laterne-svg" viewBox="0 0 40 40" aria-hidden="true"><defs><radialGradient id="${g}" cx="0.5" cy="0.55" r="0.6"><stop offset="0" stop-color="${mix(LATERNE, WEISS, 0.6)}"/><stop offset="1" stop-color="${LATERNE}"/></radialGradient></defs><path d="M14 7Q20 1 26 7" fill="none" stroke="${F['ast-kante']}" stroke-width="3" stroke-linecap="round"/><rect x="11" y="8" width="18" height="5" rx="2.5" fill="${F['ast-kante']}"/><rect x="12" y="12" width="16" height="19" rx="6" fill="url(#${g})"/><rect x="12" y="12" width="16" height="19" rx="6" fill="none" stroke="${F.ast}" stroke-width="2.6"/><rect x="11" y="30" width="18" height="5" rx="2.5" fill="${F['ast-kante']}"/><circle class="gluehwurm" cx="20" cy="22" r="3.2" fill="${F['blatt-gold-kante']}"/><circle cx="19" cy="21" r="1.3" fill="${WEISS}"/></svg>`;
 }
 
 /** kleine Bilder der Kacheln am Ende des Satzes */
