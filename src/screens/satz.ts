@@ -22,7 +22,7 @@ import {
   type Sitzung,
 } from '../satz/sitzung';
 import { HISTORIE_SCHLUESSEL, historieLesen, type Historie } from '../satz/historie';
-import { ausWert, schritt, stellenwerte, wertVon, type Handlung, type Plaetze } from '../satz/zahleingabe';
+import { ausWert, schritt, stellenwerte, wertVon, zahlfeld, type Handlung, type Plaetze, type Zahlfeld } from '../satz/zahleingabe';
 import { aenderbar, blaetter, fertig, kannVergleichen, setzeAntwort, vergleiche, zuruecklegen } from '../satz/vergleich';
 
 /**
@@ -101,10 +101,10 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   /** wo die Zahl gerade eingegeben wird: Aufgabe im Satz oder Schritt im Lernbeispiel */
   const eingabeOrt = () => (lernOffen() ? `${sitzung.samen}:lern:${aufgabe().format}:${lernSchritt().k}` : `${sitzung.samen}:${aktuell()}`);
   /** Plätze zur gerade gezeigten Antwort; passen die gemerkten nicht mehr dazu, aus der Zahl neu */
-  function plaetzeZu(antwort: Antwort | null, max: number): Plaetze {
+  function plaetzeZu(antwort: Antwort | null, feld: Zahlfeld): Plaetze {
     const wert = antwort?.art === 'zahl' ? antwort.wert : null;
-    if (plaetze && plaetze.wo === eingabeOrt() && wertVon(plaetze.p) === wert && plaetze.p.stellen.length === stellenwerte(max).length) return plaetze.p;
-    return ausWert(wert, max);
+    if (plaetze && plaetze.wo === eingabeOrt() && wertVon(plaetze.p) === wert && plaetze.p.stellen.length === stellenwerte(feld).length) return plaetze.p;
+    return ausWert(wert, feld);
   }
 
   /** ähnliche Aufgabe für Hilfe 3/4: gleiches Format, gleiche Stufe, anderer Samen */
@@ -124,8 +124,10 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const art = e.art;
     if (e.art === 'zahl') {
       // Plätze über den Ziffern: Zehner links, Einer rechts; ihr Aussehen hängt nie davon ab, ob die Zahl stimmt
-      const p = plaetzeZu(antwort, e.max);
-      const plaetzeHtml = stellenwerte(e.max)
+      // Feld aus Format und Zahlenraum, nie aus der Aufgabe (harte Regel 7)
+      const feld = zahlfeld(e, a.zahlenraum);
+      const p = plaetzeZu(antwort, feld);
+      const plaetzeHtml = stellenwerte(feld)
         .map((sw, k) => {
           const d = p.stellen[k];
           const st = KIND.stelle[sw];
@@ -306,7 +308,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
         : ziffer!.dataset.ziffer === 'x'
           ? { art: 'loeschen' }
           : { art: 'ziffer', ziffer: Number(ziffer!.dataset.ziffer) };
-      const p = schritt(plaetzeZu(alt, e.max), h, e.max);
+      const feld = zahlfeld(e, a.zahlenraum);
+      const p = schritt(plaetzeZu(alt, feld), h, feld);
       plaetze = { wo: eingabeOrt(), p };
       const wert = wertVon(p);
       const neu: Antwort | null = wert === null ? null : { art: 'zahl', wert };

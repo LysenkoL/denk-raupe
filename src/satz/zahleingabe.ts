@@ -2,15 +2,18 @@
  * Zahl in Plätze eingeben (docs/TZ.md, „Движки“; docs/PLAN.md, A5): Zehner links, Einer rechts, wie in
  * der Stellenwerttafel. Reine Logik ohne Bildschirm: Zustand der Plätze + Handlung → neuer Zustand.
  *
- * - Plätze aus der größten Antwort des Formats (`max`): unter 10 nur E; bis 99 Z und E; ab 100 H, Z und E.
- *   So bleibt jede Ziffer an ihrem Platz – auch bei 100 (1 Hunderter, 0 Zehner, 0 Einer).
+ * Harte Regel 7 (docs/TZ.md): die Eingabe verrät nichts über die Antwort. Deshalb hängt die Größe des
+ * Feldes nie von der einzelnen Aufgabe ab (`zahlfeld`): zwei Plätze Z und E nehmen jede Zahl 0–99; drei
+ * Plätze H, Z, E (bis 100) gibt es nur, wenn der Elternteil „bis 100“ eingestellt hat; ein Platz E nur bei
+ * einem Format, das bei jeder Aufgabe einstellig antwortet. Innerhalb des Feldes geht jede Zahl.
+ *
  * - Gewöhnliches Tippen: die erste Ziffer geht in E; die nächste schiebt die Zahl nach links und geht in E.
- *   Passt die geschobene Zahl nicht mehr in die Plätze oder wäre sie größer als `max`, beginnt die Zahl
- *   neu. Bis 100: 1, 0, 0 ergibt 100; bis 20: die dritte Ziffer beginnt neu.
+ *   Passt die geschobene Zahl nicht mehr ins Feld, beginnt die Zahl neu: bei Z und E mit der dritten
+ *   Ziffer; bei H, Z und E ergibt 1, 0, 0 die 100, eine Zahl über 100 beginnt neu.
  * - Tipp auf einen Platz wählt ihn: die nächste Ziffer ersetzt nur diesen Platz; danach geht die Wahl auf
- *   den anderen Platz (Z oder E), wenn er leer ist, sonst ist nichts mehr gewählt. Eine Ziffer, mit der die
- *   Zahl größer als `max` würde, ändert nichts. Tipp auf den schon gewählten Platz lässt ihn gewählt
- *   (sonst würde „Platz E, 4, Platz Z, 1“ zu 41).
+ *   den anderen Platz (Z oder E), wenn er leer ist, sonst ist nichts mehr gewählt. Tipp auf den schon
+ *   gewählten Platz lässt ihn gewählt (sonst würde „Platz E, 4, Platz Z, 1“ zu 41). Nur H nimmt nicht
+ *   jede Ziffer: über 100 geht das Feld nicht (das gilt für jede Aufgabe gleich).
  * - Löschen leert den gewählten Platz; ohne Wahl (oder wenn der gewählte Platz leer ist, etwa weil die Wahl
  *   von selbst weitergegangen ist) den Platz der zuletzt getippten Ziffer, sonst die rechteste Ziffer.
  *   Die anderen Ziffern bleiben, wo sie sind; die Wahl bleibt, außer wenn alles leer ist: dann geht die
@@ -20,6 +23,20 @@
  * Die Antwort ist der Wert der Plätze (`wertVon`); die Plätze selbst werden nicht gespeichert.
  * Ob die Zahl stimmt, spielt hier keine Rolle.
  */
+
+import type { Eingabe, Zahlenraum } from '../aufgaben/format';
+
+/** Größe des Eingabefelds = größte Zahl, die es aufnimmt: ein Platz (9), Z und E (99), H, Z und E (100) */
+export type Zahlfeld = 9 | 99 | 100;
+
+/**
+ * Feld für eine Zahleingabe: aus der Art des Formats und dem Zahlenraum der Eltern, nie aus der Aufgabe
+ * selbst (sonst verriete die Größe des Feldes etwas über die Antwort).
+ */
+export function zahlfeld(e: Extract<Eingabe, { art: 'zahl' }>, zahlenraum: Zahlenraum): Zahlfeld {
+  if (e.einstellig) return 9;
+  return zahlenraum === 100 ? 100 : 99;
+}
 
 /** Ziffer 0–9 oder leer */
 export type Stelle = number | null;
@@ -38,23 +55,23 @@ export type Handlung = { art: 'ziffer'; ziffer: number } | { art: 'platz'; platz
 /** Name des Platzes von rechts gezählt: E, Z, H */
 export type Stellenwert = 'E' | 'Z' | 'H';
 
-/** Anzahl der Plätze für die größte Antwort des Formats */
-export function anzahlPlaetze(max: number): 1 | 2 | 3 {
-  return max < 10 ? 1 : max < 100 ? 2 : 3;
+/** Anzahl der Plätze des Feldes */
+export function anzahlPlaetze(feld: Zahlfeld): 1 | 2 | 3 {
+  return feld === 9 ? 1 : feld === 99 ? 2 : 3;
 }
 
 /** Stellenwert jedes Platzes, von links: z. B. ['Z', 'E'] */
-export function stellenwerte(max: number): Stellenwert[] {
-  return (['H', 'Z', 'E'] as const).slice(3 - anzahlPlaetze(max));
+export function stellenwerte(feld: Zahlfeld): Stellenwert[] {
+  return (['H', 'Z', 'E'] as const).slice(3 - anzahlPlaetze(feld));
 }
 
-export function leer(max: number): Plaetze {
-  return { stellen: Array<Stelle>(anzahlPlaetze(max)).fill(null), gewaehlt: null, zuletzt: null };
+export function leer(feld: Zahlfeld): Plaetze {
+  return { stellen: Array<Stelle>(anzahlPlaetze(feld)).fill(null), gewaehlt: null, zuletzt: null };
 }
 
 /** Plätze aus einer gespeicherten Zahl (nach Neuladen, anderer Perle): rechtsbündig, nichts gewählt */
-export function ausWert(wert: number | null, max: number): Plaetze {
-  const p = leer(max);
+export function ausWert(wert: number | null, feld: Zahlfeld): Plaetze {
+  const p = leer(feld);
   if (wert === null || !Number.isInteger(wert) || wert < 0) return p;
   const ziffern = [...String(wert)].map(Number);
   if (ziffern.length > p.stellen.length) return p;
@@ -74,7 +91,7 @@ export function wertVon(p: Plaetze): number | null {
   return Number(rest.join(''));
 }
 
-/** kleinste Zahl, die aus diesen Plätzen noch werden kann (leere Plätze als 0); über `max` → Ziffer passt nicht */
+/** kleinste Zahl, die aus diesen Plätzen noch werden kann (leere Plätze als 0); über dem Feld → passt nicht */
 function mindestens(s: Stelle[]): number {
   return s.reduce<number>((n, d) => n * 10 + (d ?? 0), 0);
 }
@@ -104,7 +121,7 @@ function geloescht(p: Plaetze, stellen: Stelle[]): Plaetze {
   return { stellen: geordnet, gewaehlt: leerAlles ? null : p.gewaehlt, zuletzt: null };
 }
 
-export function schritt(p: Plaetze, h: Handlung, max: number): Plaetze {
+export function schritt(p: Plaetze, h: Handlung, feld: Zahlfeld): Plaetze {
   const n = p.stellen.length;
   const e = n - 1;
 
@@ -134,14 +151,13 @@ export function schritt(p: Plaetze, h: Handlung, max: number): Plaetze {
   if (p.gewaehlt !== null) {
     const stellen = [...p.stellen];
     stellen[p.gewaehlt] = d;
-    if (mindestens(stellen) > max) return p;
+    if (mindestens(stellen) > feld) return p;
     const geordnet = ordnen(stellen);
     return { stellen: geordnet, gewaehlt: naechsteWahl(geordnet, p.gewaehlt), zuletzt: p.gewaehlt };
   }
 
   // gewöhnliches Tippen
   const neuBeginnen = (): Plaetze => {
-    if (d > max) return p;
     const stellen = Array<Stelle>(n).fill(null);
     stellen[e] = d;
     return { stellen, gewaehlt: null, zuletzt: e };
@@ -155,6 +171,6 @@ export function schritt(p: Plaetze, h: Handlung, max: number): Plaetze {
     if (p.stellen[0] !== null) return neuBeginnen();
     stellen = [...p.stellen.slice(1), d];
   }
-  if (mindestens(stellen) > max) return neuBeginnen();
+  if (mindestens(stellen) > feld) return neuBeginnen();
   return { stellen: ordnen(stellen), gewaehlt: null, zuletzt: e };
 }

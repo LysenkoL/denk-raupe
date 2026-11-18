@@ -17,7 +17,7 @@ export interface Mauer {
   reihen: number[][];
   /** fehlender Stein */
   fehlt: [number, number];
-  /** größte Zahl, die in dieser Mauer stehen darf (aus Stufe und Zahlenraum); bestimmt die Eingabe */
+  /** größte Zahl, die in dieser Mauer stehen darf (aus Stufe und Zahlenraum); nur für den Generator, nicht für die Eingabe */
   grenze: Zahlenraum;
 }
 
@@ -143,7 +143,8 @@ export const ZAHLENMAUER: Format<Mauer> = {
   stufen: 3,
   erzeuge,
   loesungen,
-  eingabe: (m) => ({ art: 'zahl', max: m.grenze }),
+  /** Feld wie bei jeder Zahl: nicht aus der Grenze der Mauer – sonst verriete es, wie groß die Antwort sein kann */
+  eingabe: () => ({ art: 'zahl' }),
   zeichne,
   /**
    * Lernbeispiel: vom Kleinsten zur gewöhnlichen Mauer der Stufe 1 (Steine und größte Zahl wachsen).

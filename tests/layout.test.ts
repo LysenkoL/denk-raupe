@@ -555,7 +555,7 @@ describe('Zahl in Plätzen (A5)', () => {
     await page.close();
   });
 
-  it('bis 100: 1, 0, 0 ergibt 100; über max geht nicht; die dritte Ziffer beginnt neu', async () => {
+  it('bis 100: 1, 0, 0 ergibt 100; über 100 geht nicht; die dritte Ziffer beginnt neu', async () => {
     const { sitzung, i } = satzMitMauer(2, 100);
     const { page } = await oeffnen(390, 800, { gespeichert: { sitzung, profil: bekanntesProfil() } });
     await page.click(`.perle[data-i="${i}"]`);
@@ -570,31 +570,37 @@ describe('Zahl in Plätzen (A5)', () => {
     expect(await inhalte(page)).toEqual(['leer', 'leer', '4']);
     await page.close();
 
-    // Standard-Satz: Zahlenmauer bis 10 – zwei Plätze, 15 geht nicht, die dritte Ziffer beginnt neu
+    // Standard-Satz (bis 20): zwei Plätze, die dritte Ziffer beginnt neu
     const s = await oeffnen(390, 800);
     const j = s.sitzung.aufgaben.findIndex((a) => a.format === 'zahlenmauer');
     await s.page.click(`.perle[data-i="${j}"]`);
     expect(await s.page.$$eval('.platz', (e) => e.length)).toBe(2);
-    for (const d of '15') await s.page.click(`[data-ziffer="${d}"]`);
-    expect(await inhalte(s.page)).toEqual(['leer', '5']);
     for (const d of '101') await s.page.click(`[data-ziffer="${d}"]`);
     expect(await inhalte(s.page)).toEqual(['leer', '1']);
     expect(await perleText(s.page, j)).toMatch(/: 1$/);
     await s.page.close();
   });
 
-  it('ein Platz, wenn die größte Antwort einstellig ist', async () => {
+  it('harte Regel 7: Zahlenmauer Stufe 1 bis 20 (Mauer bis 10) nimmt jede Zahl 0–99, Feld immer gleich', async () => {
     const { sitzung, i } = satzMitMauer(1, 20);
-    const mauer: Mauer = { reihen: [[2, 3], [5]], fehlt: [1, 0], grenze: 9 as Zahlenraum };
-    const s9 = { ...sitzung, aufgaben: sitzung.aufgaben.map((a, j) => (j === i ? { ...a, bedingung: mauer } : a)) };
-    expect(FORMATE.zahlenmauer.eingabe(mauer)).toEqual({ art: 'zahl', max: 9 });
-    const { page } = await oeffnen(390, 800, { gespeichert: { sitzung: s9, profil: bekanntesProfil() } });
+    expect((sitzung.aufgaben[i].bedingung as Mauer).grenze).toBe(10);
+    const { page } = await oeffnen(390, 800, { gespeichert: { sitzung, profil: bekanntesProfil() } });
     await page.click(`.perle[data-i="${i}"]`);
-    expect(await plaetzeLesen(page)).toEqual([{ name: 'Einer', inhalt: 'leer', gewaehlt: false }]);
-    await page.click('[data-ziffer="3"]');
-    await page.click('[data-ziffer="8"]');
-    expect(await inhalte(page)).toEqual(['8']);
-    expect(await perleText(page, i)).toMatch(/: 8$/);
+    expect((await plaetzeLesen(page)).map((p) => p.name)).toEqual(['Zehner', 'Einer']);
+    for (const w of ['12', '19', '99', '57']) {
+      for (const d of w) await page.click(`[data-ziffer="${d}"]`);
+      expect(await perleText(page, i)).toMatch(new RegExp(`: ${w}$`));
+      expect(await inhalte(page)).toEqual([...w]);
+      // die nächste Zahl beginnt mit der dritten Ziffer neu
+    }
+    // auch über die Plätze: Platz Z, 9 → 97
+    await page.click('.platz[data-platz="0"]');
+    await page.click('[data-ziffer="9"]');
+    expect(await perleText(page, i)).toMatch(/: 97$/);
+    // eine andere Mauer (Stufe 3 bis 100) hat dieselben zwei Plätze bei „bis 20“
+    const andere = satzMitMauer(3, 20);
+    expect((andere.sitzung.aufgaben[andere.i].bedingung as Mauer).grenze).toBe(20);
+    expect(FORMATE.zahlenmauer.eingabe(andere.sitzung.aufgaben[andere.i].bedingung as Mauer)).toEqual(FORMATE.zahlenmauer.eingabe(sitzung.aufgaben[i].bedingung as Mauer));
     await page.close();
   });
 

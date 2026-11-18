@@ -52,7 +52,7 @@ describe('Sitzung: Umzug von Version 1', () => {
     for (const a of neu.aufgaben.filter((x) => x.format === 'zahlenmauer')) {
       const m = a.bedingung as Mauer;
       expect(m.grenze).toBe(a.stufe === 1 ? 10 : 20);
-      expect(FORMATE.zahlenmauer.eingabe(m)).toEqual({ art: 'zahl', max: m.grenze });
+      expect(FORMATE.zahlenmauer.eingabe(m)).toEqual({ art: 'zahl' });
     }
   });
 

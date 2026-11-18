@@ -54,8 +54,13 @@ export const STANDARD_EINSTELLUNG: Einstellung = { zahlenraum: 20 };
 
 /** Wie das Kind antwortet */
 export type Eingabe =
-  /** Zahl mit Ziffernperlen; max = größte Antwort, die das Format hier verlangen kann (bei max < 10 ein Platz) */
-  | { art: 'zahl'; max: number }
+  /**
+   * Zahl mit Ziffernperlen in Plätzen. Die Größe des Feldes kommt nie aus der Aufgabe (harte Regel 7: die
+   * Eingabe verrät nichts): Z und E für 0–99, H, Z und E nur bei Zahlenraum 100 (src/satz/zahleingabe.ts,
+   * `zahlfeld`). `einstellig`: nur ein Platz E – nur für ein Format, das bei JEDER Aufgabe einstellig
+   * antwortet (heute keins); hängt nie von der einzelnen Aufgabe ab.
+   */
+  | { art: 'zahl'; einstellig?: true }
   /** eine von mehreren Perlen wählen */
   | { art: 'wahl' }
   /** im Bild auf ein Ding tippen (Elemente mit data-wahl="k"); mehrfach: mehrere */
