@@ -432,7 +432,8 @@ button.zwilling-perle { cursor: pointer; touch-action: manipulation; }
   .tisch > .frage-brett { grid-area: frage; }
   .tisch > .feld { grid-area: feld; }
   .tisch > .lotte { grid-area: lotte; }
-  .tisch.ohne-eingabe { grid-template-areas: 'frage frage' 'feld lotte'; }
+  /* im Bild antworten (Auswahl): kein Tablett nötig, das Feld bekommt die ganze Breite */
+  .tisch.ohne-eingabe { grid-template-areas: 'frage frage' 'feld feld' 'lotte lotte'; }
   .ast-zone { padding: var(--s3) var(--s5) var(--s3); }
   .buehne { --b-max: min(72px, calc((100dvh - 600px) / 3)); }
   .frage-brett { padding: var(--s2) var(--s4); }

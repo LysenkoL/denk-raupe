@@ -518,9 +518,11 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   });
 
   /** Die Raupe schaut, wo das Kind tippt: Pupillen 2–3 px zum Ort der Handlung (Abschnitt 9, „Гусеница следит“) */
-  app.addEventListener(
+  // am Satz selbst, nicht an #app: #app bleibt beim Wechsel der Seiten, der Satz nicht
+  app.querySelector('.satz')!.addEventListener(
     'pointerdown',
-    (e) => {
+    (ev) => {
+      const e = ev as PointerEvent;
       if (!bewegung()) return;
       const kopf = buehne.querySelector('.raupe-zeile.kind .vorne');
       if (!kopf) return;
