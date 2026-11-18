@@ -31,3 +31,11 @@
 .kopf-probe { display: flex; justify-content: center; padding-top: calc(var(--b) * 0.8); }
 .blatt-probe { width: 96px; height: auto; display: block; }
 .korb-probe { width: 96px; height: auto; display: block; }
+.format-probe { display: flex; flex-direction: column; gap: var(--s2); padding-top: var(--s2); border-top: var(--linie) solid var(--holz-kante); }
+.format-probe h3 { margin: 0; font-size: var(--t-text); font-weight: 800; }
+.format-bilder { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s3); }
+.format-bilder figure { margin: 0; display: flex; flex-direction: column; gap: var(--s1); }
+.format-bilder figcaption { font-size: var(--t-klein); color: var(--tinte-leise); font-weight: 700; }
+.eltern-texte { margin: 0; display: grid; gap: var(--s1); }
+.eltern-texte dt { font-weight: 800; }
+.eltern-texte dd { margin: 0 0 var(--s2); }

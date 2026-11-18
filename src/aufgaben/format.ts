@@ -82,6 +82,13 @@ export type HilfeStufe = 0 | 1 | 2 | 3 | 4;
 
 export type Braucht = 'woerterbuch' | 'autorensatz' | 'bilder';
 
+export interface ZeichenOptionen {
+  hilfe: HilfeStufe;
+  gewaehlt: Antwort | null;
+  vorrechnen?: boolean;
+  aehnlich?: boolean;
+}
+
 export interface Format<B> {
   // Pass
   id: FormatId;
@@ -116,8 +123,14 @@ export interface Format<B> {
   mehrere?: boolean;
 
   // Anzeige
-  /** Bild der Aufgabe; `hilfe` 2 oder 3 zeigt die Hilfe auf dem Bild; `gewaehlt` = Antwort des Kindes */
-  zeichne(b: B, o: { hilfe: HilfeStufe; gewaehlt: Antwort | null; vorrechnen?: boolean }): string;
+  /**
+   * Bild der Aufgabe; `hilfe` 2 oder 3 zeigt die Hilfe auf dem Bild; `gewaehlt` = Antwort des Kindes.
+   * Hilfe auf dem Bild trägt `data-hilfe`: "teil" (Stufe 2, hervorgehoben), "schatten" (Stufe 2, im
+   * Halbschatten), "schritt" (Stufe 3, der gezeigte Schritt). Sie lässt nie nur die richtige Antwort sichtbar.
+   * `aehnlich`: Bild der ähnlichen Aufgabe, nicht der eigenen – nur dort darf der Schritt der Stufe 3 alles
+   * zeigen (wenn `schrittVerraet`).
+   */
+  zeichne(b: B, o: ZeichenOptionen): string;
   /** true: Hilfe Stufe 3 würde hier die Lösung verraten – dann wird sie an der ähnlichen Aufgabe gezeigt */
   schrittVerraet?(b: B): boolean;
   /**

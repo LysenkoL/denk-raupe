@@ -144,8 +144,8 @@ async function eingeben(page: Page, s: Sitzung, i: number, antwort: Antwort): Pr
   await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => null))));
 }
 
-/** Hilfe Stufe 2 auf dem Bild: warme Füllung des hervorgehobenen Teils (in allen drei Formaten) */
-const HILFE2 = '#FFF3B0';
+/** Hilfe Stufe 2 auf dem Bild: der hervorgehobene Teil ist markiert (in allen drei Formaten, src/aufgaben/format.ts) */
+const HILFE2 = 'data-hilfe="teil"';
 const lernRichtig = (a: Aufgabe): Antwort => FORMATE[a.format].loesungen(a.bedingung)[0];
 /** falsche Antwort im Lernbeispiel: andere Wahl oder eine andere einstellige Zahl */
 function lernFalsch(a: Aufgabe): Antwort {
@@ -274,7 +274,9 @@ describe('Ablauf eines Satzes', () => {
     const steine = await page.$$eval('.aufgabe-bild svg text', (els) => els.map((e) => e.textContent));
     for (const z of [5, 1, 6, 2, 8]) expect(steine).toContain(String(z));
     expect(steine).toContain('3');
-    expect(steine).toContain('? + 1 = 2');
+    // Hilfe 3 (ergänzen: ? + 1 = 2) als Punkte: einer für den Nachbarn, einer leer – keine Rechnung als Text
+    const punkte = await page.$$eval('.aufgabe-bild [data-punkt]', (els) => els.map((e) => e.getAttribute('data-punkt')));
+    expect(punkte).toEqual(['zweiter', 'leer']);
     // gold gehobene Blätter über Perle 1 und 3, über Perle 2 liegt das Blatt noch
     const zu = await page.$$eval('.zwilling-perle', (els) => els.map((e) => !!e.querySelector('.blatt')));
     expect(zu).toEqual([false, true, false]);

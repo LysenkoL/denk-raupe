@@ -162,7 +162,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     }
     if (stufe === 3 && f.schrittVerraet?.(a.bedingung)) {
       const ae = aehnlich(a);
-      return `<div class="hilfe-box"><b>${KIND.aehnlich}</b>${f.zeichne(ae.bedingung, { hilfe: 3, gewaehlt: null })}</div>`;
+      // der Schritt an der ähnlichen Aufgabe darf zeigen, was er an der eigenen verraten würde
+      return `<div class="hilfe-box"><b>${KIND.aehnlich}</b>${f.zeichne(ae.bedingung, { hilfe: 3, gewaehlt: null, aehnlich: true })}</div>`;
     }
     if (stufe === 4) {
       const ae = aehnlich(a);

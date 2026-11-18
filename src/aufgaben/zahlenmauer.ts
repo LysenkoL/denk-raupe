@@ -1,16 +1,22 @@
-import { TINTE } from '../design/farbe';
+import { LATERNE, LATERNE_KANTE, PAPIER, TINTE, TINTE_LEISE } from '../design/farbe';
 import type { Antwort } from '../perlen/antwort';
 import type { Einstellung, Format, Zahlenraum } from './format';
 import type { Zufall } from '../core/zufall';
 
 /**
  * Zahlenmauer (Raster): jeder Stein = Summe der beiden Steine darunter; ein Stein fehlt.
- * Die Stufe bestimmt den Bau der Mauer, der Zahlenraum der Eltern die größte Zahl:
- * Stufe 1: 3 Reihen, fehlender Stein oben oder in der Mitte (addieren);
+ * Die Stufe bestimmt den Bau der Mauer, der Zahlenraum der Eltern die größte Zahl.
+ * Stufe 1: 3 Reihen, fehlender Stein oben oder in der Mitte – nur addieren;
  *          Zahlen eine Stufe unter dem Zahlenraum (bis 20 → bis 10, bis 100 → bis 20, bis 10 bleibt bis 10).
- * Stufe 2: 3 Reihen, fehlender Stein auch unten (ergänzen); Zahlen im ganzen Zahlenraum.
- * Stufe 3: 4 Reihen, fehlender Stein überall; Zahlen im ganzen Zahlenraum.
+ * Stufe 2: schwerer wird die Rechnung – der fehlende Stein kann auch unten stehen (ergänzen statt addieren),
+ *          und die Zahlen gehen bis zum ganzen Zahlenraum.
+ * Stufe 3: schwerer wird der Bau – 4 Reihen, mehr Steine zum Überblicken, fehlender Stein überall;
+ *          Zahlen im ganzen Zahlenraum.
  * Bis 20 (Standard) sind die Mauern genau die von Version 1.
+ *
+ * Hilfe auf dem Bild (docs/TZ.md, „Помощь“): Stufe 2 hebt die zwei Steine hervor, von denen die Antwort
+ * abhängt, die übrigen gehen in den Halbschatten; Stufe 3 legt dazu ihre Summe als Punkte, in Fünfern und
+ * Zehnern wie auf dem Zwanzigerfeld. Kein Text im Bild, keine Zahl der Lösung.
  */
 export interface Mauer {
   /** Reihen von unten; Stein (r, i) = Stein (r-1, i) + Stein (r-1, i+1) */
@@ -83,6 +89,7 @@ export function abhaengig(m: Mauer): { steine: [number, number][]; rechnung: 'pl
   return { steine: [[1, i - 1], [0, i - 1]], rechnung: 'ergaenzen' };
 }
 
+/** Rechnung zum Vorrechnen (nur an der ähnlichen Aufgabe und im Lernbeispiel, nie an der eigenen) */
 function gleichung(m: Mauer, mitLoesung: boolean): string {
   const { steine, rechnung } = abhaengig(m);
   const w = (s: [number, number]) => m.reihen[s[0]][s[1]];
@@ -93,21 +100,81 @@ function gleichung(m: Mauer, mitLoesung: boolean): string {
 const SW = 66;
 const SH = 42;
 
+/** Art eines Punktes der Hilfe Stufe 3: Punkt des ersten oder zweiten hervorgehobenen Steins, oder leer (fehlt noch) */
+export type PunktArt = 'erster' | 'zweiter' | 'leer';
+
+/**
+ * Punkte der Hilfe Stufe 3, in der Reihenfolge des Legens (Zehnerreihen, `punktLage`).
+ * Addieren: erst die Punkte des einen Steins, dann die des anderen – zusammen ihre Summe.
+ * Ergänzen: so viele Punkte wie der Stein darüber; die des Nachbarn voll, die übrigen leer.
+ * Die Lösung steht nie als Zahl da: das Kind zählt die Punkte (in Fünfern) selbst.
+ */
+export function hilfePunkte(m: Mauer): PunktArt[] {
+  const { steine, rechnung } = abhaengig(m);
+  const w = (s: [number, number]) => m.reihen[s[0]][s[1]];
+  const reihe = (n: number, art: PunktArt): PunktArt[] => Array.from({ length: n }, () => art);
+  if (rechnung === 'plus') return [...reihe(w(steine[0]), 'erster'), ...reihe(w(steine[1]), 'zweiter')];
+  const nachbar = w(steine[1]);
+  return [...reihe(nachbar, 'zweiter'), ...reihe(w(steine[0]) - nachbar, 'leer')];
+}
+
+/** Abstand der Punkte; Lücke nach je fünf Punkten einer Reihe und nach je fünf Reihen (wie Zwanzigerfeld/Hunderterfeld) */
+const PUNKT = 17;
+const LUECKE = 10;
+export const PUNKTE_JE_REIHE = 10;
+
+/** Lage des k-ten Punktes im Punktefeld: Reihe und Spalte, Mittelpunkt relativ zur linken oberen Ecke */
+export function punktLage(k: number): { reihe: number; spalte: number; x: number; y: number } {
+  const reihe = Math.floor(k / PUNKTE_JE_REIHE);
+  const spalte = k % PUNKTE_JE_REIHE;
+  return {
+    reihe,
+    spalte,
+    x: spalte * PUNKT + (spalte >= 5 ? LUECKE : 0) + PUNKT / 2,
+    y: reihe * PUNKT + (reihe >= 5 ? LUECKE : 0) + PUNKT / 2,
+  };
+}
+
+function punktefeld(m: Mauer, breite: number, oben: number): { svg: string; hoehe: number } {
+  const punkte = hilfePunkte(m);
+  const reihen = Math.max(1, Math.ceil(punkte.length / PUNKTE_JE_REIHE));
+  const feldB = PUNKTE_JE_REIHE * PUNKT + LUECKE;
+  const feldH = reihen * PUNKT + (reihen > 5 ? LUECKE : 0);
+  const x0 = (breite - feldB) / 2;
+  const y0 = oben + 8;
+  let s = `<rect data-hilfe="schritt" x="${x0 - 8}" y="${oben}" width="${feldB + 16}" height="${feldH + 16}" rx="12" fill="${PAPIER}" stroke="${LATERNE_KANTE}" stroke-width="2.5"/>`;
+  punkte.forEach((art, k) => {
+    const p = punktLage(k);
+    const fill = art === 'erster' ? TINTE_LEISE : art === 'zweiter' ? LATERNE_KANTE : PAPIER;
+    s += `<circle data-punkt="${art}" cx="${x0 + p.x}" cy="${y0 + p.y}" r="6" fill="${fill}" stroke="${TINTE_LEISE}" stroke-width="2"/>`;
+  });
+  return { svg: s, hoehe: feldH + 16 };
+}
+
+/**
+ * `hilfe` 2: die zwei Steine, von denen die Antwort abhängt, bekommen einen warmen Rahmen (data-hilfe="teil"),
+ * die übrigen gehen in den Halbschatten (data-hilfe="schatten"); der fehlende Stein bleibt, wie er ist.
+ * `hilfe` 3: dazu ihre Summe als Punkte unter der Mauer (data-hilfe="schritt").
+ * `vorrechnen` (ähnliche Aufgabe, Lernbeispiel): Steine hervorgehoben, Rechnung mit Ergebnis.
+ */
 function zeichne(m: Mauer, o: { hilfe: number; gewaehlt: Antwort | null; vorrechnen?: boolean }): string {
   const n = m.reihen.length;
   const W = n * SW + 8;
-  const H = n * SH + 8 + (o.hilfe >= 2 || o.vorrechnen ? 56 : 0);
+  const hervor = o.hilfe >= 2 || !!o.vorrechnen;
   const { steine } = abhaengig(m);
-  const markiert = (r: number, i: number) => (o.hilfe >= 2 || o.vorrechnen) && steine.some(([a, b]) => a === r && b === i);
+  const markiert = (r: number, i: number) => hervor && steine.some(([a, b]) => a === r && b === i);
   let s = '';
   m.reihen.forEach((reihe, r) => {
     reihe.forEach((v, i) => {
       const x = 4 + r * (SW / 2) + i * SW;
       const y = 4 + (n - 1 - r) * SH;
       const fehlt = r === m.fehlt[0] && i === m.fehlt[1];
-      const fill = fehlt ? '#FDEEDC' : markiert(r, i) ? '#FFF3B0' : '#FFFFFF';
-      const stroke = fehlt ? '#E8893A' : '#1B2033';
-      s += `<rect x="${x + 2}" y="${y + 2}" width="${SW - 4}" height="${SH - 4}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${markiert(r, i) ? 4 : 2.5}"${fehlt ? ' stroke-dasharray="7 5"' : ''}/>`;
+      const teil = markiert(r, i);
+      const schatten = hervor && !fehlt && !teil;
+      const fill = fehlt ? '#FDEEDC' : teil ? LATERNE : '#FFFFFF';
+      const stroke = fehlt ? '#E8893A' : teil ? LATERNE_KANTE : '#1B2033';
+      s += `<g${teil ? ' data-hilfe="teil"' : schatten ? ' data-hilfe="schatten" opacity="0.4"' : ''}>`;
+      s += `<rect x="${x + 2}" y="${y + 2}" width="${SW - 4}" height="${SH - 4}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${teil ? 4 : 2.5}"${fehlt ? ' stroke-dasharray="7 5"' : ''}/>`;
       let text = String(v);
       let farbe = TINTE;
       if (fehlt) {
@@ -115,13 +182,17 @@ function zeichne(m: Mauer, o: { hilfe: number; gewaehlt: Antwort | null; vorrech
         else if (o.gewaehlt?.art === 'zahl') ((text = String(o.gewaehlt.wert)), (farbe = '#8A4B12'));
         else ((text = '?'), (farbe = '#8A4B12'));
       }
-      s += `<text x="${x + SW / 2}" y="${y + SH / 2 + 8}" text-anchor="middle" font-size="23" font-weight="800" fill="${farbe}">${text}</text>`;
+      s += `<text x="${x + SW / 2}" y="${y + SH / 2 + 8}" text-anchor="middle" font-size="23" font-weight="800" fill="${farbe}">${text}</text></g>`;
     });
   });
-  if (o.hilfe >= 3 || o.vorrechnen) {
-    s += `<text x="${W / 2}" y="${n * SH + 46}" text-anchor="middle" font-size="26" font-weight="800" fill="#2F6B3A">${gleichung(m, !!o.vorrechnen)}</text>`;
-  } else if (o.hilfe === 2) {
-    s += `<text x="${W / 2}" y="${n * SH + 46}" text-anchor="middle" font-size="18" font-weight="700" fill="#5B655F">Schau auf die gelben Steine.</text>`;
+  let H = n * SH + 8;
+  if (o.vorrechnen) {
+    s += `<text x="${W / 2}" y="${n * SH + 46}" text-anchor="middle" font-size="26" font-weight="800" fill="#2F6B3A">${gleichung(m, true)}</text>`;
+    H += 56;
+  } else if (o.hilfe >= 3) {
+    const feld = punktefeld(m, W, n * SH + 14);
+    s += feld.svg;
+    H += feld.hoehe + 14;
   }
   return `<svg class="aufgabe-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Zahlenmauer">${s}</svg>`;
 }

@@ -1,4 +1,6 @@
-import { setSprache, t, type Key, type Sprache } from '../app/i18n';
+import { elternTexte, setSprache, t, type Key, type Sprache } from '../app/i18n';
+import { FORMATE } from '../aufgaben';
+import { aufgabeAus, type FormatId } from '../aufgaben/format';
 import { HUNDERT_FARBE, HUNDERT_KANTE, ZIFFER_FARBEN, ZIFFER_KANTEN } from '../design/farbe';
 import { KIND } from '../i18n/kind';
 import type { Antwort } from '../perlen/antwort';
@@ -58,6 +60,36 @@ function zustaende(): [string, string][] {
     [t('stil.z.fertig'), szeneHtml(fertig, o)],
     [t('stil.z.lang'), szeneHtml(lang, o)],
   ];
+}
+
+/** Samen der Beispielaufgaben dieser Seite: fest, damit die Seite immer gleich aussieht */
+const FORMAT_SAMEN = 20261118;
+
+/**
+ * Jedes fertige Format: Pass, dieselbe Aufgabe (Stufe 2) ohne Hilfe, mit Hilfe 2 und 3, Texte für Eltern.
+ * Stufe 2, weil dort jeder Schritt der Stufe 3 an der eigenen Aufgabe gezeigt werden kann.
+ */
+function formate(): string {
+  return (Object.keys(FORMATE) as FormatId[])
+    .map((id) => {
+      const f = FORMATE[id];
+      const a = aufgabeAus(f, FORMAT_SAMEN, 2);
+      const e = elternTexte(id);
+      const pass = t('stil.f.pass', { nr: f.nr, faehigkeit: f.faehigkeit, motor: f.motor, stufen: f.stufen, druck: t(f.druck ? 'stil.f.druck' : 'stil.f.nurBildschirm') });
+      const bild = (hilfe: 0 | 2 | 3, titel: string) =>
+        `<figure><figcaption>${titel}</figcaption><div class="aufgabe-bild">${f.zeichne(a.bedingung, { hilfe, gewaehlt: null })}</div></figure>`;
+      return `<article class="format-probe" data-format="${id}">
+        <h3>${e.name}</h3>
+        <p class="hinweis">${pass}</p>
+        <div class="format-bilder">${bild(0, t('stil.f.ohne'))}${bild(2, t('stil.f.hilfe2'))}${bild(3, t('stil.f.hilfe3'))}</div>
+        <dl class="eltern-texte">
+          <dt>${t('stil.f.uebt')}</dt><dd>${e.uebt}</dd>
+          <dt>${t('stil.f.beispiel')}</dt><dd>${e.beispiel}</dd>
+          <dt>${t('stil.f.helfen')}</dt><dd>${e.helfen}</dd>
+        </dl>
+      </article>`;
+    })
+    .join('');
 }
 
 export function renderStil(app: HTMLElement, params: URLSearchParams): void {
@@ -124,6 +156,7 @@ export function renderStil(app: HTMLElement, params: URLSearchParams): void {
     <section><h2>${t('stil.satz')}</h2>
       ${zustaende().map(([titel, html]) => `<figure class="zustand"><figcaption>${titel}</figcaption><div class="buehne-wrap">${html}</div></figure>`).join('')}
     </section>
+    <section><h2>${t('stil.formate')}</h2><p class="hinweis">${t('stil.formateText')}</p>${formate()}</section>
     <section><h2>${t('stil.knoepfe')}</h2>
       <div class="knopf-reihe"><button class="btn haupt" type="button">${KIND.vergleichen}</button><button class="btn haupt" type="button" disabled>${KIND.vergleichen}</button><button class="btn leise" type="button">${KIND.weiter} →</button></div>
     </section>
