@@ -14,7 +14,7 @@ import {
   ladeProfil,
   ladeSitzung,
   lernbeispielVorher,
-  neueSitzung,
+  naechsteSitzung,
   neuesProfil,
   stimmtFuer,
   type LernZustand,
@@ -44,7 +44,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   // Unbekanntes (neuere Version, kaputt) bleibt unter „…-unbekannt“, bevor hier etwas überschrieben wird
   let profil: Profil = (await ladeGeschuetzt('profil', ladeProfil)) ?? neuesProfil();
   // ein Satz von vor A6 kann schon so weit sein, dass der Hilfeknopf pulsiert: gleich für die Historie festhalten
-  let sitzung: Sitzung = pulsNachfuehren((await ladeGeschuetzt('sitzung', ladeSitzung)) ?? neueSitzung(neuerSamen()));
+  // ohne gespeicherten Satz: ein neuer, mit einer zurückgelegten Aufgabe aus dem Profil, falls eine wartet
+  let sitzung: Sitzung = pulsNachfuehren((await ladeGeschuetzt('sitzung', ladeSitzung)) ?? naechsteSitzung(neuerSamen(), profil));
   let historie: Historie = await historieLesen();
   tonAn(profil.ton);
 
@@ -363,7 +364,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       return alles();
     }
     if (t.closest('.neuer-satz')) {
-      sitzung = neueSitzung(neuerSamen());
+      // eine zurückgelegte Aufgabe kommt zurück, wie sie war – auf dem Bildschirm ohne eigenes Zeichen
+      sitzung = naechsteSitzung(neuerSamen(), profil);
       neuerBuchstabe = null;
       wackeln = [];
       meldung = '';

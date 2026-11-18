@@ -227,17 +227,17 @@ describe('Profil: Umzug von Version 1', () => {
   it('Schnappschuss aus Version 1: „gesehen“ wird zu „bekannt“, sonst neu; alles Übrige bleibt', () => {
     expect(v1.profil.version).toBe(1);
     const p = ladeProfil(structuredClone(v1.profil))!;
-    expect(p).toEqual({ version: 2, formate: { zahlenmauer: 'bekannt', muster: 'bekannt' }, blaetter: 7, saetze: 2, geheim: { wort: 'TEICH', offen: [0, 3] }, ton: false });
+    expect(p).toEqual({ version: 3, formate: { zahlenmauer: 'bekannt', muster: 'bekannt' }, blaetter: 7, saetze: 2, geheim: { wort: 'TEICH', offen: [0, 3] }, ton: false, zurueckgelegt: [] });
     expect(Object.keys(p).sort()).toEqual(Object.keys(neuesProfil()).sort());
     expect(kenntnis(p, 'wer-ist-es')).toBe('neu');
     expect(lernbeispielVorher(p, 'wer-ist-es')).toBe(true);
     expect(lernbeispielVorher(p, 'zahlenmauer')).toBe(false);
   });
 
-  it('Version 2 bleibt, wie sie ist; Unbekanntes → null', () => {
+  it('Version 3 bleibt, wie sie ist; Unbekanntes → null', () => {
     const p: Profil = { ...neuesProfil(), formate: { muster: 'nochmal' }, blaetter: 3 };
     expect(ladeProfil(structuredClone(p))).toEqual(p);
-    expect(ladeProfil({ ...p, version: 3 })).toBeNull();
+    expect(ladeProfil({ ...p, version: 4 })).toBeNull();
     expect(ladeProfil(null)).toBeNull();
   });
 });

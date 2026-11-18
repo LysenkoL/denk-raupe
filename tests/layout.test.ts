@@ -498,7 +498,7 @@ describe('Ablauf eines Satzes', () => {
 
   it('unbekannte neuere Version: Satz, Profil und Historie bleiben unangetastet unter „…-unbekannt“', async () => {
     const satzNeu = { ...neueSitzung(SAMEN), version: 3, ausDerZukunft: true };
-    const profilNeu = { ...neuesProfil(), version: 3, blaetter: 99 };
+    const profilNeu = { ...neuesProfil(), version: 4, blaetter: 99 };
     const historieNeu = { version: 2, eintraege: [{ format: 'muster', ergebnis: 'gold' }] };
     const { page } = await oeffnen(390, 800, { gespeichert: { sitzung: satzNeu as unknown as Sitzung, profil: profilNeu }, weitere: { historie: historieNeu } });
     await page.waitForTimeout(200);
