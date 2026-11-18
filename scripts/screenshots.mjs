@@ -18,7 +18,8 @@ const url = server.resolvedUrls.local[0];
 const { neueSitzung, neuesProfil, PROBE_FORMATE } = await server.ssrLoadModule('/src/satz/sitzung.ts');
 const { FORMATE } = await server.ssrLoadModule('/src/aufgaben/index.ts');
 const { gleich } = await server.ssrLoadModule('/src/perlen/antwort.ts');
-const { lernbeispiel } = await server.ssrLoadModule('/src/aufgaben/format.ts');
+const { lernbeispiel, aufgabeAus, stimmt } = await server.ssrLoadModule('/src/aufgaben/format.ts');
+const { setzeAntwort, vergleiche } = await server.ssrLoadModule('/src/satz/vergleich.ts');
 const browser = await chromium.launch();
 
 const sitzung = neueSitzung(20261115);
@@ -29,8 +30,32 @@ const falsch = (i) => {
   return a.wahl ? a.wahl.find((w) => !gleich(w, l)) : { art: 'zahl', wert: (l.wert + 1) % 100 };
 };
 
-/** `bekannt`: alle Formate bekannt (kein Lernbeispiel von selbst); sonst alle neu */
-async function vorbereiten(page, bekannt = true) {
+/**
+ * Satz nach dem ersten Vergleichen, bei dem im Format `id` (Stufe, Zahlenraum) die Hilfestufe `hilfe` offen ist:
+ * alle Antworten waren falsch, die Antwort dieser Aufgabe ist wieder leer – das Bild zeigt „?“ und die Hilfe.
+ */
+function hilfeSitzung(id, stufe, hilfe, zahlenraum = 20) {
+  const s = neueSitzung(20261115);
+  const i = s.aufgaben.findIndex((a) => a.format === id);
+  const aufgaben = s.aufgaben.map((a, j) => (j === i ? aufgabeAus(FORMATE[id], a.samen, stufe, { zahlenraum }) : a));
+  const daneben = (a) => {
+    const l = FORMATE[a.format].loesungen(a.bedingung)[0];
+    return a.wahl ? a.wahl.find((w) => !gleich(w, l)) : { art: 'zahl', wert: (l.wert + 1) % 100 };
+  };
+  const voll = aufgaben.reduce((satz, a, j) => setzeAntwort(satz, j, daneben(a)), s.satz);
+  const geprueft = vergleiche(voll, (j, antwort) => stimmt(FORMATE[aufgaben[j].format], aufgaben[j], antwort)).satz;
+  return { ...s, aufgaben, satz: setzeAntwort(geprueft, i, null), aktuell: i, hilfeOffen: aufgaben.map((_, j) => (j === i ? hilfe : 0)) };
+}
+
+/** Hilfe 2 und 3 je Format (Stufe 2); dazu Wer ist es? Stufe 1 (Schritt an der ähnlichen Aufgabe) und Zahlenmauer bis 100 */
+const HILFE_BILDER = [
+  ...PROBE_FORMATE.flatMap((id) => [2, 3].map((hilfe) => [`hilfe${hilfe}-${id}`, hilfeSitzung(id, 2, hilfe)])),
+  ['hilfe3-wer-ist-es-aehnlich', hilfeSitzung('wer-ist-es', 1, 3)],
+  ['hilfe3-zahlenmauer-bis100', hilfeSitzung('zahlenmauer', 2, 3, 100)],
+];
+
+/** `bekannt`: alle Formate bekannt (kein Lernbeispiel von selbst); sonst alle neu; `s`: dieser Satz statt des festen */
+async function vorbereiten(page, bekannt = true, s = sitzung) {
   // Musterseite fasst den Speicher nicht an – sonst könnte die App beim ersten Laden einen eigenen Satz speichern
   await page.goto(url + '#/stil');
   await page.evaluate(
@@ -45,7 +70,7 @@ async function vorbereiten(page, bekannt = true) {
           tx.oncomplete = () => (req.result.close(), ok());
         };
       }),
-    [sitzung, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) : {} }],
+    [s, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) : {} }],
   );
   await page.goto(url + '#/');
   await page.reload();
@@ -112,6 +137,13 @@ for (const [name, w, h] of GERAETE) {
   await page.click('.vergleichen');
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `screenshots/${name}-fertig.png` });
+  // Hilfe auf dem Bild, Stufen 2 und 3, jedes Format
+  for (const [bild, s] of HILFE_BILDER) {
+    await vorbereiten(page, true, s);
+    // der Knopf „Vergleichen“ steht fest unten: Bild (und Kasten der ähnlichen Aufgabe) in die Mitte holen
+    await page.evaluate(() => (document.querySelector('.hilfe-box') ?? document.querySelector('.aufgabe-bild')).scrollIntoView({ block: 'center' }));
+    await page.screenshot({ path: `screenshots/${name}-${bild}.png` });
+  }
   await page.close();
 }
 const page = await browser.newPage({ viewport: { width: 980, height: 900 } });

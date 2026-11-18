@@ -1,13 +1,24 @@
-import { FORM_FARBEN, TINTE, type FormFarbe } from '../design/farbe';
+import { FORM_FARBEN, LATERNE, LATERNE_KANTE, TINTE, type FormFarbe } from '../design/farbe';
 import type { Antwort } from '../perlen/antwort';
-import type { Format } from './format';
+import type { Format, ZeichenOptionen } from './format';
 import type { Zufall } from '../core/zufall';
 
 /**
  * Wer ist es? (Auswahl): sechs Raupen mit Hut und Brille; Hinweis-Karten sagen, welche gemeint ist.
- * Stufe 1: ein Hinweis. Stufe 2: zwei Hinweise, jeder allein passt auf mehrere.
- * Stufe 3: zwei Hinweise, einer davon durchgestrichen („kein …“).
+ * Stufe 1: ein Hinweis, immer bejaht (Hut einer Farbe oder Brille).
+ * Stufe 2: schwerer wird die Zahl der Bedingungen – zwei Hinweise (ein Hut-, ein Brillen-Hinweis), jeder
+ *          allein passt auf mehrere Raupen: beide müssen zugleich beachtet werden.
+ * Stufe 3: schwerer wird die Art der Bedingung – zwei Hinweise, einer davon durchgestrichen („kein …“,
+ *          „gar kein Hut“), also eine Verneinung.
  * Antwort = Nummer der Raupe. Der Löser zählt, welche Raupen zu ALLEN Hinweisen passen.
+ *
+ * Zeichen der Bedingungen (ein kleiner Satz, docs/TZ.md, „Интерфейс и надёжность“): Karte mit Hut in seiner
+ * Farbe; Karte mit grauem Hut = irgendein Hut (nur durchgestrichen); Karte mit Brille; schräger Strich über
+ * der Karte = „nicht“.
+ *
+ * Hilfe auf dem Bild (docs/TZ.md, „Помощь“): Stufe 2 hebt die erste Karte hervor, die übrigen gehen in den
+ * Halbschatten; Stufe 3 lässt dazu die Raupen blass werden, die zur ersten Karte nicht passen – nur wenn
+ * danach mehrere sichtbar bleiben (sonst `schrittVerraet`: der Schritt kommt an der ähnlichen Aufgabe).
  */
 /** Hutfarben: eine Auswahl der Formfarben, damit sie dieselbe Farbprüfung bestehen wie die Palette */
 export const HUT_FARBEN = ['rot', 'blau', 'gelb'] as const satisfies readonly FormFarbe[];
@@ -112,38 +123,55 @@ function raupe(x: number, y: number, r: Raupe): string {
   return t;
 }
 
-/** Hinweis-Karte: Bild des Merkmals, durchgestrichen bei „kein …“ */
-function karte(x: number, y: number, h: Hinweis, hell: boolean): string {
+/** Hinweis-Karte: Bild des Merkmals, durchgestrichen bei „kein …“; `hilfe`: hervorgehoben oder im Halbschatten */
+function karte(x: number, y: number, h: Hinweis, hilfe: 'teil' | 'schatten' | null): string {
   const w = 92;
   const hh = 70;
-  let t = `<rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="14" fill="${hell ? '#FFF3B0' : '#FFFFFF'}" stroke="${hell ? '#E8B10E' : '#1B2033'}" stroke-width="${hell ? 4 : 2.5}"/>`;
+  const hell = hilfe === 'teil';
+  let t = `<g${hilfe ? ` data-hilfe="${hilfe}"` : ''}${hilfe === 'schatten' ? ' opacity="0.4"' : ''}>`;
+  t += `<rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="14" fill="${hell ? LATERNE : '#FFFFFF'}" stroke="${hell ? LATERNE_KANTE : '#1B2033'}" stroke-width="${hell ? 4 : 2.5}"/>`;
   const cx = x + w / 2;
   const cy = y + hh / 2;
   if (h.art === 'brille') t += brille(cx, cy, 44);
   else t += hut(cx, cy + 14, 30, h.art === 'hut' ? h.farbe : 'rot', h.art === 'hut-da');
-  if (h.nicht) t += `<path d="M${x + 14} ${y + hh - 12}L${x + w - 14} ${y + 12}" stroke="#1B2033" stroke-width="6" stroke-linecap="round"/>`;
-  return t;
+  if (h.nicht) t += `<path data-zeichen="nicht" d="M${x + 14} ${y + hh - 12}L${x + w - 14} ${y + 12}" stroke="#1B2033" stroke-width="6" stroke-linecap="round"/>`;
+  return t + '</g>';
 }
 
 const SPALTE = 120;
 const ZEILE = 112;
 
-function zeichne(w: WerIstEs, o: { hilfe: number; gewaehlt: Antwort | null; vorrechnen?: boolean }): string {
+/** Raupen, die nach Hilfe Stufe 3 blass sind: die nicht zur ersten Karte passen – an der eigenen Aufgabe nur, wenn mehrere bleiben */
+export function blassNachSchritt(w: WerIstEs, aehnlich = false): boolean[] {
+  if (!aehnlich && schrittVerraet(w)) return w.raupen.map(() => false);
+  return w.raupen.map((r) => !passt(r, w.hinweise[0]));
+}
+
+/**
+ * `hilfe` 2: erste Karte hervorgehoben (data-hilfe="teil"), die anderen im Halbschatten.
+ * `hilfe` 3: dazu werden die Raupen blass, die zur ersten Karte nicht passen (data-hilfe="schritt") –
+ * an der eigenen Aufgabe nur, wenn danach mindestens zwei sichtbar bleiben; an der ähnlichen (`aehnlich`) immer.
+ * `vorrechnen`: alle Karten hervorgehoben, nur die Lösung bleibt sichtbar und ist umrahmt.
+ */
+function zeichne(w: WerIstEs, o: ZeichenOptionen): string {
   const W = 3 * SPALTE + 20;
   const kartenH = 92;
   const H = kartenH + 2 * ZEILE + 10;
   let s = '';
   const kx = (W - w.hinweise.length * 104 + 12) / 2;
-  w.hinweise.forEach((h, i) => (s += karte(kx + i * 104, 8, h, (o.hilfe >= 2 && i === 0) || !!o.vorrechnen)));
+  w.hinweise.forEach((h, i) => {
+    const hilfe = o.vorrechnen ? 'teil' : o.hilfe >= 2 ? (i === 0 ? 'teil' : 'schatten') : null;
+    s += karte(kx + i * 104, 8, h, hilfe);
+  });
   const ziel = loesungen(w)[0];
+  const schritt = o.hilfe >= 3 && !o.vorrechnen ? blassNachSchritt(w, !!o.aehnlich) : w.raupen.map(() => false);
   w.raupen.forEach((r, i) => {
     const cx = 10 + (i % 3) * SPALTE + SPALTE / 2 + 22;
     const cy = kartenH + Math.floor(i / 3) * ZEILE + 50;
-    // Hilfe 3: Raupen, die zum ersten Hinweis nicht passen, werden blass (nur wenn mehrere bleiben)
-    const blass = (o.hilfe >= 3 && !schrittVerraet(w) && !passt(r, w.hinweise[0])) || (!!o.vorrechnen && !w.hinweise.every((h) => passt(r, h)));
+    const blass = schritt[i] || (!!o.vorrechnen && !w.hinweise.every((h) => passt(r, h)));
     const gewaehlt = o.gewaehlt?.art === 'zahl' && o.gewaehlt.wert === i + 1;
     const loesung = !!o.vorrechnen && ziel?.art === 'zahl' && ziel.wert === i + 1;
-    s += `<g class="wahl-ziel" data-wahl="${i}" role="button" tabindex="0" aria-label="Raupe ${i + 1}" opacity="${blass ? 0.25 : 1}">`;
+    s += `<g class="wahl-ziel" data-wahl="${i}" role="button" tabindex="0" aria-label="Raupe ${i + 1}" opacity="${blass ? 0.25 : 1}"${schritt[i] ? ' data-hilfe="schritt"' : ''}>`;
     s += `<rect x="${cx - 80}" y="${cy - 52}" width="${SPALTE - 6}" height="${ZEILE - 6}" rx="16" fill="${gewaehlt || loesung ? '#FDEEDC' : 'transparent'}" stroke="${gewaehlt || loesung ? '#E8893A' : 'transparent'}" stroke-width="4"/>`;
     s += raupe(cx, cy - 2, r);
     s += `<text x="${cx - 24}" y="${cy + 47}" text-anchor="middle" font-size="22" font-weight="800" fill="${TINTE}">${i + 1}</text>`;
