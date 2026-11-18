@@ -22,6 +22,7 @@ import {
   type Sitzung,
 } from '../satz/sitzung';
 import { HISTORIE_SCHLUESSEL, historieLesen, type Historie } from '../satz/historie';
+import { hilfeOeffnen, hilfePulst, hoechsteHilfe, pulsNachfuehren } from '../satz/hilfe';
 import { ausWert, schritt, stellenwerte, wertVon, zahlfeld, type Handlung, type Plaetze, type Zahlfeld } from '../satz/zahleingabe';
 import { aenderbar, blaetter, fertig, kannVergleichen, setzeAntwort, vergleiche, zuruecklegen } from '../satz/vergleich';
 
@@ -35,12 +36,15 @@ const TON_AUS = `<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="tr
 const LAMPE = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z" style="fill:var(--laterne)" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 19h5M10.5 21.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
 const pause = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 40 : 380);
+/** Dauer eines Pulses des Hilfeknopfs (wie `--puls` in tokens.css) */
+const PULS_MS = 1700;
 const warte = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
 export async function renderSatz(app: HTMLElement): Promise<void> {
   // Unbekanntes (neuere Version, kaputt) bleibt unter „…-unbekannt“, bevor hier etwas überschrieben wird
   let profil: Profil = (await ladeGeschuetzt('profil', ladeProfil)) ?? neuesProfil();
-  let sitzung: Sitzung = (await ladeGeschuetzt('sitzung', ladeSitzung)) ?? neueSitzung(neuerSamen());
+  // ein Satz von vor A6 kann schon so weit sein, dass der Hilfeknopf pulsiert: gleich für die Historie festhalten
+  let sitzung: Sitzung = pulsNachfuehren((await ladeGeschuetzt('sitzung', ladeSitzung)) ?? neueSitzung(neuerSamen()));
   let historie: Historie = await historieLesen();
   tonAn(profil.ton);
 
@@ -216,12 +220,16 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const p = satz().perlen[aktuell()];
     const gesperrt = !aenderbar(satz(), aktuell()) || busy;
     const offen = sitzung.hilfeOffen[aktuell()];
-    const maxHilfe: HilfeStufe = satz().runden > 0 ? 4 : 2;
+    const maxHilfe = hoechsteHilfe(satz());
+    // Hilfeknopf gegen Durchprobieren: pulsiert nur nach der Zahl der Fehlprüfungen (src/satz/hilfe.ts).
+    // Die Phase läuft mit der Uhr weiter, damit Neuzeichnen beim Tippen den Puls nicht von vorn beginnt.
+    const pulst = !gesperrt && hilfePulst(sitzung, aktuell());
+    const puls = pulst ? ` data-puls="ja" style="--puls-phase: -${Math.round(performance.now() % PULS_MS)}ms"` : '';
     const bildHilfe: HilfeStufe = offen === 2 || (offen >= 3 && !f.schrittVerraet?.(a.bedingung)) ? (Math.min(offen, 3) as HilfeStufe) : offen >= 3 ? 2 : 0;
     panel.innerHTML = `
       <div class="aufgabe-kopf"><div class="frage"><h1 class="auftrag">${KIND.auftrag[f.auftrag]}</h1>
         ${!gesperrt && offen >= 2 ? `<button class="btn leise so-gehts" type="button">${KIND.soGehts}</button>` : ''}</div>
-        ${gesperrt ? '' : `<button class="btn leise hilfe-knopf" type="button"${offen >= maxHilfe ? ' disabled' : ''}>${LAMPE}${offen ? KIND.mehrHilfe : KIND.hilfe}</button>`}</div>
+        ${gesperrt ? '' : `<button class="btn leise hilfe-knopf" type="button"${puls}${offen >= maxHilfe ? ' disabled' : ''}>${LAMPE}${offen ? KIND.mehrHilfe : KIND.hilfe}</button>`}</div>
       <div class="aufgabe-bild${f.eingabe(a.bedingung).art === 'bild' && !gesperrt ? ' tippbar' : ''}">${f.zeichne(a.bedingung, { hilfe: gesperrt ? 0 : bildHilfe, gewaehlt: p.antwort })}</div>
       ${gesperrt ? '' : eingabeHtml(a, p.antwort, gesperrt)}
       ${gesperrt ? '' : hilfeHtml(a, offen)}
@@ -335,13 +343,10 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       return alles();
     }
     if (!lern && t.closest('.hilfe-knopf')) {
-      const max: HilfeStufe = satz().runden > 0 ? 4 : 2;
-      const neu = Math.min(max, sitzung.hilfeOffen[aktuell()] + 1) as HilfeStufe;
-      const hilfeOffen = sitzung.hilfeOffen.map((h, i) => (i === aktuell() ? neu : h));
-      const aufgaben = sitzung.aufgaben.map((x, i) => (i === aktuell() ? { ...x, hilfe: Math.max(x.hilfe, neu) as HilfeStufe } : x));
-      sitzung = { ...sitzung, hilfeOffen, aufgaben };
+      // nächste Stufe; ein pulsierender Knopf hört auf und zählt ab hier neu
+      sitzung = hilfeOeffnen(sitzung);
       // Stufe 1 = Lernbeispiel, im eigenen Fenster
-      if (neu === 1) lernSetzen(lernStart());
+      if (sitzung.hilfeOffen[aktuell()] === 1) lernSetzen(lernStart());
       speichern();
       return alles();
     }
@@ -415,7 +420,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       await warte(pause());
     }
     hebt = null;
-    sitzung = { ...sitzung, satz: r.satz };
+    sitzung = pulsNachfuehren({ ...sitzung, satz: r.satz });
     busy = false;
     wackeln = r.bleiben;
     if (!fertig(r.satz)) {

@@ -3,6 +3,7 @@ import type { Aufgabe, Eingabe, FormatId, HilfeStufe } from '../aufgaben/format'
 import { ladeGeschuetzt } from '../core/speicher';
 import { gleich, type Antwort } from '../perlen/antwort';
 import { fertig, type PerlenZustand, type Satz } from './vergleich';
+import type { PulsZustand } from './hilfe';
 
 /**
  * Historie der Aufgaben (docs/PLAN.md, Aufgabe A3; docs/FORMATE.md, „Вид сохранённого задания“).
@@ -45,8 +46,13 @@ export interface Eintrag extends Aufgabe {
   gleicherFehler: number;
   /** Wahrscheinlichkeit, die Antwort zu erraten (siehe `rateChance`) */
   rateChance: number;
-  // Erweiterung A6: hier kommt dazu, ob der Hilfeknopf gepulst hat und ob das Kind danach Hilfe nahm.
-  // Neue Felder sind optional – ältere Einträge bleiben gültig, die Version der Historie bleibt 1.
+  /**
+   * Seit A6 (src/satz/hilfe.ts): der Hilfeknopf hat bei dieser Aufgabe mindestens einmal gepulst.
+   * Optional – Einträge von vorher haben es nicht (unbekannt), die Version der Historie bleibt 1.
+   */
+  puls?: boolean;
+  /** Seit A6: das Kind hat den Hilfeknopf gedrückt, während er pulsierte. Optional wie `puls`. */
+  hilfeNachPuls?: boolean;
 }
 
 export interface Historie {
@@ -125,13 +131,17 @@ export function naechsterSatz(h: Historie): number {
   return letzter ? letzter.satz + 1 : 0;
 }
 
-/** Einträge eines fertigen Satzes (noch nicht fertig → keine) */
-export function eintraegeAus(aufgaben: readonly Aufgabe[], satz: Satz, nummer: number, jetzt: Date): Eintrag[] {
+/**
+ * Einträge eines fertigen Satzes (noch nicht fertig → keine).
+ * `puls`: Zustand des Hilfeknopfs je Perle (Sitzung seit A6); ohne ihn fehlen `puls` und `hilfeNachPuls`.
+ */
+export function eintraegeAus(aufgaben: readonly Aufgabe[], satz: Satz, nummer: number, jetzt: Date, puls?: readonly PulsZustand[]): Eintrag[] {
   if (!fertig(satz)) return [];
   const tag = tagVon(jetzt);
   return aufgaben.map((a, nr) => {
     const p = satz.perlen[nr];
     const falsch = fehlantworten(p);
+    const z = puls?.[nr];
     return {
       ...a,
       satz: nummer,
@@ -142,13 +152,14 @@ export function eintraegeAus(aufgaben: readonly Aufgabe[], satz: Satz, nummer: n
       falsch,
       gleicherFehler: gleicheFehler(falsch),
       rateChance: rateChance(FORMATE[a.format].eingabe(a.bedingung), a.wahl),
+      ...(z ? { puls: z.puls, hilfeNachPuls: z.hilfeNachPuls } : {}),
     };
   });
 }
 
 /** Satz an die Historie anhängen (nichts wird überschrieben) */
-export function anhaengen(h: Historie, aufgaben: readonly Aufgabe[], satz: Satz, jetzt: Date): Historie {
-  const neu = eintraegeAus(aufgaben, satz, naechsterSatz(h), jetzt);
+export function anhaengen(h: Historie, aufgaben: readonly Aufgabe[], satz: Satz, jetzt: Date, puls?: readonly PulsZustand[]): Historie {
+  const neu = eintraegeAus(aufgaben, satz, naechsterSatz(h), jetzt, puls);
   return neu.length ? { ...h, eintraege: [...h.eintraege, ...neu] } : h;
 }
 
