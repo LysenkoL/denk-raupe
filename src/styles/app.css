@@ -192,9 +192,11 @@ svg text { font-family: var(--font); font-feature-settings: var(--font-features)
  * Zeichen H, Z, E ins Holz gebrannt; Zehner links, Einer rechts. Gewählter Platz: doppelte Linie
  * (Papiersaum innen, --fokus außen). Wie sie aussehen, hängt nie davon ab, ob die Zahl stimmt.
  */
-.zahl-eingabe { display: flex; flex-direction: column; align-items: center; gap: var(--s3); }
+.zahl-eingabe { display: flex; flex-direction: column; align-items: stretch; gap: var(--s3); }
+/* stil.css (Musterseite) hat eine eigene Liste .ziffern als Raster – hier gilt die Zeile der Ziffernperlen */
+.zahl-eingabe .ziffern { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0; padding: 0; }
 .plaetze {
-  display: flex; justify-content: center; gap: var(--s2);
+  align-self: center; display: flex; justify-content: center; gap: var(--s2);
   padding: var(--s2) var(--s4) var(--s3); border-radius: var(--rund-m);
   background: var(--holz); border: var(--linie) solid var(--holz-kante); border-bottom-width: var(--kante-knopf);
   box-shadow: var(--schatten-tisch);

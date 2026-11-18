@@ -13,7 +13,8 @@
  *   (sonst würde „Platz E, 4, Platz Z, 1“ zu 41).
  * - Löschen leert den gewählten Platz; ohne Wahl (oder wenn der gewählte Platz leer ist, etwa weil die Wahl
  *   von selbst weitergegangen ist) den Platz der zuletzt getippten Ziffer, sonst die rechteste Ziffer.
- *   Die anderen Ziffern bleiben, wo sie sind; die Wahl bleibt.
+ *   Die anderen Ziffern bleiben, wo sie sind; die Wahl bleibt, außer wenn alles leer ist: dann geht die
+ *   nächste Ziffer wieder in E.
  * - Eine führende Null verschwindet, sobald rechts davon eine Ziffer steht: 0 in Z und 4 in E ist 4.
  *
  * Die Antwort ist der Wert der Plätze (`wertVon`); die Plätze selbst werden nicht gespeichert.
@@ -96,6 +97,13 @@ function naechsteWahl(s: Stelle[], platz: number): number | null {
   return kandidaten.find((k) => k >= 0 && s[k] === null) ?? null;
 }
 
+/** nach Löschen: geordnet; alles leer → keine Wahl mehr, die nächste Ziffer beginnt in E */
+function geloescht(p: Plaetze, stellen: Stelle[]): Plaetze {
+  const geordnet = ordnen(stellen);
+  const leerAlles = geordnet.every((d) => d === null);
+  return { stellen: geordnet, gewaehlt: leerAlles ? null : p.gewaehlt, zuletzt: null };
+}
+
 export function schritt(p: Plaetze, h: Handlung, max: number): Plaetze {
   const n = p.stellen.length;
   const e = n - 1;
@@ -109,14 +117,14 @@ export function schritt(p: Plaetze, h: Handlung, max: number): Plaetze {
     if (p.gewaehlt !== null && p.stellen[p.gewaehlt] !== null) {
       const stellen = [...p.stellen];
       stellen[p.gewaehlt] = null;
-      return { ...p, stellen: ordnen(stellen), zuletzt: null };
+      return geloescht(p, stellen);
     }
     const rechteste = p.stellen.map((d, i) => (d === null ? -1 : i)).reduce((a, b) => Math.max(a, b), -1);
     const ziel = p.zuletzt !== null && p.stellen[p.zuletzt] !== null ? p.zuletzt : rechteste;
     if (ziel < 0) return p;
     const stellen = [...p.stellen];
     stellen[ziel] = null;
-    return { ...p, stellen: ordnen(stellen), zuletzt: null };
+    return geloescht(p, stellen);
   }
 
   const d = h.ziffer;

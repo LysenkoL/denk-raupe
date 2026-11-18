@@ -686,6 +686,8 @@ describe('Zahl in Plätzen (A5)', () => {
       expect(b.left).toBeGreaterThanOrEqual(0);
       expect(b.right).toBeLessThanOrEqual(360);
     }
+    // Ziffernperlen in Zeilen, nicht untereinander: höchstens drei Reihen
+    expect(new Set(m.ziffern.map((b) => Math.round(b.top))).size).toBeLessThanOrEqual(3);
     // Zehner links von den Einern, Plätze über den Ziffern
     expect(m.plaetze[0].x).toBeLessThan(m.plaetze[1].x);
     expect(m.plaetze[1].x).toBeLessThan(m.plaetze[2].x);
