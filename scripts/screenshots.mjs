@@ -18,6 +18,7 @@ const url = server.resolvedUrls.local[0];
 const { neueSitzung, neuesProfil, PROBE_FORMATE } = await server.ssrLoadModule('/src/satz/sitzung.ts');
 const { FORMATE } = await server.ssrLoadModule('/src/aufgaben/index.ts');
 const { gleich } = await server.ssrLoadModule('/src/perlen/antwort.ts');
+const { lernbeispiel } = await server.ssrLoadModule('/src/aufgaben/format.ts');
 const browser = await chromium.launch();
 
 const sitzung = neueSitzung(20261115);
@@ -28,7 +29,8 @@ const falsch = (i) => {
   return a.wahl ? a.wahl.find((w) => !gleich(w, l)) : { art: 'zahl', wert: (l.wert + 1) % 100 };
 };
 
-async function vorbereiten(page, gesehen = true) {
+/** `bekannt`: alle Formate bekannt (kein Lernbeispiel von selbst); sonst alle neu */
+async function vorbereiten(page, bekannt = true) {
   // Musterseite fasst den Speicher nicht an – sonst könnte die App beim ersten Laden einen eigenen Satz speichern
   await page.goto(url + '#/stil');
   await page.evaluate(
@@ -43,7 +45,7 @@ async function vorbereiten(page, gesehen = true) {
           tx.oncomplete = () => (req.result.close(), ok());
         };
       }),
-    [sitzung, { ...neuesProfil(), ton: false, gesehen: gesehen ? PROBE_FORMATE : [] }],
+    [sitzung, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) : {} }],
   );
   await page.goto(url + '#/');
   await page.reload();
@@ -64,10 +66,29 @@ async function eingeben(page, i, antwort) {
   }
 }
 
+/** im Lernbeispiel die richtige oder eine falsche Antwort tippen */
+async function lernTippen(page, a, richtig) {
+  const f = FORMATE[a.format];
+  const l = f.loesungen(a.bedingung)[0];
+  const antwort = richtig ? l : a.wahl ? a.wahl.find((w) => !gleich(w, l)) : { art: 'zahl', wert: (l.wert + 1) % 10 };
+  if (f.eingabe(a.bedingung).art === 'zahl') for (const d of String(antwort.wert)) await page.click(`.lern [data-ziffer="${d}"]`);
+  else {
+    const k = a.wahl.findIndex((w) => gleich(w, antwort));
+    await page.click(f.eingabe(a.bedingung).art === 'wahl' ? `.lern .wahl button[data-k="${k}"]` : `.lern [data-wahl="${k}"]`);
+  }
+}
+
 for (const [name, w, h] of GERAETE) {
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
   await vorbereiten(page, false);
   await page.screenshot({ path: `screenshots/${name}-lernbeispiel.png` });
+  // Lernbeispiel: richtig („Genau so!“), dann im zweiten Schritt falsch („Schau noch einmal.“, Hilfe Stufe 2)
+  const schritte = lernbeispiel(FORMATE[sitzung.aufgaben[0].format]);
+  await lernTippen(page, schritte[0], true);
+  await page.screenshot({ path: `screenshots/${name}-lernbeispiel-genau.png` });
+  await page.click('.lern-weiter');
+  await lernTippen(page, schritte[1], false);
+  await page.screenshot({ path: `screenshots/${name}-lernbeispiel-falsch.png` });
   await vorbereiten(page);
   await eingeben(page, 0, loesung(0));
   await page.screenshot({ path: `screenshots/${name}-teil.png` });
@@ -77,6 +98,8 @@ for (const [name, w, h] of GERAETE) {
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `screenshots/${name}-geprueft.png` });
   await page.click('.hilfe-knopf');
+  // Stufe 1 öffnet das Lernbeispiel, „Los geht's“ führt zurück; Stufe 2 zeigt das Zeichen „So geht's“
+  await page.click('.los');
   await page.click('.hilfe-knopf');
   await page.screenshot({ path: `screenshots/${name}-hilfe.png`, fullPage: true });
   await eingeben(page, 1, loesung(1));

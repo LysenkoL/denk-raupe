@@ -192,6 +192,10 @@ svg text { font-family: var(--font); font-feature-settings: var(--font-features)
 .hilfe-box .spaeter { align-self: flex-start; }
 .lern { display: flex; flex-direction: column; gap: var(--s3); }
 .lern-titel { margin: 0; font-size: var(--t-klein); font-weight: 800; color: var(--tinte-leise); text-transform: uppercase; letter-spacing: .06em; }
-.lern .los { align-self: stretch; }
+.lern .los, .lern .lern-weiter { align-self: stretch; }
+/* Frage mit dem Zeichen „So geht's“ darunter (ab Hilfe Stufe 2) */
+.aufgabe-kopf .frage { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); }
+.aufgabe-kopf .frage .auftrag { flex: none; }
+.so-gehts { min-height: 48px; padding: 0 var(--s3); font-size: var(--t-klein); border-width: 3px; }
 .geheim span.neu { box-shadow: 0 0 0 var(--fokus-saum) var(--papier), 0 0 0 calc(var(--fokus-saum) + var(--fokus-linie)) var(--fokus); animation: hupf var(--mittel) ease-out 2; }
 .ende .neuer-satz { align-self: stretch; margin-top: var(--s2); }

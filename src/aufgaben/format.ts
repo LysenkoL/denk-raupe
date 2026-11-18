@@ -115,7 +115,11 @@ export interface Format<B> {
   zeichne(b: B, o: { hilfe: HilfeStufe; gewaehlt: Antwort | null; vorrechnen?: boolean }): string;
   /** true: Hilfe Stufe 3 würde hier die Lösung verraten – dann wird sie an der ähnlichen Aufgabe gezeigt */
   schrittVerraet?(b: B): boolean;
-  /** Aufgaben des Lernbeispiels, von leicht zu gewöhnlich (vorerst eine; mehrere Schritte: Aufgabe A4) */
+  /**
+   * 2–3 Aufgaben des Lernbeispiels, von leicht zu gewöhnlich: die erste löst eine einzige offensichtliche
+   * Handlung, die letzte ist eine gewöhnliche Aufgabe der Stufe 1. Jede muss die Prüfung wie `aufgabeAus`
+   * bestehen (siehe `lernbeispiel`).
+   */
   beispiele(z: Zufall): B[];
   /** Block für das A4-Blatt; Pflicht bei druck: true */
   druckBlock?(b: B): string;
@@ -149,6 +153,37 @@ export function aufgabeAus<B>(f: Format<B>, samen: number, stufe: number, e: Ein
     return { format: f.id, version: f.version, samen: s, stufe, zahlenraum: e.zahlenraum, bedingung: b, wahl, hilfe: 0 };
   }
   throw new Error(`${f.id}: keine eindeutige Aufgabe gefunden (Stufe ${stufe}, bis ${e.zahlenraum})`);
+}
+
+/** Samen der Schritte im Lernbeispiel: fest, damit Wahl und Reihenfolge nach Neuladen gleich bleiben */
+const LERN_SAMEN = 1;
+
+/**
+ * Schritte des Lernbeispiels als Aufgaben (Stufe 1, Standard-Zahlenraum). Jeder Schritt besteht dieselbe
+ * Prüfung wie `aufgabeAus`: genau eine Lösung, in der Wahl genau einmal. Sonst Fehler – ein Format mit
+ * mehrdeutigem Lernbeispiel kommt nicht durch die Tests.
+ */
+export function lernbeispiel<B>(f: Format<B>): Aufgabe<B>[] {
+  return f.beispiele(zufall(LERN_SAMEN)).map((b, k) => {
+    const samen = LERN_SAMEN + k;
+    const l = f.loesungen(b);
+    const wahl = f.wahl ? f.wahl(b, zufall(samen)) : null;
+    const eindeutig = l.length === 1 && (!wahl || wahl.filter((w) => gleich(w, l[0])).length === 1);
+    if (!eindeutig) throw new Error(`${f.id}: Lernbeispiel, Schritt ${k + 1}, ist nicht eindeutig`);
+    return { format: f.id, version: f.version, samen, stufe: 1, zahlenraum: STANDARD_EINSTELLUNG.zahlenraum, bedingung: b, wahl, hilfe: 0 };
+  });
+}
+
+/**
+ * Sofortige Rückmeldung im Lernbeispiel (nur dort – im Satz gibt es keine bis zum Vergleichen):
+ * richtig; falsch; offen = noch nichts oder eine Zahl, die erst halb getippt ist (1 auf dem Weg zu 10).
+ */
+export function lernPruefen<B>(f: Format<B>, a: Aufgabe<B>, antwort: Antwort | null): 'richtig' | 'falsch' | 'offen' {
+  if (!antwort) return 'offen';
+  const l = f.loesungen(a.bedingung)[0];
+  if (gleich(l, antwort)) return 'richtig';
+  if (antwort.art === 'zahl' && l.art === 'zahl' && String(l.wert).startsWith(String(antwort.wert))) return 'offen';
+  return 'falsch';
 }
 
 export function stimmt<B>(f: Format<B>, a: Aufgabe<B>, antwort: Antwort): boolean {

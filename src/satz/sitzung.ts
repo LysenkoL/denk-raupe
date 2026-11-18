@@ -4,7 +4,7 @@ import type { Mauer } from '../aufgaben/zahlenmauer';
 import { zufall } from '../core/zufall';
 import type { Antwort } from '../perlen/antwort';
 import { blaetter, fertig, neuerSatz, type Satz } from './vergleich';
-import { anhaengen, type Historie } from './historie';
+import { anhaengen, type Eintrag, type Historie } from './historie';
 
 /**
  * Ein laufender Satz mit allem, was gespeichert wird: jede Aufgabe ganz (Format, Version, Samen,
@@ -26,13 +26,39 @@ export interface Sitzung {
   hilfeOffen: HilfeStufe[];
   /** Blätter schon in den Korb gezählt (einmal je Satz) */
   gezaehlt: boolean;
+  /**
+   * Lernbeispiel, das gerade offen ist: Format, Schritt, was im Schritt steht und ob schon ein falscher
+   * Versuch war. So geht es nach Verlassen, Drehen oder Neuladen beim selben Schritt weiter.
+   * Optional seit A4 – ältere Sätze bleiben gültig, daher keine neue Version. Nie Teil von Raupe,
+   * Zwilling oder Historie.
+   */
+  lernbeispiel?: LernZustand;
 }
+
+export interface LernZustand {
+  format: FormatId;
+  /** 0 … Zahl der Schritte − 1 */
+  schritt: number;
+  /** Antwort im Schritt: die richtige, eine halb getippte Zahl oder nichts (eine falsche kehrt sofort zurück) */
+  antwort: Antwort | null;
+  /** in diesem Schritt schon einmal falsch → Hilfe Stufe 2 auf dem Bild, bis er gelöst ist */
+  versucht: boolean;
+}
+
+/**
+ * Wie gut das Kind ein Format kennt (docs/TZ.md, „Самопроверка“, Nr. 8):
+ * neu – noch nie gesehen: Lernbeispiel vor der Aufgabe;
+ * bekannt – Lernbeispiel nur auf Wunsch (Hilfe Stufe 1, Zeichen „So geht's“);
+ * nochmal – letztes Mal zurückgelegt oder nur mit Hilfe Stufe 4 gelöst: Lernbeispiel noch einmal vor der Aufgabe.
+ */
+export type Kenntnis = 'neu' | 'bekannt' | 'nochmal';
 
 /** Profil des Kindes (nur auf dem Gerät) */
 export interface Profil {
-  version: 1;
-  /** Formate, deren Lernbeispiel schon gezeigt wurde */
-  gesehen: FormatId[];
+  /** 2: `formate` statt der Liste `gesehen` (Umzug von 1: `ladeProfil`) */
+  version: 2;
+  /** Kenntnis je Format; ein Format, das hier fehlt, ist neu */
+  formate: Partial<Record<FormatId, Kenntnis>>;
   /** Blätter im Korb, gesamt */
   blaetter: number;
   saetze: number;
@@ -41,23 +67,58 @@ export interface Profil {
   ton: boolean;
 }
 
+/** Profil in Version 1 (bis Aufgabe A4): Liste der Formate, deren Lernbeispiel schon gezeigt wurde */
+interface ProfilV1 extends Omit<Profil, 'version' | 'formate'> {
+  version: 1;
+  gesehen: FormatId[];
+}
+
 /** Platzhalter bis Etappe 5 (Welt): Wörter, die neue Orte öffnen */
 export const GEHEIMWOERTER = ['TEICH', 'BERGE', 'STRAND'];
 
 export function neuesProfil(): Profil {
-  return { version: 1, gesehen: [], blaetter: 0, saetze: 0, geheim: { wort: GEHEIMWOERTER[0], offen: [] }, ton: true };
+  return { version: 2, formate: {}, blaetter: 0, saetze: 0, geheim: { wort: GEHEIMWOERTER[0], offen: [] }, ton: true };
+}
+
+export function kenntnis(p: Profil, id: FormatId): Kenntnis {
+  return p.formate[id] ?? 'neu';
+}
+
+/** Lernbeispiel kommt von selbst vor der Aufgabe: bei neu und nochmal */
+export function lernbeispielVorher(p: Profil, id: FormatId): boolean {
+  return kenntnis(p, id) !== 'bekannt';
+}
+
+/** Umzug 1 → 2: jedes Format aus `gesehen` ist bekannt, alle anderen neu; alles Übrige bleibt, wie es war */
+function profilVonV1(p: Partial<ProfilV1>): Profil {
+  const { gesehen, version: _v, ...rest } = p;
+  const formate: Profil['formate'] = {};
+  for (const id of Array.isArray(gesehen) ? gesehen : []) formate[id] = 'bekannt';
+  return { ...neuesProfil(), ...rest, version: 2, formate };
 }
 
 /**
- * Gespeichertes Profil lesen. Die Form ist seit Version 1 gleich (die Historie liegt in einem eigenen
- * Speicher), daher kein Umzug: Version 1 bleibt, wie sie ist; fehlt ein Feld, kommt der Wert eines
- * neuen Profils dazu. Nichts gespeichert, kaputt oder unbekannte (neuere) Version → null.
+ * Gespeichertes Profil lesen, Version 1 umziehen; fehlt ein Feld, kommt der Wert eines neuen Profils dazu.
+ * Nichts gespeichert, kaputt oder unbekannte (neuere) Version → null; das Gespeicherte bewahrt vorher
+ * `ladeGeschuetzt` unter `profil-unbekannt` auf.
  */
 export function ladeProfil(roh: unknown): Profil | null {
   if (!roh || typeof roh !== 'object') return null;
-  const p = roh as Partial<Profil> & { version?: unknown };
-  if (p.version === 1) return { ...neuesProfil(), ...p } as Profil;
+  const p = roh as { version?: unknown };
+  if (p.version === 2) return { ...neuesProfil(), ...(roh as Partial<Profil>) };
+  if (p.version === 1) return profilVonV1(roh as Partial<ProfilV1>);
   return null;
+}
+
+/**
+ * Kenntnis nach einem fertigen Satz: ein Format, dessen Aufgabe zurückgelegt oder erst mit Hilfe Stufe 4
+ * gelöst wurde, bekommt beim nächsten Mal das Lernbeispiel noch einmal. Sonst bleibt alles (aus „nochmal“
+ * wird „bekannt“ erst, wenn das Lernbeispiel durch ist).
+ */
+export function kenntnisNachSatz(formate: Profil['formate'], neu: readonly Eintrag[]): Profil['formate'] {
+  const out = { ...formate };
+  for (const e of neu) if (e.ergebnis === 'zurueck' || (e.ergebnis === 'hilfe' && e.hilfe >= 4)) out[e.format] = 'nochmal';
+  return out;
 }
 
 /** Probesatz (Etappe 3): je ein Zahlenmauer-, Wer-ist-es- und Muster-Aufgabe in zufälliger Reihenfolge */
@@ -116,7 +177,8 @@ export function stimmtFuer(s: Sitzung) {
 
 /**
  * Satz fertig → Blätter in den Korb, ein Buchstabe des Geheimworts öffnet sich, jede Aufgabe kommt in
- * die Historie. Alles genau einmal je Satz (`gezaehlt`); die drei Teile werden zusammen gespeichert.
+ * die Historie, die Kenntnis der Formate wird nachgeführt (`kenntnisNachSatz`). Alles genau einmal
+ * je Satz (`gezaehlt`); die drei Teile werden zusammen gespeichert.
  * `jetzt`: Zeitpunkt des Abschlusses (Tag in der Historie).
  */
 export function abschliessen(
@@ -134,10 +196,12 @@ export function abschliessen(
   }
   const zu = [...geheim.wort].map((_, i) => i).filter((i) => !geheim.offen.includes(i));
   const neu = z.eins(zu);
+  const historie = anhaengen(h, s.aufgaben, s.satz, jetzt);
+  const formate = kenntnisNachSatz(p.formate, historie.eintraege.slice(h.eintraege.length));
   return {
     sitzung: { ...s, gezaehlt: true },
-    profil: { ...p, blaetter: p.blaetter + blaetter(s.satz).wert, saetze: p.saetze + 1, geheim: { ...geheim, offen: [...geheim.offen, neu] } },
-    historie: anhaengen(h, s.aufgaben, s.satz, jetzt),
+    profil: { ...p, formate, blaetter: p.blaetter + blaetter(s.satz).wert, saetze: p.saetze + 1, geheim: { ...geheim, offen: [...geheim.offen, neu] } },
+    historie,
     neuerBuchstabe: neu,
   };
 }

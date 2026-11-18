@@ -47,9 +47,10 @@ describe.each(IDS)('Format %s', (id) => {
     expect(aufgabeAus(f, 42, 1)).toEqual(aufgabeAus(f, 42, 1, { zahlenraum: 20 }));
   });
 
-  it('Lernbeispiel: mindestens eine Aufgabe, jede eindeutig', () => {
+  it('Lernbeispiel: 2–3 Aufgaben, jede eindeutig (Einzelheiten: tests/lernbeispiel.test.ts)', () => {
     const b = f.beispiele(zufall(1));
-    expect(b.length).toBeGreaterThanOrEqual(1);
+    expect(b.length).toBeGreaterThanOrEqual(2);
+    expect(b.length).toBeLessThanOrEqual(3);
     for (const x of b) expect(f.loesungen(x)).toHaveLength(1);
   });
 

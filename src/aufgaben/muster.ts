@@ -124,11 +124,19 @@ export const MUSTER: Format<Muster> = {
   eingabe: () => ({ art: 'wahl' }),
   wahl,
   zeichne,
+  /**
+   * Lernbeispiel: (1) immer dasselbe – eine Form, ein Blick; (2) zwei Formen im Wechsel, dreimal ganz zu
+   * sehen; (3) gewöhnliche Aufgabe der Stufe 1 (AB, Länge 5).
+   */
   beispiele: () => {
-    const u: Element[] = [
-      { form: 'kreis', farbe: 'rot' },
-      { form: 'quadrat', farbe: 'blau' },
+    const e = (form: Form, farbe: FormFarbe): Element => ({ form, farbe });
+    const a = e('kreis', 'rot');
+    const [b, c] = [e('dreieck', 'gelb'), e('quadrat', 'blau')];
+    const [d, f] = [e('stern', 'gruen'), e('kreis', 'lila')];
+    return [
+      { reihe: [a, a, a, a], periode: 1 },
+      { reihe: [b, c, b, c, b, c], periode: 2 },
+      { reihe: [d, f, d, f, d], periode: 2 },
     ];
-    return [{ reihe: [u[0], u[1], u[0], u[1], u[0]], periode: 2 }];
   },
 };

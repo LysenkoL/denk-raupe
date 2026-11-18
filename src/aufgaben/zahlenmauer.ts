@@ -145,5 +145,16 @@ export const ZAHLENMAUER: Format<Mauer> = {
   loesungen,
   eingabe: (m) => ({ art: 'zahl', max: m.grenze }),
   zeichne,
-  beispiele: () => [{ reihen: baue([1, 2]), fehlt: [1, 0], grenze: 10 }],
+  /**
+   * Lernbeispiel: vom Kleinsten zur gewöhnlichen Mauer der Stufe 1 (Steine und größte Zahl wachsen).
+   * Alle Antworten einstellig: eine Ziffernperle genügt.
+   */
+  beispiele: () => [
+    // zwei Reihen, 1 + 1: eine einzige Rechnung
+    { reihen: baue([1, 1]), fehlt: [1, 0], grenze: 10 },
+    // drei Reihen aus Einsen, der oberste Stein fehlt
+    { reihen: baue([1, 1, 1]), fehlt: [2, 0], grenze: 10 },
+    // gewöhnliche Mauer der Stufe 1: ein Stein in der Mitte fehlt
+    { reihen: baue([1, 3, 2]), fehlt: [1, 1], grenze: 10 },
+  ],
 };

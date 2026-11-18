@@ -4,7 +4,8 @@ import { createServer, type ViteDevServer } from 'vite';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { FORMATE } from '../src/aufgaben';
-import { neueSitzung, neuesProfil, PROBE_FORMATE, type Sitzung } from '../src/satz/sitzung';
+import { lernbeispiel, type Aufgabe } from '../src/aufgaben/format';
+import { neueSitzung, neuesProfil, PROBE_FORMATE, type Profil, type Sitzung } from '../src/satz/sitzung';
 import { gleich, type Antwort } from '../src/perlen/antwort';
 import { KIND } from '../src/i18n/kind';
 
@@ -36,15 +37,16 @@ afterAll(async () => {
 
 const SAMEN = 20261115;
 
-/** Seite mit festem Satz; `gesehen` = Lernbeispiele schon gezeigt; `gespeichert` = so liegt es schon im Speicher */
+/** Seite mit festem Satz; `formate` = Kenntnis im Profil (Standard: alle bekannt); `gespeichert` = so liegt es schon im Speicher */
 async function oeffnen(
   w: number,
   h: number,
-  o: { gesehen?: boolean; samen?: number; gespeichert?: { sitzung: Sitzung; profil: unknown }; weitere?: Record<string, unknown> } = {},
+  o: { formate?: Profil['formate']; samen?: number; gespeichert?: { sitzung: Sitzung; profil: unknown }; weitere?: Record<string, unknown> } = {},
 ): Promise<{ page: Page; sitzung: Sitzung }> {
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
   const sitzung = o.gespeichert?.sitzung ?? neueSitzung(o.samen ?? SAMEN);
-  const profil = o.gespeichert?.profil ?? { ...neuesProfil(), ton: false, gesehen: o.gesehen === false ? [] : PROBE_FORMATE };
+  const alleBekannt = Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt']));
+  const profil = o.gespeichert?.profil ?? { ...neuesProfil(), ton: false, formate: o.formate ?? alleBekannt };
   // Musterseite fasst den Speicher nicht an – sonst könnte die App beim ersten Laden einen eigenen Satz speichern
   await page.goto(url + '#/stil');
   await page.evaluate(
@@ -113,6 +115,25 @@ async function eingeben(page: Page, s: Sitzung, i: number, antwort: Antwort): Pr
   }
   // abgebrochene Animationen (Bildschirm neu gezeichnet) zählen als fertig
   await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => null))));
+}
+
+/** Hilfe Stufe 2 auf dem Bild: warme Füllung des hervorgehobenen Teils (in allen drei Formaten) */
+const HILFE2 = '#FFF3B0';
+const lernRichtig = (a: Aufgabe): Antwort => FORMATE[a.format].loesungen(a.bedingung)[0];
+/** falsche Antwort im Lernbeispiel: andere Wahl oder eine andere einstellige Zahl */
+function lernFalsch(a: Aufgabe): Antwort {
+  const l = lernRichtig(a);
+  if (a.wahl) return a.wahl.find((w) => !gleich(w, l))!;
+  return { art: 'zahl', wert: l.art === 'zahl' ? (l.wert + 1) % 10 : 1 };
+}
+/** im Lernbeispiel tippen, wie das Kind es tut */
+async function lernTippen(page: Page, a: Aufgabe, antwort: Antwort): Promise<void> {
+  const art = FORMATE[a.format].eingabe(a.bedingung).art;
+  if (art === 'zahl' && antwort.art === 'zahl') for (const d of String(antwort.wert)) await page.click(`.lern [data-ziffer="${d}"]`);
+  else {
+    const k = a.wahl!.findIndex((w) => gleich(w, antwort));
+    await page.click(art === 'wahl' ? `.lern .wahl button[data-k="${k}"]` : `.lern [data-wahl="${k}"]`);
+  }
 }
 
 async function vergleichen(page: Page): Promise<void> {
@@ -230,40 +251,129 @@ describe('Ablauf eines Satzes', () => {
     await page.close();
   });
 
-  it("Lernbeispiel vor einem neuen Format: falsche Wahl → „Schau noch einmal“, richtige → „Los geht's“", async () => {
-    const { page, sitzung } = await oeffnen(390, 800, { gesehen: false });
-    expect(await page.textContent('.lern-titel')).toBe("So geht's");
-    const f = FORMATE[sitzung.aufgaben[0].format];
-    const b = f.beispiele({} as never)[0];
-    const art = f.eingabe(b).art;
-    const richtig = f.loesungen(b)[0];
-    const tippe = async (a: Antwort) => {
-      if (art === 'zahl' && a.art === 'zahl') for (const d of String(a.wert)) await page.click(`[data-ziffer="${d}"]`);
-      else {
-        const { zufall } = await import('../src/core/zufall');
-        const wahl = f.wahl!(b, zufall(1));
-        const k = wahl.findIndex((w) => gleich(w, a));
-        await page.click(art === 'wahl' ? `.wahl button[data-k="${k}"]` : `[data-wahl="${k}"]`);
+  it('Lernbeispiel vor jedem neuen Format: Schritte mit sofortiger Rückmeldung; danach bekannt; keine Perlen, Blätter, Historie', async () => {
+    const { page, sitzung } = await oeffnen(390, 800, { formate: {} });
+    for (let i = 0; i < sitzung.aufgaben.length; i++) {
+      await page.click(`.perle[data-i="${i}"]`);
+      expect(await page.textContent('.lern-titel')).toBe("So geht's");
+      // von selbst gezeigt: kein Hilfeknopf, kein Weg vorbei, Vergleichen geht nicht
+      expect(await page.$('.hilfe-knopf')).toBeNull();
+      expect(await page.$('.los')).toBeNull();
+      expect(await page.isDisabled('.vergleichen')).toBe(true);
+      const f = FORMATE[sitzung.aufgaben[i].format];
+      const schritte = lernbeispiel(f);
+      expect(schritte.length).toBeGreaterThanOrEqual(2);
+      for (let k = 0; k < schritte.length; k++) {
+        const a = schritte[k];
+        expect(await page.getAttribute('.lern', 'data-schritt')).toBe(String(k));
+        expect(await page.innerHTML('.lern .aufgabe-bild')).not.toContain(HILFE2);
+        // falsch: „Schau noch einmal.“, die Antwort kehrt zurück, Hilfe Stufe 2 auf dem Bild
+        await lernTippen(page, a, lernFalsch(a));
+        expect(await page.textContent('.lern .meldung')).toBe(KIND.nochmalSchauen);
+        expect(await page.innerHTML('.lern .aufgabe-bild')).toContain(HILFE2);
+        expect(await page.$$('.lern [aria-pressed="true"]')).toHaveLength(0);
+        if (f.eingabe(a.bedingung).art === 'zahl') expect(await page.isDisabled('[data-ziffer="x"]')).toBe(true);
+        // richtig: „Genau so!“, dann zum nächsten Schritt, nach dem letzten „Los geht's“
+        await lernTippen(page, a, lernRichtig(a));
+        expect(await page.textContent('.lern .meldung')).toBe(KIND.genau);
+        if (k < schritte.length - 1) {
+          expect(await page.$('.los')).toBeNull();
+          await page.click('.lern-weiter');
+        }
       }
-    };
-    const anders: Antwort = richtig.art === 'zahl' ? { art: 'zahl', wert: richtig.wert === 1 ? 2 : 1 } : { art: 'form', form: 'stern', farbe: 'gelb' };
-    if (art !== 'wahl' || anders.art === 'zahl') {
-      await tippe(anders);
-      expect(await page.textContent('.meldung')).toBe('Schau noch einmal.');
-      if (art === 'zahl') await page.click('[data-ziffer="x"]');
+      await page.click('.los');
+      expect(await page.$('.lern')).toBeNull();
+      expect(await page.textContent('.auftrag')).toBe(KIND.auftrag[f.auftrag]);
     }
-    await tippe(richtig);
-    expect(await page.textContent('.meldung')).toBe('Genau so!');
+    await page.waitForTimeout(150);
+    // nichts davon im Satz: keine Antwort, kein Blatt gehoben, keine Historie, kein Blatt im Korb
+    const s = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(s.satz.perlen.every((p) => p.antwort === null && p.blatt === 'zu')).toBe(true);
+    expect(s.satz.runden).toBe(0);
+    expect(s.lernbeispiel).toBeUndefined();
+    expect(await gespeichert(page, 'historie')).toBeUndefined();
+    expect(await page.$$eval('.zwilling-perle .blatt', (e) => e.length)).toBe(3);
+    const p = await gespeichert<Profil>(page, 'profil');
+    expect(p.formate).toEqual(Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])));
+    expect(p.blaetter).toBe(0);
+    // einmal: nach Neuladen und vor jeder Aufgabe kein Lernbeispiel mehr
+    await page.reload();
+    await page.waitForSelector('.perle');
+    for (let i = 0; i < 3; i++) {
+      await page.click(`.perle[data-i="${i}"]`);
+      expect(await page.$('.lern')).toBeNull();
+    }
+    await page.close();
+  });
+
+  it('Neuladen mitten im Lernbeispiel: derselbe Schritt, derselbe Stand', async () => {
+    const { page, sitzung } = await oeffnen(390, 800, { formate: {} });
+    const a0 = lernbeispiel(FORMATE[sitzung.aufgaben[0].format]);
+    await lernTippen(page, a0[0], lernRichtig(a0[0]));
+    await page.waitForTimeout(150);
+    await page.reload();
+    await page.waitForSelector('.lern');
+    expect(await page.getAttribute('.lern', 'data-schritt')).toBe('0');
+    expect(await page.textContent('.lern .meldung')).toBe(KIND.genau);
+    await page.click('.lern-weiter');
+    await lernTippen(page, a0[1], lernFalsch(a0[1]));
+    await page.waitForTimeout(150);
+    // Drehen (anderes Seitenverhältnis), dann Neuladen
+    await page.setViewportSize({ width: 800, height: 390 });
+    await page.reload();
+    await page.waitForSelector('.lern');
+    expect(await page.getAttribute('.lern', 'data-schritt')).toBe('1');
+    expect(await page.textContent('.lern .meldung')).toBe(KIND.nochmalSchauen);
+    expect(await page.innerHTML('.lern .aufgabe-bild')).toContain(HILFE2);
+    // zu einer anderen Perle und zurück: das Lernbeispiel wartet beim selben Schritt
+    await page.click('.perle[data-i="1"]');
+    await page.click('.perle[data-i="0"]');
+    expect(await page.getAttribute('.lern', 'data-schritt')).toBe('1');
+    await page.close();
+  });
+
+  it("Zeichen „So geht's“: erst ab Hilfe Stufe 2, öffnet das Lernbeispiel, die Hilfestufe bleibt", async () => {
+    const { page } = await oeffnen(390, 900);
+    await page.click('.perle[data-i="1"]');
+    expect(await page.$('.so-gehts')).toBeNull();
+    // bekanntes Format: Hilfe Stufe 1 öffnet das Lernbeispiel auf Wunsch – „Los geht's“ führt jederzeit zurück
+    await page.click('.hilfe-knopf');
+    expect(await page.getAttribute('.lern', 'data-schritt')).toBe('0');
+    expect(await page.isDisabled('.vergleichen')).toBe(true);
     await page.click('.los');
     expect(await page.$('.lern')).toBeNull();
-    expect(await page.textContent('.auftrag')).toBe(KIND.auftrag[f.auftrag]);
+    expect(await page.$('.so-gehts')).toBeNull();
+    await page.click('.hilfe-knopf');
+    expect(await page.isVisible('.so-gehts')).toBe(true);
+    const box = (await page.locator('.so-gehts').boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(48);
+    await page.waitForTimeout(150);
+    const vorher = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(vorher.hilfeOffen[1]).toBe(2);
+    await page.click('.so-gehts');
+    expect(await page.getAttribute('.lern', 'data-schritt')).toBe('0');
+    await page.waitForTimeout(150);
+    const offen = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(offen.hilfeOffen).toEqual(vorher.hilfeOffen);
+    expect(offen.aufgaben.map((a) => a.hilfe)).toEqual(vorher.aufgaben.map((a) => a.hilfe));
+    await page.click('.los');
+    await page.waitForTimeout(150);
+    const nachher = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(nachher.hilfeOffen).toEqual(vorher.hilfeOffen);
+    expect(nachher.lernbeispiel).toBeUndefined();
+    expect(await page.isVisible('.so-gehts')).toBe(true);
+    // das Profil bleibt: bekannt
+    expect((await gespeichert<Profil>(page, 'profil')).formate[nachher.aufgaben[1].format]).toBe('bekannt');
     await page.close();
   });
 
   it('Hilfe: vor dem Vergleichen zwei Stufen, danach bis zur ähnlichen Aufgabe; „Später“ legt zurück', async () => {
     const { page, sitzung } = await oeffnen(390, 900);
     await page.click('.perle[data-i="1"]');
+    // Stufe 1: das Lernbeispiel auf Wunsch; zurück steht sein letzter Schritt vorgerechnet in der Hilfe
     await page.click('.hilfe-knopf');
+    expect(await page.textContent('.lern-titel')).toBe("So geht's");
+    await page.click('.los');
     expect(await page.textContent('.hilfe-box')).toContain("So geht's");
     await page.click('.hilfe-knopf');
     expect(await page.isDisabled('.hilfe-knopf')).toBe(true);
@@ -280,6 +390,29 @@ describe('Ablauf eines Satzes', () => {
     // das Blatt über der zurückgelegten Aufgabe bleibt liegen
     const zu = await page.$$eval('.zwilling-perle', (els) => els.map((e) => !!e.querySelector('.blatt')));
     expect(zu).toEqual([false, true, false]);
+    // zurückgelegt → dieses Format bekommt das Lernbeispiel noch einmal (nochmal), die anderen nicht
+    await page.waitForTimeout(150);
+    const id = sitzung.aufgaben[1].format;
+    const p = await gespeichert<Profil>(page, 'profil');
+    expect(p.formate[id]).toBe('nochmal');
+    expect(Object.values(p.formate).filter((k) => k === 'bekannt')).toHaveLength(2);
+    await page.click('.neuer-satz');
+    await page.waitForTimeout(150);
+    const neu = await gespeichert<Sitzung>(page, 'sitzung');
+    for (let i = 0; i < neu.aufgaben.length; i++) {
+      await page.click(`.perle[data-i="${i}"]`);
+      expect(!!(await page.$('.lern')), neu.aufgaben[i].format).toBe(neu.aufgaben[i].format === id);
+    }
+    // nach dem Lernbeispiel wieder bekannt
+    const j = neu.aufgaben.findIndex((a) => a.format === id);
+    await page.click(`.perle[data-i="${j}"]`);
+    for (const [k, a] of lernbeispiel(FORMATE[id]).entries()) {
+      if (k > 0) await page.click('.lern-weiter');
+      await lernTippen(page, a, lernRichtig(a));
+    }
+    await page.click('.los');
+    await page.waitForTimeout(150);
+    expect((await gespeichert<Profil>(page, 'profil')).formate[id]).toBe('bekannt');
     await page.close();
   });
 
@@ -322,7 +455,7 @@ describe('Ablauf eines Satzes', () => {
 
   it('unbekannte neuere Version: Satz, Profil und Historie bleiben unangetastet unter „…-unbekannt“', async () => {
     const satzNeu = { ...neueSitzung(SAMEN), version: 3, ausDerZukunft: true };
-    const profilNeu = { ...neuesProfil(), version: 2, blaetter: 99 };
+    const profilNeu = { ...neuesProfil(), version: 3, blaetter: 99 };
     const historieNeu = { version: 2, eintraege: [{ format: 'muster', ergebnis: 'gold' }] };
     const { page } = await oeffnen(390, 800, { gespeichert: { sitzung: satzNeu as unknown as Sitzung, profil: profilNeu }, weitere: { historie: historieNeu } });
     await page.waitForTimeout(200);

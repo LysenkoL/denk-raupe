@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { FORMATE } from '../src/aufgaben';
 import type { Mauer } from '../src/aufgaben/zahlenmauer';
-import { ladeSitzung, neueSitzung, neuesProfil, stimmtFuer } from '../src/satz/sitzung';
+import { ladeProfil, ladeSitzung, neueSitzung, neuesProfil, stimmtFuer } from '../src/satz/sitzung';
 
 /**
  * Daten aus Version 1 überstehen das Update (docs/PLAN.md, Р13).
@@ -81,9 +81,9 @@ describe('Sitzung: Umzug von Version 1', () => {
 });
 
 describe('Profil', () => {
-  it('Form unverändert: das Profil aus Version 1 passt ohne Umzug', () => {
+  it('das Profil aus Version 1 bekommt beim Umzug genau die Felder eines neuen Profils (Version 2)', () => {
     expect(v1.profil.version).toBe(1);
-    expect(neuesProfil().version).toBe(1);
-    expect(Object.keys(v1.profil).sort()).toEqual(Object.keys(neuesProfil()).sort());
+    expect(neuesProfil().version).toBe(2);
+    expect(Object.keys(ladeProfil(v1.profil)!).sort()).toEqual(Object.keys(neuesProfil()).sort());
   });
 });
