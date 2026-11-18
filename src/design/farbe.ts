@@ -45,6 +45,45 @@ export const FARB_TOKEN = {
 } as const;
 
 /**
+ * Farben der Figuren und Dinge des Tisches, die in docs/STIL.md keinen eigenen Code haben (Abschnitte 3 und 11):
+ * Raupe (warmes Grün, Samt), Halstuch (Terrakotta), Fliege des Zwillings (Himmelblau), Ast, Filzblätter,
+ * Korb. Vorläufig bis zu den Bildern aus Paket K1; danach bleiben sie für Ast, Nester und Funken.
+ * Jede Farbe hat ihre Kante (dunkler, unten) und, wo nötig, ein Licht (oben links). Ein Test hält sie
+ * mit tokens.css gleich.
+ */
+export const FIGUR_TOKEN = {
+  raupe: '#86C25A',
+  'raupe-licht': '#B9DF8E',
+  'raupe-kante': '#5B9638',
+  'raupe-wange': '#F0A884',
+  auge: '#FFFDF6',
+  halstuch: '#D8693F',
+  'halstuch-kante': '#A8472A',
+  fliege: '#8CCDF2',
+  'fliege-kante': '#4B9ACB',
+  fuehler: '#E9A23B',
+  ast: '#C49A68',
+  'ast-kante': '#946A3E',
+  'ast-licht': '#DDBB8C',
+  nest: '#E7D6B6',
+  blatt: '#6FAE4E',
+  'blatt-licht': '#9BCF73',
+  'blatt-kante': '#4A8833',
+  'blatt-ader': '#A3D07C',
+  'blatt-gold': '#F5C540',
+  'blatt-gold-licht': '#FFE27A',
+  'blatt-gold-kante': '#C9900F',
+  'blatt-gold-ader': '#FFEDA6',
+  korb: '#CB955A',
+  'korb-kante': '#956637',
+  'korb-licht': '#E6BE85',
+  /** Karte „gar kein Hut“ in Wer ist es?: irgendein Hut, ohne Farbe */
+  'hut-grau': '#C3CBC5',
+  'hut-grau-kante': '#8F9A93',
+} as const;
+export type FigurFarbe = keyof typeof FIGUR_TOKEN;
+
+/**
  * Ziffernfarben 0–9 (docs/TZ.md, „Цвета цифр“, Stand 16.11.2026). Per Rechnung gewählt, nicht als Regenbogen:
  * je zwei der elf Farben (mit der 100) ΔE2000 ≥ 20, bei Protanopie und Deuteranopie ΔE76 ≥ 19
  * (Test: tests/palette.test.ts).

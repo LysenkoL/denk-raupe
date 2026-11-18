@@ -1,10 +1,9 @@
-import { TINTE, WEISS, mix } from '../design/farbe';
-import { BLAETTER, KOEPFE, type BlattArt, type KopfArt } from '../bilder/bilder';
+import { FIGUR_TOKEN, HOLZ_KANTE, TINTE, WEISS, mix } from '../design/farbe';
 import type { Form, Sammelzeichen } from './antwort';
 import type { PerlenBild } from './perle';
 
 /**
- * Zeichnet Perlen, Blätter und den Kopf als SVG. Jede Perle ist ein eigenes kleines SVG,
+ * Zeichnet Perlen als SVG (Figuren: src/bilder/figuren.ts). Jede Perle ist ein eigenes kleines SVG,
  * damit sie ein eigener Knopf sein kann (große Tippfläche, Tastatur, Screenreader).
  *
  * Perle aus fünf Schichten (docs/STIL.md, Abschnitt 7): Kante mit Schatten → Zehner-Ring mit hellem Bogen →
@@ -191,36 +190,11 @@ export function perleSvg(p: PerlenBild, cls = 'perle-svg'): string {
   return `<svg class="${cls}" viewBox="0 0 ${f(w)} ${f(h)}" aria-hidden="true">${perleInhalt(p)}</svg>`;
 }
 
-/** leere Perle: gestrichelt, weiß – „noch keine Antwort“ */
+/** leeres Nest (Musterseite): Mulde im Holz mit Innenschatten und gestricheltem Rand – wie `.mulde` in app.css */
 export function leerSvg(cls = 'perle-svg'): string {
   const { w, h } = perlenBox(2);
-  return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><circle cx="${w / 2}" cy="${h / 2}" r="${R - 2}" fill="#FFFFFF" stroke="#8C9A92" stroke-width="${R * 0.1}" stroke-dasharray="${R * 0.36} ${R * 0.28}"/></svg>`;
-}
-
-/** Platz unter dem Blatt beim Zwilling */
-export function mulde(): string {
-  return `<circle cx="${RAND + R}" cy="${RAND + R}" r="${R - 2}" fill="#E4EEE1" stroke="#B9CDB4" stroke-width="${R * 0.08}"/>`;
-}
-
-/** Blatt als Bild (Blätter des Zwillings, Lohn, Korb) */
-export function blattImg(art: BlattArt = 'normal', cls = 'blatt-img'): string {
-  return `<img class="${cls}" src="${BLAETTER[art]}" alt="" draggable="false">`;
-}
-
-/**
- * Kopfkreis = 1,25 Perlen. Der Platz ist 1,5 Perlen breit (Fühler, Blatt und Funken ragen seitlich heraus),
- * die Kopfmitte liegt 0,65 Perlen vom linken Rand und 0,6 Perlen über dem Boden.
- */
-const KOPF_D = 1.25;
-const MITTE_X = 0.65;
-const MITTE_HOEHE = 0.6;
-
-/** Kopf der Raupe: Bild so gelegt, dass der Kopfkreis immer gleich groß und an gleicher Stelle sitzt */
-export function kopfHtml(art: KopfArt = 'normal'): string {
-  const k = KOEPFE[art];
-  const s = KOPF_D / (2 * k.r);
-  const style = `width:calc(var(--b) * ${f(k.w * s * 1000) / 1000});left:calc(var(--b) * ${f((MITTE_X - k.mx * s) * 1000) / 1000});bottom:calc(var(--b) * ${f((MITTE_HOEHE - (k.h - k.my) * s) * 1000) / 1000})`;
-  return `<span class="kopf-platz" data-kopf="${art}"><img class="kopf" src="${k.src}" alt="" draggable="false" style="${style}"></span>`;
+  const c = RAND + R;
+  return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${R - 2}" fill="${FIGUR_TOKEN.nest}"/><circle cx="${c}" cy="${c + 3}" r="${R - 8}" fill="${mix(FIGUR_TOKEN.nest, '#FFFFFF', 0.35)}"/><circle cx="${c}" cy="${c}" r="${R - 4}" fill="none" stroke="${HOLZ_KANTE}" stroke-width="${R * 0.1}" stroke-dasharray="${R * 0.3} ${R * 0.24}"/></svg>`;
 }
 
 function esc(s: string): string {

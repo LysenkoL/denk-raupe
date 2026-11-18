@@ -1,4 +1,4 @@
-import { FORM_FARBEN, LATERNE, LATERNE_KANTE, TINTE, type FormFarbe } from '../design/farbe';
+import { FIGUR_TOKEN, FOKUS, FORM_FARBEN, HOLZ_KANTE, HOLZKNOPF, LATERNE, LATERNE_KANTE, PAPIER, SCHATTEN, STEIN, STEIN_KANTE, TINTE, WEISS, kanteZu, type FormFarbe } from '../design/farbe';
 import type { Antwort } from '../perlen/antwort';
 import type { Format, ZeichenOptionen } from './format';
 import type { Zufall } from '../core/zufall';
@@ -96,45 +96,58 @@ export function schrittVerraet(w: WerIstEs): boolean {
   return w.raupen.filter((r) => passt(r, w.hinweise[0])).length < 2;
 }
 
+/** Hut ohne Umriss: Krempe und Krone in der Farbe, Kante darunter; grau = irgendein Hut */
 function hut(x: number, y: number, s: number, h: Hut, grau = false): string {
   if (h === 'kein') return '';
-  const c = grau ? '#B8C2BC' : hutFarbe(h);
+  const c = grau ? FIGUR_TOKEN['hut-grau'] : hutFarbe(h);
+  const k = grau ? FIGUR_TOKEN['hut-grau-kante'] : kanteZu(c);
   return (
-    `<ellipse cx="${x}" cy="${y}" rx="${s * 1.05}" ry="${s * 0.22}" fill="${c}" stroke="#1B2033" stroke-width="2.5"/>` +
-    `<path d="M${x - s * 0.62} ${y} Q${x - s * 0.62} ${y - s * 0.95} ${x} ${y - s * 0.95} Q${x + s * 0.62} ${y - s * 0.95} ${x + s * 0.62} ${y} Z" fill="${c}" stroke="#1B2033" stroke-width="2.5" stroke-linejoin="round"/>`
+    `<ellipse cx="${x}" cy="${y + s * 0.07}" rx="${s * 1.05}" ry="${s * 0.24}" fill="${k}"/>` +
+    `<path d="M${x - s * 0.6} ${y} Q${x - s * 0.62} ${y - s * 0.95} ${x} ${y - s * 0.95} Q${x + s * 0.62} ${y - s * 0.95} ${x + s * 0.6} ${y} Z" fill="${c}"/>` +
+    `<path d="M${x - s * 0.6} ${y} Q${x} ${y + s * 0.12} ${x + s * 0.6} ${y} L${x + s * 0.58} ${y - s * 0.22} Q${x} ${y - s * 0.1} ${x - s * 0.58} ${y - s * 0.22} Z" fill="${k}"/>` +
+    `<ellipse cx="${x}" cy="${y - s * 0.02}" rx="${s * 1.02}" ry="${s * 0.2}" fill="${c}"/>` +
+    `<ellipse cx="${x - s * 0.26}" cy="${y - s * 0.66}" rx="${s * 0.16}" ry="${s * 0.09}" fill="${WEISS}" opacity="0.55" transform="rotate(-30 ${x - s * 0.26} ${y - s * 0.66})"/>`
   );
 }
 
+/** Brille: dunkle Fassung (ein Gegenstand, kein Umriss), leicht getöntes Glas */
 function brille(x: number, y: number, s: number): string {
-  const k = `fill="#FFFFFF" fill-opacity=".35" stroke="#1B2033" stroke-width="2.6"`;
-  return `<circle cx="${x - s * 0.36}" cy="${y}" r="${s * 0.27}" ${k}/><circle cx="${x + s * 0.36}" cy="${y}" r="${s * 0.27}" ${k}/><path d="M${x - s * 0.09} ${y}h${s * 0.18}" stroke="#1B2033" stroke-width="2.6"/>`;
+  const k = `fill="${WEISS}" fill-opacity=".4" stroke="${TINTE}" stroke-width="3"`;
+  return `<circle cx="${x - s * 0.36}" cy="${y}" r="${s * 0.27}" ${k}/><circle cx="${x + s * 0.36}" cy="${y}" r="${s * 0.27}" ${k}/><path d="M${x - s * 0.09} ${y}h${s * 0.18}" stroke="${TINTE}" stroke-width="3"/>`;
 }
 
-/** kleine Raupe: zwei Perlen und Kopf */
+/** kleine Raupe aus Samt (wie die Raupe auf dem Ast, ohne Kontur): zwei Segmente und Kopf */
 function raupe(x: number, y: number, r: Raupe): string {
-  const s = 26;
-  let t = '';
-  for (const dx of [-46, -24]) t += `<circle cx="${x + dx}" cy="${y + 8}" r="15" fill="#8BD13B" stroke="#1B2033" stroke-width="2.5"/>`;
-  t += `<circle cx="${x}" cy="${y}" r="${s}" fill="#8BD13B" stroke="#1B2033" stroke-width="3"/>`;
-  t += `<circle cx="${x - 9}" cy="${y - 3}" r="4" fill="#1B2033"/><circle cx="${x + 9}" cy="${y - 3}" r="4" fill="#1B2033"/>`;
-  t += `<path d="M${x - 8} ${y + 10} Q${x} ${y + 16} ${x + 8} ${y + 10}" fill="none" stroke="#1B2033" stroke-width="2.5" stroke-linecap="round"/>`;
-  if (r.brille) t += brille(x, y - 3, s);
-  t += hut(x, y - s * 0.78, s, r.hut);
+  const s = 25;
+  const c = FIGUR_TOKEN.raupe;
+  const k = FIGUR_TOKEN['raupe-kante'];
+  const l = FIGUR_TOKEN['raupe-licht'];
+  const kugel = (cx: number, cy: number, rr: number) =>
+    `<circle cx="${cx}" cy="${cy + rr * 0.12}" r="${rr}" fill="${k}"/><circle cx="${cx}" cy="${cy}" r="${rr}" fill="${c}"/><ellipse cx="${cx - rr * 0.35}" cy="${cy - rr * 0.38}" rx="${rr * 0.42}" ry="${rr * 0.28}" fill="${l}" opacity="0.8"/>`;
+  let t = kugel(x - 46, y + 9, 14) + kugel(x - 25, y + 6, 16);
+  t += kugel(x, y, s);
+  t += `<ellipse cx="${x - 8}" cy="${y - 2}" rx="4.6" ry="5.2" fill="${FIGUR_TOKEN.auge}"/><ellipse cx="${x + 8}" cy="${y - 2}" rx="4.6" ry="5.2" fill="${FIGUR_TOKEN.auge}"/>`;
+  t += `<circle cx="${x - 7.5}" cy="${y - 1}" r="2.8" fill="${TINTE}"/><circle cx="${x + 8.5}" cy="${y - 1}" r="2.8" fill="${TINTE}"/>`;
+  t += `<path d="M${x - 7} ${y + 10} Q${x} ${y + 15} ${x + 7} ${y + 10}" fill="none" stroke="${k}" stroke-width="2.8" stroke-linecap="round"/>`;
+  if (r.brille) t += brille(x, y - 2, s);
+  t += hut(x, y - s * 0.74, s, r.hut);
   return t;
 }
 
-/** Hinweis-Karte: Bild des Merkmals, durchgestrichen bei „kein …“; `hilfe`: hervorgehoben oder im Halbschatten */
+/** Hinweis-Karte als Holzschild: Bild des Merkmals, durchgestrichen bei „kein …“; `hilfe`: hervorgehoben oder im Halbschatten */
 function karte(x: number, y: number, h: Hinweis, hilfe: 'teil' | 'schatten' | null): string {
   const w = 92;
   const hh = 70;
   const hell = hilfe === 'teil';
-  let t = `<g${hilfe ? ` data-hilfe="${hilfe}"` : ''}${hilfe === 'schatten' ? ' opacity="0.4"' : ''}>`;
-  t += `<rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="14" fill="${hell ? LATERNE : '#FFFFFF'}" stroke="${hell ? LATERNE_KANTE : '#1B2033'}" stroke-width="${hell ? 4 : 2.5}"/>`;
+  let t = `<g${hilfe ? ` data-hilfe="${hilfe}"` : ''}${hilfe === 'schatten' ? ' opacity="0.35"' : ''}>`;
+  if (hell) t += `<rect x="${x - 5}" y="${y - 5}" width="${w + 10}" height="${hh + 14}" rx="18" fill="${LATERNE}" stroke="${LATERNE_KANTE}" stroke-width="3.5"/>`;
+  t += `<rect x="${x}" y="${y + 4}" width="${w}" height="${hh}" rx="14" fill="${HOLZ_KANTE}"/>`;
+  t += `<rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="14" fill="${HOLZKNOPF}"/>`;
   const cx = x + w / 2;
   const cy = y + hh / 2;
   if (h.art === 'brille') t += brille(cx, cy, 44);
   else t += hut(cx, cy + 14, 30, h.art === 'hut' ? h.farbe : 'rot', h.art === 'hut-da');
-  if (h.nicht) t += `<path data-zeichen="nicht" d="M${x + 14} ${y + hh - 12}L${x + w - 14} ${y + 12}" stroke="#1B2033" stroke-width="6" stroke-linecap="round"/>`;
+  if (h.nicht) t += `<path data-zeichen="nicht" d="M${x + 14} ${y + hh - 12}L${x + w - 14} ${y + 12}" stroke="${TINTE}" stroke-width="6" stroke-linecap="round"/>`;
   return t + '</g>';
 }
 
@@ -148,6 +161,28 @@ export function blassNachSchritt(w: WerIstEs, aehnlich = false): boolean[] {
 }
 
 /**
+ * Fische aus Sandstein mit Kante (Engine Auswahl, docs/STIL.md, „Движки“). Gewählt: sie hebt sich um 4 und
+ * bekommt die doppelte Linie (Papiersaum innen, --fokus außen); ihre Größe ändert sich nicht.
+ */
+function fische(x: number, y: number, gewaehlt: boolean, inhalt: string, nr: number): string {
+  const w = 108;
+  const h = 102;
+  const hub = gewaehlt ? -4 : 0;
+  let t = `<rect x="${x + 2}" y="${y + 7}" width="${w}" height="${h}" rx="18" fill="${SCHATTEN}" opacity="${gewaehlt ? 0.8 : 0.5}"/>`;
+  t += `<g transform="translate(0 ${hub})"${gewaehlt ? ' data-inhalt=""' : ''}>`;
+  t += `<rect x="${x}" y="${y + 4}" width="${w}" height="${h}" rx="18" fill="${STEIN_KANTE}"/>`;
+  t += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="18" fill="${STEIN}"/>`;
+  t += `<rect x="${x + 10}" y="${y + 4}" width="${w - 20}" height="4" rx="2" fill="${WEISS}" opacity="0.45"/>`;
+  if (gewaehlt) {
+    t += `<rect x="${x - 2}" y="${y - 2}" width="${w + 4}" height="${h + 10}" rx="20" fill="none" stroke="${PAPIER}" stroke-width="4"/>`;
+    t += `<rect x="${x - 6.5}" y="${y - 6.5}" width="${w + 13}" height="${h + 19}" rx="24" fill="none" stroke="${FOKUS}" stroke-width="5"/>`;
+  }
+  t += inhalt;
+  t += `<text x="${x + 18}" y="${y + 30}" text-anchor="middle" font-size="22" font-weight="800" fill="${TINTE}">${nr}</text>`;
+  return t + '</g>';
+}
+
+/**
  * `hilfe` 2: erste Karte hervorgehoben (data-hilfe="teil"), die anderen im Halbschatten.
  * `hilfe` 3: dazu werden die Raupen blass, die zur ersten Karte nicht passen (data-hilfe="schritt") –
  * an der eigenen Aufgabe nur, wenn danach mindestens zwei sichtbar bleiben; an der ähnlichen (`aehnlich`) immer.
@@ -156,7 +191,7 @@ export function blassNachSchritt(w: WerIstEs, aehnlich = false): boolean[] {
 function zeichne(w: WerIstEs, o: ZeichenOptionen): string {
   const W = 3 * SPALTE + 20;
   const kartenH = 92;
-  const H = kartenH + 2 * ZEILE + 10;
+  const H = kartenH + 2 * ZEILE + 18;
   let s = '';
   const kx = (W - w.hinweise.length * 104 + 12) / 2;
   w.hinweise.forEach((h, i) => {
@@ -167,14 +202,12 @@ function zeichne(w: WerIstEs, o: ZeichenOptionen): string {
   const schritt = o.hilfe >= 3 && !o.vorrechnen ? blassNachSchritt(w, !!o.aehnlich) : w.raupen.map(() => false);
   w.raupen.forEach((r, i) => {
     const cx = 10 + (i % 3) * SPALTE + SPALTE / 2 + 22;
-    const cy = kartenH + Math.floor(i / 3) * ZEILE + 50;
+    const cy = kartenH + Math.floor(i / 3) * ZEILE + 58;
     const blass = schritt[i] || (!!o.vorrechnen && !w.hinweise.every((h) => passt(r, h)));
     const gewaehlt = o.gewaehlt?.art === 'zahl' && o.gewaehlt.wert === i + 1;
     const loesung = !!o.vorrechnen && ziel?.art === 'zahl' && ziel.wert === i + 1;
     s += `<g class="wahl-ziel" data-wahl="${i}" role="button" tabindex="0" aria-label="Raupe ${i + 1}" opacity="${blass ? 0.25 : 1}"${schritt[i] ? ' data-hilfe="schritt"' : ''}>`;
-    s += `<rect x="${cx - 80}" y="${cy - 52}" width="${SPALTE - 6}" height="${ZEILE - 6}" rx="16" fill="${gewaehlt || loesung ? '#FDEEDC' : 'transparent'}" stroke="${gewaehlt || loesung ? '#E8893A' : 'transparent'}" stroke-width="4"/>`;
-    s += raupe(cx, cy - 2, r);
-    s += `<text x="${cx - 24}" y="${cy + 47}" text-anchor="middle" font-size="22" font-weight="800" fill="${TINTE}">${i + 1}</text>`;
+    s += fische(cx - 76, cy - 53, gewaehlt || loesung, raupe(cx + 2, cy + 6, r), i + 1);
     s += `</g>`;
   });
   return `<svg class="aufgabe-svg" viewBox="0 0 ${W} ${H}" role="group" aria-label="Wer ist es?">${s}</svg>`;

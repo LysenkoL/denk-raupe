@@ -6,6 +6,8 @@ export const KIND = {
   vergleichen: 'Vergleichen',
   weiter: 'Weiter',
   deineRaupe: 'Deine Raupe',
+  /** Unterschrift unter der Reihe des Zwillings */
+  deinZwilling: 'Dein Zwilling',
   zwilling: 'Zwilling mit Blättern',
   /** nach dem Vergleichen, wenn Blätter liegen bleiben */
   blattBleibt: 'Wo ein Blatt liegen bleibt, ist etwas anders. Tippe auf die Perle darüber.',
@@ -24,7 +26,14 @@ export const KIND = {
   aehnlich: 'So geht es bei einer ähnlichen Aufgabe:',
   spaeterKnopf: 'Später',
   wartet: 'Diese Aufgabe wartet auf später. Du kannst sie jetzt lösen.',
-  neuerSatz: 'Neuer Satz',
+  /** drei Kacheln am Ende des Satzes: Welt, noch ein Satz, aufhören */
+  neuerSatz: 'Noch ein Satz',
+  welt: 'Meine Welt',
+  pause: 'Pause machen',
+  /** Zwischenseiten, bis Welt und Start da sind (Aufgaben C1 und C6) */
+  weltBald: 'Hier wächst bald deine Welt.',
+  bisBald: 'Bis bald!',
+  zurueck: 'Zurück',
   loeschen: 'Löschen',
   /** Zahl eingeben: Gruppe der Ziffernperlen und Plätze (für Screenreader) */
   zahlEingeben: 'Zahl eingeben',
@@ -42,6 +51,14 @@ export const KIND = {
     welcheZahlFehlt: 'Welche Zahl fehlt?',
     wieGehtEsWeiter: 'Wie geht es weiter?',
     werIstEs: 'Wer ist es?',
+  },
+  /** Korb mit Blättern (für Screenreader) */
+  korb(n: number): string {
+    return n === 1 ? 'Korb: 1 Blatt' : `Korb: ${n} Blätter`;
+  },
+  /** liegen gebliebenes Blatt als Knopf (für Screenreader) */
+  blattLiegt(nr: number): string {
+    return `Aufgabe ${nr}: Blatt liegt noch`;
   },
   /** Vorlesename für Screenreader */
   perleName(nr: number, inhalt: string | null): string {

@@ -4,11 +4,12 @@ import { aufgabeAus, type FormatId } from '../aufgaben/format';
 import { HUNDERT_FARBE, HUNDERT_KANTE, ZIFFER_FARBEN, ZIFFER_KANTEN } from '../design/farbe';
 import { KIND } from '../i18n/kind';
 import type { Antwort } from '../perlen/antwort';
-import { blattImg, kopfHtml, leerSvg, perleSvg } from '../perlen/maler';
-import { BLAETTER, KOEPFE, KORB, type BlattArt, type KopfArt } from '../bilder/bilder';
+import { leerSvg, perleSvg } from '../perlen/maler';
+import { figur, type FigurName } from '../bilder/bilder';
+import { laterneSvg } from '../bilder/figuren';
 import { perlenBild } from '../perlen/perle';
 import { gleich } from '../perlen/antwort';
-import { szeneHtml } from '../satz/szene';
+import { korbHtml, szeneHtml } from '../satz/szene';
 import { neuerSatz, setzeAntwort, vergleiche, zuruecklegen, type Satz } from '../satz/vergleich';
 
 /**
@@ -55,9 +56,9 @@ function zustaende(): [string, string][] {
     [t('stil.z.start'), szeneHtml(leer, { ...o, aktuell: 0 })],
     [t('stil.z.teil'), szeneHtml(teil, { ...o, aktuell: 2 })],
     [t('stil.z.voll'), szeneHtml(voll, { ...o, aktuell: 5 })],
-    [t('stil.z.geprueft'), szeneHtml(geprueft, { ...o, aktuell: 1, ringe: true })],
-    [t('stil.z.zurueck'), szeneHtml(zurueck, { ...o, ringe: true })],
-    [t('stil.z.fertig'), szeneHtml(fertig, o)],
+    [t('stil.z.geprueft'), szeneHtml(geprueft, { ...o, aktuell: 1, korb: 4 })],
+    [t('stil.z.zurueck'), szeneHtml(zurueck, { ...o, korb: 8 })],
+    [t('stil.z.fertig'), szeneHtml(fertig, { ...o, korb: 11 })],
     [t('stil.z.lang'), szeneHtml(lang, o)],
   ];
 }
@@ -137,7 +138,7 @@ export function renderStil(app: HTMLElement, params: URLSearchParams): void {
     <p>${t('stil.einleitung')}</p>
     <p><a class="btn haupt" href="#/">${t('stil.zumSatz')}</a></p>
 
-    <section><h2>${t('stil.farben')}</h2><p class="hinweis">${t('stil.farbenText')}</p><ul class="ziffern">${ziffern}</ul></section>
+    <section><h2>${t('stil.farben')}</h2><p class="hinweis">${t('stil.farbenText')}</p><ul class="farb-liste">${ziffern}</ul></section>
     <section><h2>${t('stil.zahlen')}</h2><div class="perlen-raster">${zahlen}</div></section>
     <section><h2>${t('stil.andere')}</h2><div class="perlen-raster">${andere.map(perle).join('')}</div></section>
     <section><h2>${t('stil.zustaende')}</h2>
@@ -147,10 +148,10 @@ export function renderStil(app: HTMLElement, params: URLSearchParams): void {
     </section>
     <section><h2>${t('stil.bilder')}</h2>
       <div class="bilder-raster">
-        ${(Object.keys(KOEPFE) as KopfArt[]).map((k) => `<figure><div class="kopf-probe" style="--b:72px">${kopfHtml(k)}</div><figcaption>${t(`stil.kopf.${k}` as Key)}</figcaption></figure>`).join('')}
-        ${(Object.keys(BLAETTER) as BlattArt[]).map((b) => `<figure>${blattImg(b, 'blatt-probe')}<figcaption>${t(`stil.blatt.${b}` as Key)}</figcaption></figure>`).join('')}
-        <figure><img class="korb-probe" src="${KORB.leer}" alt=""><figcaption>${t('stil.korb.leer')}</figcaption></figure>
-        <figure><img class="korb-probe" src="${KORB.voll}" alt=""><figcaption>${t('stil.korb.voll')}</figcaption></figure>
+        ${(['raupe-ruhig', 'raupe-denkt', 'raupe-freude', 'raupe-staunt', 'zwilling'] as FigurName[]).map((n) => `<figure><span class="figur-probe vorne-probe">${figur(n)}</span><figcaption>${t(`stil.figur.${n === 'zwilling' ? 'zwilling' : n.slice(6)}` as Key)}</figcaption></figure>`).join('')}
+        ${(['blatt', 'blatt-gold'] as FigurName[]).map((n) => `<figure><span class="figur-probe blatt-probe">${figur(n)}</span><figcaption>${t(n === 'blatt' ? 'stil.blatt.normal' : 'stil.blatt.gold')}</figcaption></figure>`).join('')}
+        <figure>${korbHtml(0)}<figcaption>${t('stil.korb.leer')}</figcaption></figure>
+        <figure>${korbHtml(12, true)}<figcaption>${t('stil.korb.voll')}</figcaption></figure>
       </div>
     </section>
     <section><h2>${t('stil.satz')}</h2>
@@ -158,7 +159,9 @@ export function renderStil(app: HTMLElement, params: URLSearchParams): void {
     </section>
     <section><h2>${t('stil.formate')}</h2><p class="hinweis">${t('stil.formateText')}</p>${formate()}</section>
     <section><h2>${t('stil.knoepfe')}</h2>
-      <div class="knopf-reihe"><button class="btn haupt" type="button">${KIND.vergleichen}</button><button class="btn haupt" type="button" disabled>${KIND.vergleichen}</button><button class="btn leise" type="button">${KIND.weiter} →</button></div>
+      <p class="hinweis">${t('stil.knoepfeText')}</p>
+      <div class="knopf-reihe"><button class="btn haupt" type="button">${KIND.vergleichen}</button><button class="btn haupt" type="button" disabled>${KIND.vergleichen}</button><button class="btn leise" type="button">${KIND.weiter}</button><button class="leise-knopf" type="button">${KIND.soGehts}</button><button class="hilfe-knopf" type="button">${laterneSvg()}<span class="sr">${KIND.hilfe}</span></button></div>
+      <div class="knopf-reihe"><div class="plaetze"><span class="platz"><span class="platz-zeichen">Z</span><span class="nest leer"></span></span><span class="platz"><span class="platz-zeichen">E</span><span class="nest">${perleSvg(perlenBild({ art: 'zahl', wert: 4 }))}</span></span></div></div>
     </section>
     <section><h2>${t('stil.schrift')}</h2><p class="hinweis">${t('stil.schriftText')}</p>
       <p class="schriftprobe">Il1 a ä ß — Wie geht es weiter? 0123456789</p>
