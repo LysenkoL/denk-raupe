@@ -97,7 +97,7 @@ export function gleicheFehler(falsch: readonly (Antwort | null)[]): number {
 
 /**
  * Wahrscheinlichkeit, die Antwort zu erraten – aus der Art der Eingabe, kein eigenes Feld im Format
- * (docs/FORMATE.md, Abschnitt 3, Regel 5): Wahl aus k Möglichkeiten (Perlen oder ein Ding im Bild) 1/k;
+ * (docs/FORMATE.md, Abschnitt 3, Regel 6): Wahl aus k Möglichkeiten (Perlen oder ein Ding im Bild) 1/k;
  * Zahl, Uhrzeit, Geld und Sammelantwort (auch mehrere Dinge im Bild) 0.
  */
 export function rateChance(e: Eingabe, wahl: readonly Antwort[] | null): number {
