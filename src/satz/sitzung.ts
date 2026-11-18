@@ -98,7 +98,10 @@ export interface Profil {
   /** Geheimwort: Wort und schon geöffnete Buchstaben (Stelle) */
   geheim: { wort: string; offen: number[] };
   ton: boolean;
-  /** zurückgelegte Aufgaben in der Reihenfolge des Zurücklegens; jede höchstens einmal */
+  /**
+   * Zurückgelegte Aufgaben in der Reihenfolge des Zurücklegens (mehrere aus einem Satz: nach Platz im Satz –
+   * wann im Satz „Später“ gedrückt wurde, wird nicht gespeichert); jede höchstens einmal
+   */
   zurueckgelegt: Zurueckgelegt[];
 }
 
