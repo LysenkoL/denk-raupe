@@ -25,6 +25,14 @@ export const HISTORIE_SCHLUESSEL = 'historie';
  */
 export type Ausgang = 'gold' | 'selbst' | 'hilfe' | 'zurueck';
 
+/** Verweis auf einen Eintrag der Historie: Nummer des Satzes und Platz darin (eindeutig) */
+export interface Verweis {
+  satz: number;
+  nr: number;
+}
+
+export const gleicherVerweis = (a: Verweis, b: Verweis): boolean => a.satz === b.satz && a.nr === b.nr;
+
 /** Ein Eintrag = die gespeicherte Aufgabe (mit `hilfe`: höchste benutzte Stufe 0–4) + Lösungsweg */
 export interface Eintrag extends Aufgabe {
   /** laufende Nummer des Satzes in dieser Historie (0, 1, 2 …): Aufgaben eines Satzes gehören zusammen */
@@ -53,6 +61,17 @@ export interface Eintrag extends Aufgabe {
   puls?: boolean;
   /** Seit A6: das Kind hat den Hilfeknopf gedrückt, während er pulsierte. Optional wie `puls`. */
   hilfeNachPuls?: boolean;
+  /**
+   * Seit A7, nur bei einer zurückgekehrten Aufgabe: sie wurde in einem früheren Satz zurückgelegt und kam
+   * mit ihrem Lösungsweg wieder. Verweis auf ihren vorigen Eintrag (Ausgang `zurueck`) – so bilden die
+   * Einträge einer Aufgabe eine Kette (`verlauf`); der letzte zeigt, wie sie am Ende ausging (`endstand`).
+   * Dieser Eintrag führt den Lösungsweg weiter: `falsch`, `gleicherFehler`, `hilfe`, `puls` und
+   * `hilfeNachPuls` gelten für die ganze Aufgabe über alle Sätze, nicht nur für diesen.
+   * Das Blatt kommt nur hier (nie golden); der vorige Eintrag hat keins – also kein Blatt doppelt (`blattWert`).
+   */
+  zurueckAus?: Verweis;
+  /** Seit A7, nur mit `zurueckAus`: höchste Hilfestufe, die in diesem Satz geöffnet wurde (`hilfe`: über alle Sätze) */
+  hilfeImSatz?: HilfeStufe;
 }
 
 export interface Historie {
@@ -125,23 +144,40 @@ export function gewicht(e: Pick<Eintrag, 'ergebnis' | 'hilfe' | 'rateChance'>): 
   return (1 - e.rateChance) * HILFE_FAKTOR[e.hilfe];
 }
 
+/**
+ * Blätter, die ein Eintrag in den Korb gebracht hat: golden 2, gewöhnlich 1, zurückgelegt 0.
+ * Die Summe über die ganze Historie ist die Zahl aller verdienten Blätter – eine zurückgekehrte Aufgabe
+ * zählt nur einmal, weil ihr früherer Eintrag `zurueck` ist.
+ */
+export function blattWert(e: Pick<Eintrag, 'ergebnis'>): number {
+  return e.ergebnis === 'gold' ? 2 : e.ergebnis === 'zurueck' ? 0 : 1;
+}
+
 /** Nummer, die der nächste Satz in der Historie bekommt */
 export function naechsterSatz(h: Historie): number {
   const letzter = h.eintraege[h.eintraege.length - 1];
   return letzter ? letzter.satz + 1 : 0;
 }
 
-/**
- * Einträge eines fertigen Satzes (noch nicht fertig → keine).
- * `puls`: Zustand des Hilfeknopfs je Perle (Sitzung seit A6); ohne ihn fehlen `puls` und `hilfeNachPuls`.
- */
-export function eintraegeAus(aufgaben: readonly Aufgabe[], satz: Satz, nummer: number, jetzt: Date, puls?: readonly PulsZustand[]): Eintrag[] {
+/** Was die Sitzung je Perle neben Aufgabe und Satz weiß (alles optional: ältere Sätze haben es nicht) */
+export interface JePerle {
+  /** Zustand des Hilfeknopfs (seit A6); ohne ihn fehlen `puls` und `hilfeNachPuls` */
+  puls?: readonly PulsZustand[];
+  /** zurückgekehrte Aufgabe: ihr voriger Eintrag (seit A7), sonst null */
+  zurueckAus?: readonly (Verweis | null)[];
+  /** in diesem Satz geöffnete Hilfestufe (für `hilfeImSatz`) */
+  hilfeOffen?: readonly HilfeStufe[];
+}
+
+/** Einträge eines fertigen Satzes (noch nicht fertig → keine) */
+export function eintraegeAus(aufgaben: readonly Aufgabe[], satz: Satz, nummer: number, jetzt: Date, je: JePerle = {}): Eintrag[] {
   if (!fertig(satz)) return [];
   const tag = tagVon(jetzt);
   return aufgaben.map((a, nr) => {
     const p = satz.perlen[nr];
     const falsch = fehlantworten(p);
-    const z = puls?.[nr];
+    const z = je.puls?.[nr];
+    const aus = je.zurueckAus?.[nr];
     return {
       ...a,
       satz: nummer,
@@ -153,13 +189,14 @@ export function eintraegeAus(aufgaben: readonly Aufgabe[], satz: Satz, nummer: n
       gleicherFehler: gleicheFehler(falsch),
       rateChance: rateChance(FORMATE[a.format].eingabe(a.bedingung), a.wahl),
       ...(z ? { puls: z.puls, hilfeNachPuls: z.hilfeNachPuls } : {}),
+      ...(aus ? { zurueckAus: { satz: aus.satz, nr: aus.nr }, hilfeImSatz: je.hilfeOffen?.[nr] ?? 0 } : {}),
     };
   });
 }
 
 /** Satz an die Historie anhängen (nichts wird überschrieben) */
-export function anhaengen(h: Historie, aufgaben: readonly Aufgabe[], satz: Satz, jetzt: Date, puls?: readonly PulsZustand[]): Historie {
-  const neu = eintraegeAus(aufgaben, satz, naechsterSatz(h), jetzt, puls);
+export function anhaengen(h: Historie, aufgaben: readonly Aufgabe[], satz: Satz, jetzt: Date, je: JePerle = {}): Historie {
+  const neu = eintraegeAus(aufgaben, satz, naechsterSatz(h), jetzt, je);
   return neu.length ? { ...h, eintraege: [...h.eintraege, ...neu] } : h;
 }
 
@@ -190,6 +227,30 @@ export interface Filter {
 /** Einträge nach Format und Zeitraum, in der Reihenfolge, in der sie gelöst wurden */
 export function eintraege(h: Historie, f: Filter = {}): Eintrag[] {
   return h.eintraege.filter((e) => (!f.format || e.format === f.format) && (!f.von || e.tag >= f.von) && (!f.bis || e.tag <= f.bis));
+}
+
+/**
+ * Weg einer Aufgabe bis zu Eintrag `e`: ihre Einträge über alle Sätze, der älteste zuerst, `e` zuletzt.
+ * Eine Aufgabe, die nie zurückgelegt wurde, hat nur `e`.
+ */
+export function verlauf(h: Historie, e: Eintrag): Eintrag[] {
+  const kette = [e];
+  for (let v = e.zurueckAus; v; ) {
+    const vorher = h.eintraege.find((x) => gleicherVerweis(x, v!));
+    if (!vorher || kette.includes(vorher)) break;
+    kette.unshift(vorher);
+    v = vorher.zurueckAus;
+  }
+  return kette;
+}
+
+/**
+ * Jede Aufgabe einmal, mit ihrem letzten Eintrag – wie sie am Ende ausging (oder `zurueck`, solange sie
+ * noch wartet). Einträge, die ein späterer mit `zurueckAus` weiterführt, fallen weg. Reihenfolge wie in der Historie.
+ */
+export function endstand(h: Historie): Eintrag[] {
+  const weitergefuehrt = h.eintraege.flatMap((e) => (e.zurueckAus ? [e.zurueckAus] : []));
+  return h.eintraege.filter((e) => !weitergefuehrt.some((v) => gleicherVerweis(v, e)));
 }
 
 /** Tage mit mindestens einem fertigen Satz, aufsteigend (Kalender der Blättchen) */

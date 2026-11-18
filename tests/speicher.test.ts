@@ -81,9 +81,9 @@ describe('Sitzung: Umzug von Version 1', () => {
 });
 
 describe('Profil', () => {
-  it('das Profil aus Version 1 bekommt beim Umzug genau die Felder eines neuen Profils (Version 2)', () => {
+  it('das Profil aus Version 1 bekommt beim Umzug genau die Felder eines neuen Profils (Version 3)', () => {
     expect(v1.profil.version).toBe(1);
-    expect(neuesProfil().version).toBe(2);
+    expect(neuesProfil().version).toBe(3);
     expect(Object.keys(ladeProfil(v1.profil)!).sort()).toEqual(Object.keys(neuesProfil()).sort());
   });
 });

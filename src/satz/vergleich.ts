@@ -25,6 +25,13 @@ export interface PerlenZustand {
    * Fehlt bei Sätzen, die vor Aufgabe A3 begonnen wurden: deren frühere Fehlantworten sind unbekannt.
    */
   falsch?: Antwort[];
+  /**
+   * Aufgabe aus einem früheren Satz, dort zurückgelegt (docs/PLAN.md, A7): ihr Blatt ist nie golden.
+   * Das Blatt für eine Aufgabe kommt einmal, wenn sie gelöst ist (docs/TZ.md, „Самопроверка“, Nr. 7);
+   * golden ist nur, was beim allerersten Vergleichen stimmt – das war im Satz, aus dem sie kommt.
+   * Optional – fehlt bei jeder anderen Perle.
+   */
+  keinGold?: boolean;
 }
 
 export interface Satz {
@@ -81,8 +88,8 @@ export function vergleiche(s: Satz, stimmt: Stimmt): Ergebnis {
     const a = p.antwort!;
     if (stimmt(i, a)) {
       gehoben.push(i);
-      // Gold nur, wenn die Perle schon beim allerersten Vergleichen gestimmt hat
-      return { ...p, blatt: (erste ? 'gold' : 'gehoben') as Blatt, geprueft: a };
+      // Gold nur, wenn die Perle schon beim allerersten Vergleichen gestimmt hat – nie bei einer zurückgekehrten Aufgabe
+      return { ...p, blatt: (erste && !p.keinGold ? 'gold' : 'gehoben') as Blatt, geprueft: a };
     }
     bleiben.push(i);
     const neu = !gleich(a, p.geprueft);
