@@ -49,11 +49,16 @@ export interface WieViele {
   gruppen: number[][];
   /** Höhe des Tabletts */
   hoehe: number;
+  /** Breite des Bildes: so breit wie die Dinge brauchen – wenige Dinge erscheinen so größer */
+  breite: number;
 }
 
+/** größte Breite des Bildes (zehn Dinge in einer Reihe, sieben Spalten der Streu) */
 export const BREITE = 340;
 const RAND = 18;
 const LEISTE_AB = 42;
+/** Bildbreite zu einer Breite der Dinge `cw`: Rand des Tabletts dazu; nie schmaler, als das Nest braucht */
+const bildBreite = (cw: number) => Math.max(cw + 2 * RAND + 8, 150);
 
 /** Teile von je fünf, in der Reihenfolge der Dinge */
 function fuenfer(von: number, bis: number): number[][] {
@@ -63,17 +68,20 @@ function fuenfer(von: number, bis: number): number[][] {
 }
 
 export function baueReihe(n: number, form: DingForm, farbe: DingFarbe): WieViele {
-  const breite = reiheBreite(Math.min(n, 10));
-  const dinge = inReihen(n, (BREITE - breite) / 2, 4 + RAND);
+  const cw = reiheBreite(Math.min(n, 10));
+  const breite = bildBreite(cw);
+  const dinge = inReihen(n, (breite - cw) / 2, 4 + RAND);
   const reihen = Math.ceil(n / 10);
-  return { art: 'reihe', form, farbe, dinge, leisten: [], gruppen: fuenfer(0, n), hoehe: reihen * DING_AB - (DING_AB - 2 * DING_R) + 2 * RAND };
+  return { art: 'reihe', form, farbe, dinge, leisten: [], gruppen: fuenfer(0, n), hoehe: reihen * DING_AB - (DING_AB - 2 * DING_R) + 2 * RAND, breite };
 }
 
 function baueStreu(z: Zufall, n: number, form: DingForm, farbe: DingFarbe): WieViele {
-  const spalten = 7;
+  // wenige Dinge: ein schmaleres Feld (sie liegen nicht verloren auf einem breiten Tablett)
+  const spalten = Math.min(7, Math.max(4, Math.ceil(Math.sqrt(n * 1.6))));
   const zeilen = Math.max(3, Math.ceil((n * 1.5) / spalten));
-  const dinge = verstreut(z, n, spalten, zeilen, (BREITE - spalten * STREU_ZELLE) / 2, 4 + RAND - 8);
-  return { art: 'streu', form, farbe, dinge, leisten: [], gruppen: fuenfer(0, n), hoehe: zeilen * STREU_ZELLE + 2 * RAND - 16 };
+  const breite = bildBreite(spalten * STREU_ZELLE - 16);
+  const dinge = verstreut(z, n, spalten, zeilen, (breite - spalten * STREU_ZELLE) / 2, 4 + RAND - 8);
+  return { art: 'streu', form, farbe, dinge, leisten: [], gruppen: fuenfer(0, n), hoehe: zeilen * STREU_ZELLE + 2 * RAND - 16, breite };
 }
 
 /** `buendel` Bündel zu je `groesse` Dingen auf Leisten, darunter `lose` Dinge in Reihen */
@@ -81,7 +89,8 @@ export function baueBuendel(buendel: number, groesse: 5 | 10, lose: number, form
   const dinge: Ding[] = [];
   const leisten: WieViele['leisten'] = [];
   const gruppen: number[][] = [];
-  const bx = (BREITE - reiheBreite(groesse)) / 2;
+  const breite = bildBreite(reiheBreite(groesse));
+  const bx = (breite - reiheBreite(groesse)) / 2;
   let y = 4 + RAND + 6;
   for (let b = 0; b < buendel; b++) {
     leisten.push({ x: bx, y, m: groesse });
@@ -91,12 +100,12 @@ export function baueBuendel(buendel: number, groesse: 5 | 10, lose: number, form
   }
   if (lose) {
     const start = dinge.length;
-    const lx = (BREITE - reiheBreite(Math.min(lose, 10))) / 2;
+    const lx = (breite - reiheBreite(Math.min(lose, 10))) / 2;
     dinge.push(...inReihen(lose, lx, y + 4));
     gruppen.push(...fuenfer(start, start + lose));
     y += 4 + Math.ceil(lose / 10) * DING_AB;
   } else y -= LEISTE_AB - (2 * DING_R + 6);
-  return { art: 'buendel', form, farbe, dinge, leisten, gruppen, hoehe: y - 4 + RAND - (lose ? DING_AB - 2 * DING_R : 0) };
+  return { art: 'buendel', form, farbe, dinge, leisten, gruppen, hoehe: y - 4 + RAND - (lose ? DING_AB - 2 * DING_R : 0), breite };
 }
 
 /** kleinste und größte Zahl je Stufe und Zahlenraum (siehe Kommentar oben) */
@@ -146,8 +155,8 @@ function gruppenRahmen(w: WieViele, g: number[], art: 'teil' | 'schritt'): strin
  * `vorrechnen`: alle Gruppen eingerahmt, im Nest die Zahl.
  */
 function zeichne(w: WieViele, o: ZeichenOptionen): string {
-  const H = w.hoehe + 8 + 18 + 62;
-  let s = tablett(4, 4, BREITE - 8, w.hoehe);
+  const H = w.hoehe + 8 + 10 + 62;
+  let s = tablett(4, 4, w.breite - 8, w.hoehe);
   for (const l of w.leisten) s += leiste(l.x, l.y, l.m);
   if (o.vorrechnen) w.gruppen.forEach((g) => (s += gruppenRahmen(w, g, 'teil')));
   else if (o.hilfe >= 2) {
@@ -156,10 +165,11 @@ function zeichne(w: WieViele, o: ZeichenOptionen): string {
   }
   const erste = new Set(o.hilfe >= 3 && !o.vorrechnen ? w.gruppen[0] : []);
   w.dinge.forEach((d, k) => (s += ding(d, w.form, w.farbe, { nr: k, markiert: erste.has(k) })));
-  const ny = w.hoehe + 8 + 18;
+  // das Nest gleich unter der rechten Ecke des Tabletts: dorthin gehört die Antwort
+  const ny = w.hoehe + 8 + 10;
   const loesung = o.vorrechnen ? (loesungen(w)[0] as { wert: number }).wert : null;
-  s += nest(BREITE - 4 - 84, ny, 84, 54, loesung ?? gewaehlteZahl(o.gewaehlt), { loesung: loesung !== null });
-  return svgHuelle(BREITE, H, 'Wie viele?', s);
+  s += nest(w.breite - 4 - 84, ny, 84, 54, loesung ?? gewaehlteZahl(o.gewaehlt), { loesung: loesung !== null });
+  return svgHuelle(w.breite, H, 'Wie viele?', s);
 }
 
 export const WIE_VIELE: Format<WieViele> = {

@@ -102,10 +102,11 @@ describe('Wie viele?', () => {
         for (const w of alle(WIE_VIELE, stufe, zr)) {
           expect(w.art).toBe(art[stufe]);
           zahlen.add(w.dinge.length);
-          // jedes Ding liegt ganz auf dem Tablett (Breite 340, Rand 4)
+          // jedes Ding liegt ganz auf dem Tablett (Bildbreite höchstens 340, Rand 4)
+          expect(w.breite).toBeLessThanOrEqual(340);
           for (const d of w.dinge) {
             expect(d.x - DING_R).toBeGreaterThan(8);
-            expect(d.x + DING_R).toBeLessThan(332);
+            expect(d.x + DING_R).toBeLessThan(w.breite - 8);
             expect(d.y + DING_R).toBeLessThan(4 + w.hoehe);
           }
           if (stufe === 3) {

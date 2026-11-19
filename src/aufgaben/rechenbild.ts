@@ -56,6 +56,8 @@ export interface Rechenbild {
   /** Lage und Höhe des Tabletts */
   tablettY: number;
   tablettH: number;
+  /** Breite des Bildes: so breit wie Tablett und Brettchen brauchen – wenige Dinge erscheinen so größer */
+  breite: number;
 }
 
 export const BREITE = 340;
@@ -72,6 +74,10 @@ export function baue(a: number, weg: number, dazu: number, form: DingForm, farbe
   const dinge: RechenDing[] = [];
   const leisten: Rechenbild['leisten'] = [];
   let brett: Rechenbild['brett'] = null;
+  // Breite: Tablett um die Dinge, Brettchen mit Platz für den Pfeil; mindestens so
+  // breit wie die Punkte der Hilfe Stufe 3 (das Bild behält mit jeder Hilfe dieselbe Breite); höchstens BREITE
+  const cw = reiheBreite(Math.min(a >= 20 ? 10 : a, 10));
+  const breite = Math.max(cw + 2 * RAND + 8, dazu ? 8 + reiheBreite(Math.min(dazu, 5)) + 2 * RAND + 96 : 0, 210);
   let y = 4;
   if (dazu) {
     const bw = reiheBreite(Math.min(dazu, 5)) + 2 * RAND;
@@ -84,7 +90,7 @@ export function baue(a: number, weg: number, dazu: number, form: DingForm, farbe
   let iy = y + RAND + (a >= 20 ? 6 : 0);
   const da: Ding[] = [];
   if (a >= 20) {
-    const bx = (BREITE - reiheBreite(10)) / 2;
+    const bx = (breite - reiheBreite(10)) / 2;
     for (let b = 0; b < Math.floor(a / 10); b++) {
       leisten.push({ x: bx, y: iy, m: 10 });
       da.push(...inReihen(10, bx, iy));
@@ -92,16 +98,16 @@ export function baue(a: number, weg: number, dazu: number, form: DingForm, farbe
     }
     const lose = a % 10;
     if (lose) {
-      da.push(...inReihen(lose, (BREITE - reiheBreite(lose)) / 2, iy + 2));
+      da.push(...inReihen(lose, (breite - reiheBreite(lose)) / 2, iy + 2));
       iy += 2 + DING_AB;
     } else iy += 2 * DING_R + 11 - LEISTE_AB;
   } else {
-    da.push(...inReihen(a, (BREITE - reiheBreite(Math.min(a, 10))) / 2, iy));
+    da.push(...inReihen(a, (breite - reiheBreite(Math.min(a, 10))) / 2, iy));
     iy += Math.ceil(a / 10) * DING_AB;
   }
   da.forEach((d, k) => dinge.push({ ...d, ort: 'da', ...(k >= a - weg ? { weg: true } : {}) }));
   const tablettH = iy - (DING_AB - 2 * DING_R) + RAND - tablettY;
-  return { form, farbe, dinge, leisten, brett, tablettY, tablettH };
+  return { form, farbe, dinge, leisten, brett, tablettY, tablettH, breite };
 }
 
 function erzeuge(z: Zufall, stufe: number, e: Einstellung): Rechenbild {
@@ -161,7 +167,7 @@ function zeichne(r: Rechenbild, o: ZeichenOptionen): string {
     if (hervor) s += hilfeRahmen(b.x - 6, b.y - 2, b.w + 12, b.h + 12, 'teil');
     s += schild(b.x, b.y, b.w, b.h);
   }
-  s += tablett(4, r.tablettY, BREITE - 8, r.tablettH);
+  s += tablett(4, r.tablettY, r.breite - 8, r.tablettH);
   for (const l of r.leisten) s += leiste(l.x, l.y, l.m);
   const weg = r.dinge.filter((d) => d.weg);
   if (hervor && weg.length)
@@ -170,17 +176,18 @@ function zeichne(r: Rechenbild, o: ZeichenOptionen): string {
   if (r.brett) {
     const b = r.brett;
     // Pfeil vom Brettchen hinunter aufs Tablett
-    s += pfeil(b.x + b.w + 10, b.y + b.h / 2, Math.min(b.x + b.w + 80, BREITE - 40), r.tablettY + 2, 30);
+    s += pfeil(b.x + b.w + 10, b.y + b.h / 2, Math.min(b.x + b.w + 80, r.breite - 40), r.tablettY + 2, 30);
   }
   let y = r.tablettY + r.tablettH + 5;
   if (o.hilfe >= 3 && !o.vorrechnen) {
-    const feld = punktefeld(hilfePunkte(r), BREITE, y + 14);
+    const feld = punktefeld(hilfePunkte(r), r.breite, y + 14);
     s += feld.svg;
     y += 14 + feld.hoehe;
   }
   const loesung = o.vorrechnen ? (loesungen(r)[0] as { wert: number }).wert : null;
-  s += nest(BREITE - 4 - 84, y + 16, 84, 54, loesung ?? gewaehlteZahl(o.gewaehlt), { loesung: loesung !== null });
-  return svgHuelle(BREITE, y + 16 + 62, 'Rechenbild', s);
+  // das Nest gleich unter der rechten Ecke des Tabletts
+  s += nest(r.breite - 4 - 84, y + 8, 84, 54, loesung ?? gewaehlteZahl(o.gewaehlt), { loesung: loesung !== null });
+  return svgHuelle(r.breite, y + 8 + 62, 'Rechenbild', s);
 }
 
 export const RECHENBILD: Format<Rechenbild> = {

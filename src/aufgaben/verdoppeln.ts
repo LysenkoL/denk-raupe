@@ -1,7 +1,6 @@
 import type { Antwort } from '../perlen/antwort';
 import type { Zufall } from '../core/zufall';
 import type { Einstellung, Format, ZeichenOptionen, Zahlenraum } from './format';
-import { TINTE_LEISE, WEISS } from '../design/farbe';
 import {
   DING_AB,
   DING_FARBEN,
@@ -100,15 +99,17 @@ export function hilfePunkte(v: Verdoppeln): PunktArt[] {
 }
 
 /** Bildzeichen auf einem Holzschild: ● → ●● (verdoppeln) oder ●● → ● (halbieren) */
-function bildzeichen(x: number, y: number, art: Verdoppeln['art'], w: number): string {
+function bildzeichen(x: number, y: number, v: Verdoppeln, w: number): string {
+  const art = v.art;
   const h = 64;
   let s = `<g data-zeichen="${art}">` + schild(x, y, w, h);
-  const punkt = (cx: number) => `<circle cx="${cx}" cy="${y + h / 2}" r="9" fill="${TINTE_LEISE}"/><circle cx="${cx - 3}" cy="${y + h / 2 - 3.5}" r="2.8" fill="${WEISS}" opacity="0.5"/>`;
-  const links = art === 'doppelt' ? [x + 26] : [x + 18, x + 40];
-  const rechts = art === 'doppelt' ? [x + w - 40, x + w - 18] : [x + w - 26];
+  // dieselben Dinge wie auf dem Tablett (Form und Farbe der Aufgabe): das Zeichen gehört sichtbar zu ihnen
+  const punkt = (cx: number) => ding({ x: cx, y: y + h / 2 }, v.form, v.farbe);
+  const links = art === 'doppelt' ? [x + 26] : [x + 20, x + 47];
+  const rechts = art === 'doppelt' ? [x + w - 47, x + w - 20] : [x + w - 26];
   s += links.map(punkt).join('') + rechts.map(punkt).join('');
   // kleiner, dünner Pfeil: Teil des Zeichens, nicht der Weg zur Antwort
-  s += pfeil(x + (art === 'doppelt' ? 42 : 56), y + h / 2, x + w - (art === 'doppelt' ? 56 : 42), y + h / 2, 0, 3.5);
+  s += pfeil(x + (art === 'doppelt' ? 43 : 64), y + h / 2, x + w - (art === 'doppelt' ? 64 : 43), y + h / 2, 0, 3.5);
   return s + '</g>';
 }
 
@@ -128,7 +129,7 @@ function zeichne(v: Verdoppeln, o: ZeichenOptionen): string {
     y += v.hoehe + 24;
     const zx = 30;
     if (hervor) s += hilfeRahmen(zx - 7, y - 7, 140 + 14, 64 + 18, 'teil');
-    s += bildzeichen(zx, y, v.art, 140);
+    s += bildzeichen(zx, y, v, 140);
     s += pfeil(zx + 140 + 14, y + 32, BREITE - 4 - 80 - 14, y + 32);
     s += nestHtml(y + 5);
     y += 64 + 12;
@@ -139,7 +140,7 @@ function zeichne(v: Verdoppeln, o: ZeichenOptionen): string {
     s += kachel(4, y + 1, kw, 62, String(v.zahl), String(v.zahl).length > 2 ? 26 : 30);
     const zx = 4 + kw + 12;
     if (hervor) s += hilfeRahmen(zx - 7, y - 7, 124 + 14, 64 + 18, 'teil');
-    s += bildzeichen(zx, y, v.art, 124);
+    s += bildzeichen(zx, y, v, 124);
     s += pfeil(zx + 124 + 10, y + 32, BREITE - 4 - 76 - 10, y + 32);
     s += nestHtml(y + 5, 76);
     y += 64 + 16;
