@@ -6,7 +6,7 @@
 /*FONTS*/
 /*CSS*/</style>
 
-<div class="app" id="app" data-thema="sonnig" data-lotto="nacht">
+<div class="app" id="app" data-thema="sonnig" data-lotto="porzellan">
 <div class="szene" aria-hidden="true">
   <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice">
     <defs>
@@ -32,10 +32,10 @@
   </svg>
 </div>
   <header class="leiste">
-    <button type="button" class="rund zurueck" data-zurueck="1" aria-label="Zurück"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M29 11 L16 24 L29 37" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button type="button" class="knopf zurueck" data-zurueck="1"><span class="rund"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M29 11 L16 24 L29 37" fill="none" stroke="#FF7A59" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="name">Zurück</span></button>
     <div class="oben">
       <div class="korb" id="korb"></div>
-      <button type="button" class="rund menue" id="autor-knopf" data-panel="1" aria-expanded="false" aria-label="Menü"><svg viewBox="0 0 48 48" aria-hidden="true"><g fill="#fff"><rect x="9" y="12" width="30" height="6" rx="3"/><rect x="9" y="21" width="30" height="6" rx="3"/><rect x="9" y="30" width="30" height="6" rx="3"/></g></svg></button>
+      <button type="button" class="knopf menue" id="autor-knopf" data-panel="1" aria-expanded="false"><span class="rund"><svg viewBox="0 0 48 48" aria-hidden="true"><g fill="#F0A000"><rect x="9" y="12" width="30" height="6" rx="3"/><rect x="9" y="21" width="30" height="6" rx="3"/><rect x="9" y="30" width="30" height="6" rx="3"/></g></svg></span><span class="name">Menü</span></button>
     </div>
     <div class="autor" id="autor" hidden>
       <strong class="menue-titel">Меню (для пробы)</strong>
@@ -49,7 +49,8 @@
       </span>
       <span class="gruppe">Лоток
         <span class="seg" role="group" aria-label="Цвет лотка">
-          <button type="button" data-lotto="nacht" aria-pressed="true"><span class="punkt" style="background:#24345C"></span>ночь</button>
+          <button type="button" data-lotto="porzellan" aria-pressed="true"><span class="punkt" style="background:#FFFFFF"></span>белый</button>
+          <button type="button" data-lotto="nacht" aria-pressed="false"><span class="punkt" style="background:#24345C"></span>ночь</button>
           <button type="button" data-lotto="koralle" aria-pressed="false"><span class="punkt" style="background:#F48C7F"></span>коралл</button>
           <button type="button" data-lotto="minze" aria-pressed="false"><span class="punkt" style="background:#A8E6CF"></span>мята</button>
           <button type="button" data-lotto="himmel" aria-pressed="false"><span class="punkt" style="background:#8FD3F4"></span>небо</button>

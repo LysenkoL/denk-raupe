@@ -40,14 +40,16 @@
 }
 
 /* ── Лоток: настройка ребёнка; все цвета прошли проверку различимости с шариками 0–9 ── */
-.app { --lotto: #24345C; --lotto-rand: #3A4C7A; --lotto-kante: #141E38; --grube-a: #18233F; --grube-b: #1F2C4D; }
-.app[data-lotto="nacht"] { --lotto: #24345C; --lotto-rand: #3A4C7A; --lotto-kante: #141E38; --grube-a: #18233F; --grube-b: #1F2C4D; }
-.app[data-lotto="koralle"] { --lotto: #F48C7F; --lotto-rand: #F8A89E; --lotto-kante: #B8574C; --grube-a: #C96A5F; --grube-b: #D97A6E; }
-.app[data-lotto="minze"] { --lotto: #A8E6CF; --lotto-rand: #C2F0DE; --lotto-kante: #5FA88D; --grube-a: #7FBFA7; --grube-b: #91CFB8; }
-.app[data-lotto="himmel"] { --lotto: #8FD3F4; --lotto-rand: #ADE0F8; --lotto-kante: #4E94B8; --grube-a: #6AAFD0; --grube-b: #7DC1E2; }
-.app[data-lotto="wiese"] { --lotto: #5DAA3A; --lotto-rand: #78C155; --lotto-kante: #3A7522; --grube-a: #46882A; --grube-b: #519A33; }
-.app[data-lotto="holz"] { --lotto: #7A4A26; --lotto-rand: #94643F; --lotto-kante: #4E2C12; --grube-a: #57341B; --grube-b: #65401F; }
-.app[data-lotto="keramik"] { --lotto: #FBF7F0; --lotto-rand: #FFFFFF; --lotto-kante: #BDB6AA; --grube-a: #D9D2C6; --grube-b: #E6E0D6; }
+.app, .app[data-lotto="porzellan"] { --lotto: #F2F5FA; --lotto-hell: #FFFFFF; --lotto-rand: #FFFFFF; --lotto-kante: #DCE2EC; }
+.app[data-lotto] { --lotto-hell: var(--lotto); }
+.app[data-lotto="porzellan"] { --lotto-hell: #FFFFFF; }
+.app[data-lotto="nacht"] { --lotto: #24345C; --lotto-rand: #3A4C7A; --lotto-kante: #141E38; }
+.app[data-lotto="koralle"] { --lotto: #F48C7F; --lotto-rand: #F8A89E; --lotto-kante: #B8574C; }
+.app[data-lotto="minze"] { --lotto: #A8E6CF; --lotto-rand: #C2F0DE; --lotto-kante: #5FA88D; }
+.app[data-lotto="himmel"] { --lotto: #8FD3F4; --lotto-rand: #ADE0F8; --lotto-kante: #4E94B8; }
+.app[data-lotto="wiese"] { --lotto: #5DAA3A; --lotto-rand: #78C155; --lotto-kante: #3A7522; }
+.app[data-lotto="holz"] { --lotto: #7A4A26; --lotto-rand: #94643F; --lotto-kante: #4E2C12; }
+.app[data-lotto="keramik"] { --lotto: #FBF7F0; --lotto-rand: #FFFFFF; --lotto-kante: #BDB6AA; }
 
 /* ── База ── */
 html, body { height: 100%; }
@@ -74,13 +76,15 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 .ast { grid-area: ast; }
 .tisch { grid-area: tisch; }
 
-/* Круглые кнопки верхней полосы: толстая кромка и блик, цвет из темы — не сливаются с небом */
-.rund { width: var(--knopf); height: var(--knopf); border-radius: 50%; display: grid; place-items: center; border: 4px solid #fff;
-  box-shadow: 0 5px 0 var(--kante, rgba(0,0,0,.2)), 0 9px 14px var(--schatten), inset 0 4px 0 rgba(255,255,255,.45); }
-.rund svg { width: 56%; height: 56%; }
-.zurueck { background: var(--zurueck); --kante: var(--zurueck-kante); }
-.menue { background: var(--menue); --kante: var(--menue-kante); }
-.rund:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--kante), inset 0 4px 0 rgba(255,255,255,.45); }
+/* «Назад» и «Меню»: крупные белые кнопки с цветным краем и подписью — видны на любом небе и не кричат */
+.knopf { display: grid; justify-items: center; gap: 3px; }
+.knopf .rund { width: var(--knopf); height: var(--knopf); border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 40% 30%, #FFFFFF, #EEF2F8);
+  border: 4px solid var(--rand); box-shadow: 0 4px 0 var(--rand-d), 0 10px 14px -4px rgba(20,40,90,.4); transition: transform .12s; }
+.knopf .rund svg { width: 52%; height: 52%; }
+.knopf .name { font-size: 13px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(20,40,90,.75), 0 0 1px rgba(20,40,90,.6); }
+.knopf:active .rund { transform: translateY(3px); box-shadow: 0 1px 0 var(--rand-d); }
+.zurueck { --rand: #FF7A59; --rand-d: #D9532F; }
+.menue { --rand: #FFB21F; --rand-d: #D98A00; }
 
 /* Корзинка: число листьев появляется с первого листа */
 .korb { display: flex; align-items: center; gap: 2px; }
@@ -132,23 +136,20 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 /* ── Стол: доска задания и лоток ── */
 .tisch { min-height: 0; display: grid; gap: var(--g); grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
 .app[data-lage="quer"] .tisch { grid-template-columns: minmax(0, 1fr) var(--lotto-b); grid-template-rows: minmax(0, 1fr); }
-.app[data-lage="quer"][data-werkzeug="leer"] .tisch { grid-template-columns: minmax(0, 1fr) auto; }
 
 /* Доска: светлая, в цвете темы, с толстой цветной кромкой */
 .papier { position: relative; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px;
   background: linear-gradient(180deg, #fff, var(--brett) 40%); border: 4px solid #fff; border-radius: 28px;
   box-shadow: 0 7px 0 var(--brett-kante), 0 14px 26px var(--schatten); }
-.papier.voll { grid-column: 1 / -1; grid-row: 1 / -1; align-self: center; justify-self: center; width: 100%; max-width: 1000px; max-height: 100%; padding: clamp(18px, 4vh, 40px) 16px; }
-.papier.voll .bereit, .papier.voll .gross { flex: none; }
+.papier.voll { grid-column: 1 / -1; grid-row: 1 / -1; }
 .papier { container-type: inline-size; }
-.frage-zeile { display: flex; align-items: center; justify-content: center; min-height: calc(var(--knopf) * .8); padding: 0 calc(var(--knopf) * .62); }
-.frage-zeile > .laterne { position: absolute; top: calc(var(--knopf) * -.28); right: calc(var(--knopf) * -.2); z-index: 5; }
+.frage-zeile { display: flex; align-items: center; justify-content: center; min-height: calc(var(--knopf) * .8); padding: 0 calc(var(--knopf) * .9); }
+.frage-zeile > .laterne { position: absolute; top: calc(var(--knopf) * -.3); right: calc(var(--knopf) * -.18); z-index: 5; }
 .frage-zeile > .schritt-punkte { position: absolute; top: 18px; right: 18px; }
-.frage { margin: 0; text-align: center; font-size: clamp(22px, 6.4cqw, 40px); font-weight: 800; letter-spacing: .01em; color: var(--text); text-wrap: balance; }
-.bild { flex: 0 1 auto; width: 100%; aspect-ratio: var(--ar, 2); min-height: 0; position: relative; container-type: size; }
-/* Доска по размеру задания: в столбик — посередине между ветками и лотком, в две колонки — на одной линии с лотком внизу */
-.papier:not(.voll) { align-self: center; max-height: 100%; }
-.app[data-lage="quer"] .papier:not(.voll) { align-self: end; }
+.frage { margin: 0; text-align: center; font-size: clamp(20px, 6cqw, 40px); font-weight: 800; letter-spacing: .01em; color: var(--text); text-wrap: balance; }
+.bild { flex: 1; width: 100%; min-height: 0; position: relative; container-type: size; }
+/* Окно задания одного размера во всех заданиях: занимает всё место между ветками и лотком; рисунок вписывается внутрь */
+
 .bild > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .bild [data-raupe] { cursor: pointer; }
 .hinweis { margin: 0; font-size: 17px; font-weight: 600; color: var(--text); text-align: center; }
@@ -156,62 +157,68 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 .schritt-punkte span { width: 14px; height: 14px; border-radius: 50%; background: color-mix(in srgb, var(--text) 20%, transparent); }
 .schritt-punkte span.an { background: var(--text); }
 
-/* Помощь: круглая жёлтая кнопка с фонариком; нажата — светится ровно */
-.laterne { width: var(--knopf); height: var(--knopf); border-radius: 50%; display: grid; place-items: center; border: 4px solid #fff;
-  background: radial-gradient(circle at 40% 30%, #FFF6C8, var(--hilfe) 60%, #F2A900); box-shadow: 0 5px 0 var(--hilfe-kante), 0 8px 14px var(--schatten), inset 0 3px 0 rgba(255,255,255,.6); }
-.laterne img { width: 72%; height: auto; display: block; }
-.laterne[aria-pressed="true"] { box-shadow: 0 5px 0 var(--hilfe-kante), 0 0 0 6px rgba(255,214,74,.55), 0 0 22px 6px rgba(255,214,74,.7); }
-.laterne:active { transform: translateY(3px); }
+/* Помощь: круглая жёлтая кнопка с фонариком и подписью «Hilfe» — как «Zurück» и «Menü», на углу доски; нажата — светится ровно */
+.laterne { display: grid; justify-items: center; gap: 2px; }
+.laterne .rund { width: var(--knopf); height: var(--knopf); border-radius: 50%; display: grid; place-items: center; border: 4px solid #fff;
+  background: radial-gradient(circle at 40% 30%, #FFF6C8, #FFD23F 60%, #F2A900); box-shadow: 0 4px 0 #D99400, 0 8px 12px -3px rgba(120,80,0,.45); transition: transform .12s; }
+.laterne img { width: 68%; height: 68%; object-fit: contain; display: block; }
+.laterne .name { font-size: 13px; font-weight: 800; color: #6A4300; }
+.laterne[aria-pressed="true"] .rund { box-shadow: 0 4px 0 #D99400, 0 0 0 6px rgba(255,214,74,.55), 0 0 22px 6px rgba(255,214,74,.7); }
+.laterne:active .rund { transform: translateY(3px); }
 
-/* Лоток: один предмет — ямки с шариками сверху, лист с бусиной ответа снизу */
-.lotto { width: 100%; max-width: var(--lotto-b); justify-self: center; align-self: end; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 12px 12px 10px; border-radius: 30px; background-color: var(--lotto);
-  background-image: radial-gradient(rgba(255,255,255,.14) 2px, transparent 2.7px); background-size: 18px 18px;
-  box-shadow: inset 0 0 0 6px var(--lotto-rand), inset 0 10px 16px rgba(0,0,0,.18), 0 6px 0 var(--lotto-kante), 0 14px 22px var(--schatten); }
-.app[data-werkzeug="leer"] .lotto { width: auto; padding: 10px 14px; }
-.werkzeug { width: 100%; display: flex; justify-content: center; }
-.werkzeug:empty { display: none; }
-.tasten { display: grid; grid-template-columns: repeat(5, var(--taste)) max(44px, calc(var(--taste) * .95)); gap: 6px; justify-content: center; }
-.mtaste, .wahl .kugelwahl { width: var(--taste); aspect-ratio: 1; border-radius: 50%; position: relative; display: grid; place-items: center; }
-.mtaste::before, .wahl .kugelwahl::before { content: ""; position: absolute; inset: 2%; border-radius: 50%; background: radial-gradient(circle at 50% 60%, var(--grube-a), var(--grube-b) 70%); box-shadow: inset 0 4px 6px rgba(0,0,0,.4); }
-.mtaste svg, .kugelwahl svg { position: relative; width: 92%; height: 92%; transition: transform .1s; }
-.mtaste:active svg, .kugelwahl:active svg { transform: translateY(3px) scale(.95); }
-/* «стереть»: белая клавиша с малиновым крестиком — видна на любом цвете лотка, не похожа на шарик */
-.loesch-taste { grid-column: 6; grid-row: 1 / span 2; border-radius: 20px; display: grid; place-items: center; background: linear-gradient(180deg, #FFFFFF, #FFE9F1);
-  box-shadow: 0 5px 0 #C2346A, 0 8px 12px rgba(0,0,0,.25), inset 0 3px 0 #fff; }
-.loesch-taste svg { width: 78%; height: auto; }
-.loesch-taste:active { transform: translateY(3px); box-shadow: 0 2px 0 #C2346A; }
-.wahl { display: flex; justify-content: center; gap: 10px; width: 100%; }
-.wahl .mkarte { width: calc(var(--taste) * 1.25); max-width: 23%; aspect-ratio: 1; border-radius: 20px; display: grid; place-items: center; position: relative;
-  background: linear-gradient(180deg, #FFFFFF, #F1EADF); box-shadow: 0 5px 0 #CDBFA9, 0 8px 10px rgba(0,0,0,.25); }
-.wahl .mkarte svg { width: 72%; height: 72%; }
-.wahl .mkarte.gewaehlt { transform: translateY(-6px); box-shadow: 0 0 0 5px var(--wahl), 0 11px 0 #CDBFA9, 0 14px 14px rgba(0,0,0,.3); }
-.wahl .kugelwahl { width: calc(var(--taste) * 1.25); max-width: 28%; }
-.wahl .kugelwahl.gewaehlt svg { transform: translateY(-6px); }
-.wahl .kugelwahl.gewaehlt::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 5px solid var(--wahl); }
-.karten { display: flex; gap: 10px; justify-content: center; }
-.karte, .oslot { width: calc(var(--taste) * 1.35); height: calc(var(--taste) * 1.15); border-radius: 18px; display: grid; place-items: center;
-  font-size: calc(var(--taste) * .62); font-weight: 800; color: var(--text); flex: none; }
-.karte { background: linear-gradient(180deg, #FFFFFF, #F1EADF); box-shadow: 0 5px 0 #CDBFA9, 0 8px 10px rgba(0,0,0,.25); }
-.karte.leer { background: rgba(0,0,0,.16); box-shadow: inset 0 4px 6px rgba(0,0,0,.3); }
+/* Лоток: белая фарфоровая панель с плитками; под ней лист, на который падает жемчужина ответа */
+.lotto { width: 100%; max-width: var(--lotto-b); justify-self: center; align-self: end; display: flex; flex-direction: column; align-items: center; }
+.werkzeug { width: 100%; display: flex; justify-content: center; padding: calc(var(--taste) * .22); border-radius: calc(var(--taste) * .5); border: 3px solid var(--lotto-rand);
+  background: linear-gradient(180deg, var(--lotto-hell), var(--lotto)); box-shadow: 0 6px 0 var(--lotto-kante), 0 18px 26px -10px rgba(30,60,120,.45); }
+/* Лоток всегда высотой в две строки плиток: число, выбор и сборка не меняют его размер; без инструментов он остаётся пустым местом, и лист не прыгает */
+.werkzeug { height: calc(var(--taste) * 2.6 + 6px); align-items: center; }
+.werkzeug:empty { visibility: hidden; }
+.tasten { display: grid; grid-template-columns: repeat(5, var(--taste)) max(44px, calc(var(--taste) * 1.02)); gap: calc(var(--taste) * .16) calc(var(--taste) * .14); justify-content: center; }
+/* Плитка: белое лицо, толстая обводка и кромка в цвете цифры, цветная мягкая тень */
+.mtaste, .wahl .kugelwahl, .wahl .mkarte, .karte, .loesch-taste { position: relative; display: grid; place-items: center; border-radius: calc(var(--taste) * .27);
+  background: linear-gradient(180deg, #FFFFFF, #F6F8FC); border: calc(var(--taste) * .07) solid var(--rand, #E1E6EF);
+  box-shadow: 0 calc(var(--taste) * .09) 0 var(--kante, #C5CEDC), 0 calc(var(--taste) * .2) calc(var(--taste) * .18) calc(var(--taste) * -.05) var(--schatten, rgba(40,60,110,.35)), inset 0 calc(var(--taste) * .06) 0 #fff;
+  font-size: calc(var(--taste) * .5); font-weight: 800; color: #23305E; transition: transform .12s, box-shadow .12s; }
+.mtaste { width: var(--taste); aspect-ratio: 1; }
+.mtaste:active, .wahl .kugelwahl:active, .wahl .mkarte:active, .karte:active, .loesch-taste:active { transform: translateY(calc(var(--taste) * .07)); box-shadow: 0 calc(var(--taste) * .02) 0 var(--kante, #C5CEDC), inset 0 calc(var(--taste) * .06) 0 #fff; }
+.loesch-taste { grid-column: 6; grid-row: 1 / span 2; --rand: #F06A9C; --kante: #C2346A; --schatten: rgba(194,52,106,.35); }
+.loesch-taste svg { width: 76%; height: auto; }
+.wahl { display: flex; justify-content: center; gap: calc(var(--taste) * .22); width: 100%; }
+.wahl .mkarte, .wahl .kugelwahl { width: calc(var(--taste) * 1.25); max-width: 23%; aspect-ratio: 1; border-radius: calc(var(--taste) * .32); }
+.wahl .mkarte svg { width: 66%; height: 66%; }
+.wahlzahl { font-size: calc(var(--taste) * .62); }
+.wahl .gewaehlt { transform: translateY(calc(var(--taste) * -.11)); --rand: var(--wahl); --kante: #D98A00;
+  box-shadow: 0 calc(var(--taste) * .2) 0 #D98A00, 0 0 0 calc(var(--taste) * .1) rgba(255,176,0,.25), 0 calc(var(--taste) * .3) calc(var(--taste) * .25) calc(var(--taste) * -.05) rgba(160,100,0,.35); }
+.karten { display: flex; gap: calc(var(--taste) * .2); justify-content: center; }
+.karte, .oslot { width: calc(var(--taste) * 1.35); height: calc(var(--taste) * 1.15); flex: none; }
+.karte.leer { background: rgba(30,50,90,.08); border-color: transparent; box-shadow: inset 0 3px 6px rgba(30,50,90,.18); }
 .ordnen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 2%; --t: min(26cqw, 70cqh, 230px); }
 .ordnen .oslot { width: var(--t); height: calc(var(--t) * .85); font-size: calc(var(--t) * .5); }
-.oslot { background: color-mix(in srgb, var(--brett-kante) 18%, #fff); outline: 3.5px dashed var(--brett-kante); outline-offset: -7px; }
-.oslot.voll { background: linear-gradient(180deg, #FFFFFF, #F1EADF); outline: 0; box-shadow: 0 5px 0 #CDBFA9, 0 8px 10px var(--schatten); }
+.oslot { border-radius: 18px; display: grid; place-items: center; font-weight: 800; color: var(--text); background: color-mix(in srgb, var(--brett-kante) 18%, #fff); outline: 3.5px dashed var(--brett-kante); outline-offset: -7px; }
+.oslot.voll { background: linear-gradient(180deg, #FFFFFF, #F6F8FC); outline: 4px solid var(--wahl); outline-offset: -4px; box-shadow: 0 5px 0 #E9C46A, 0 8px 10px var(--schatten); }
 .zeichen { font-size: calc(min(26cqw, 70cqh, 230px) * .4); font-weight: 800; color: var(--text); }
 
-/* Место ответа: бусина на большом листе в светлой ямке лотка */
-.abgabe-platz { display: grid; place-items: center; width: 100%; }
-.schale { width: calc(var(--ab) * 1.9); height: calc(var(--ab) * 1.3); display: grid; place-items: center; position: relative; border-radius: 50%;
-  background: var(--blatt-bild) center / contain no-repeat, radial-gradient(ellipse 48% 46% at 50% 52%, var(--mulde) 0 98%, transparent 100%);
-  filter: drop-shadow(0 4px 6px rgba(20,40,10,.3)); }
+/* Место ответа: лист под лотком (заходит под его край), жемчужина падает на лист; кнопки матовые, стеклянная — только она */
+.abgabe-platz { display: grid; place-items: center; width: 100%; margin-top: calc(var(--ab) * -.18); position: relative; z-index: 2; }
+.schale { width: calc(var(--ab) * 1.95); height: calc(var(--ab) * 1.4); display: grid; place-items: center; position: relative;
+  background: var(--blatt-bild) center / contain no-repeat; filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 8px 8px rgba(20,60,10,.35)); }
+.schale.wippt { animation: wippt .5s ease-out; }
+@keyframes wippt { 30% { transform: rotate(4deg) translateY(3px) } 70% { transform: rotate(-2deg) } }
 .abgabe { width: var(--ab); height: var(--ab); border-radius: 50%; position: relative; z-index: 1; }
-.abgabe svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 4px rgba(40,30,0,.35)); }
-.abgabe.leer svg { filter: drop-shadow(0 1px 2px rgba(0,60,0,.35)); }
+.abgabe svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 5px 5px rgba(30,40,10,.4)); }
+.abgabe.leer svg { filter: none; }
 .abgabe.atmet svg { animation: atmen .6s ease-in-out; }
 @keyframes atmen { 50% { transform: scale(1.1) } }
-.abgabe.auf svg { animation: auftauchen .35s var(--feder); }
-@keyframes auftauchen { from { transform: scale(.5) translateY(10px); } }
+.abgabe.faellt svg { animation: perlefaellt .55s cubic-bezier(.3,.1,.4,1); }
+@keyframes perlefaellt { 0% { transform: translateY(calc(var(--ab) * -1.4)) scale(.8); opacity: .3 } 55% { transform: translateY(0) scale(1.1, .9); opacity: 1 } 75% { transform: translateY(calc(var(--ab) * -.14)) scale(.97, 1.03) } 100% { transform: none } }
+.abgabe.wechselt svg { animation: wechselt .28s var(--feder); }
+@keyframes wechselt { 40% { transform: scale(.86) } }
+/* число «выделено»: голубая подсветка вокруг жемчужины, как выделенный текст — первая цифра его заменит */
+.abgabe.markiert::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; background: rgba(120,170,255,.35); box-shadow: 0 0 0 3px rgba(80,140,255,.6); }
+.slot.wackelt { animation: schuetteln .5s ease-in-out; }
+@keyframes schuetteln { 20%, 60% { transform: translateX(-4px) } 40%, 80% { transform: translateX(4px) } }
+.korb.kommt { animation: kommt .55s var(--feder); }
+@keyframes kommt { from { transform: scale(.3) translateY(20px); opacity: 0 } }
 
 /* Пример жеста: образец и место */
 .muster-gross { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 4%; --m: min(36cqw, 80cqh, 260px); }
@@ -255,6 +262,8 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
   background: linear-gradient(180deg, #fff, var(--brett)); border: 4px solid #fff; border-radius: 28px; box-shadow: 0 7px 0 var(--brett-kante), 0 18px 30px rgba(0,0,0,.25); }
 .platzhalter img, .platzhalter svg { height: min(120px, 18vh); width: auto; }
 .platzhalter p { margin: 0; font-size: 22px; font-weight: 800; color: var(--text); }
+.platzhalter .zwei { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.platzhalter button.leise { background: #fff; color: var(--text); box-shadow: 0 6px 0 #C9D1DE, 0 10px 16px var(--schatten); }
 .platzhalter button { min-height: 64px; padding: 0 32px; border-radius: 999px; border: 4px solid #fff; font-size: 22px; font-weight: 800; color: #3A2400;
   background: linear-gradient(180deg, #FFE27A, #FFC21F 55%, #F2A400); box-shadow: 0 6px 0 #C27D00, 0 10px 16px var(--schatten); }
 
@@ -266,9 +275,10 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 .funken { position: fixed; z-index: 60; width: 0; height: 0; pointer-events: none; }
 .funken i { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #FFF8C4, #FFC53D 60%, transparent 70%); animation: funke .6s ease-out forwards; transform: rotate(var(--w)) translateX(0); }
 @keyframes funke { to { transform: rotate(var(--w)) translateX(46px) scale(.3); opacity: 0; } }
-.mtaste, .mkarte, .kugelwahl, .karte, .oslot, .kachel, .laterne, .abgabe, .vergleichen, .ueberblick, .slot, .rund { transition: transform .14s ease; }
+.kachel, .laterne, .abgabe, .vergleichen, .ueberblick, .slot { transition: transform .14s ease; }
 @media (hover: hover) {
-  .mtaste:hover, .kugelwahl:hover, .laterne:hover, .rund:hover { transform: translateY(-3px) scale(1.05); }
+  .laterne:hover, .knopf:hover .rund { transform: translateY(-3px) scale(1.05); }
+  .mtaste:hover, .kugelwahl:hover { transform: translateY(-3px); }
   .mkarte:hover, .karte:hover, .kachel:hover, .loesch-taste:hover { transform: translateY(-3px); }
   .abgabe:not(.leer):hover { transform: scale(1.08); }
   button.slot:hover { transform: translateY(-2px); }
@@ -279,7 +289,7 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 @keyframes freut { 0%,100% { transform: none } 35% { transform: translateY(-14px) rotate(-6deg) } 70% { transform: translateY(0) rotate(3deg) } }
 
 /* ── Меню (для пробы, не часть игры) ── */
-.autor { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; position: absolute; right: 12px; top: calc(var(--knopf) + 18px); z-index: 80;
+.autor { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; position: absolute; right: 12px; top: calc(var(--knopf) + 36px); z-index: 80;
   width: min(720px, calc(100vw - 24px)); max-height: calc(100vh - var(--knopf) - 30px); overflow: auto; background: #fff; color: #2E3A2E;
   border-radius: 16px; padding: 12px; box-shadow: 0 10px 30px rgba(30,40,30,.25); font: 600 14px/1.3 var(--font); }
 .autor .menue-titel { flex-basis: 100%; font-size: 16px; }

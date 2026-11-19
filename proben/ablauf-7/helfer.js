@@ -31,7 +31,7 @@
   // Стеклянная бусина ответа. Пустая (null) — пунктирное гнездо.
   function perle(w) {
     var id = 'p' + (++uid), s = '', d = '';
-    if (!w) return '<svg class="perle" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,.35)" stroke="#fff" stroke-width="4.5" stroke-dasharray="10 8"/></svg>';
+    if (!w) return '<svg class="perle" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="38" fill="rgba(255,255,255,.4)" stroke="#fff" stroke-width="5" stroke-dasharray="8.92 6"/></svg>';
     var glas = function (gid, c) { return '<radialGradient id="' + gid + '" cx="40%" cy="32%" r="75%"><stop offset="0" stop-color="' + mische(c, .35) + '"/><stop offset=".55" stop-color="' + c + '"/><stop offset="1" stop-color="' + mische(c, -.32) + '"/></radialGradient>'; };
     d += '<linearGradient id="' + id + 'l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity=".15"/></linearGradient>';
     if (w.art === 'zahl') {
@@ -67,7 +67,11 @@
   var HAND = '<svg viewBox="0 0 64 76" width="64" height="76" aria-hidden="true"><path d="M22 6 C22 1 30 1 30 6 L30 34 L33 33 C34 28 41 28 41 33 L43 34 C44 30 51 30 51 35 L52 37 C53 33 60 34 60 39 L60 52 C60 66 51 74 39 74 L33 74 C24 74 18 69 14 62 L5 46 C3 41 9 37 13 41 L22 50 Z" fill="#FFE1C4" stroke="#8A5A2B" stroke-width="3" stroke-linejoin="round"/></svg>';
 
   // ── Задания: белая глина на персиковом войлоке ──
-  function stein(x, y, w, h, inhalt, leer) {
+  function stein(x, y, w, h, inhalt, leer, antwort) {
+    // Камень ответа с числом: белый с оранжевой рамкой; при возврате к заданию число «выделено» — первая цифра его заменит
+    if (antwort && !leer) return '<rect x="' + x + '" y="' + (y + 6) + '" width="' + w + '" height="' + h + '" rx="18" fill="#E9C46A"/>' +
+      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="18" fill="' + (markiert ? '#D6E8FF' : '#FFFFFF') + '" stroke="#FFB000" stroke-width="5"/>' +
+      '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 15) + '" text-anchor="middle" font-size="44" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">' + inhalt + '</text>';
     if (leer) return '<rect x="' + x + '" y="' + (y + 3) + '" width="' + w + '" height="' + h + '" rx="18" fill="rgba(40,50,90,.10)"/>' +
       '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="18" style="fill:color-mix(in srgb, var(--brett-kante) 16%, #fff);stroke:var(--brett-kante)" stroke-width="3.5" stroke-dasharray="10 7"/>' +
       '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 15) + '" text-anchor="middle" font-size="44" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">' + inhalt + '</text>';
@@ -81,7 +85,7 @@
 
   var AUFGABEN = [
     { typ: 'zahl', frage: 'Welche Zahl fehlt?', loesung: { art: 'zahl', wert: 8 },
-      bild: function (v) { var t = v === '' ? '?' : v; return '<svg viewBox="0 0 390 250" preserveAspectRatio="xMidYMid meet">' + LEHM + stein(135, 10, 120, 68, t, v === '') + stein(73, 90, 120, 68, 3) + stein(197, 90, 120, 68, 5) + stein(11, 170, 120, 68, 1) + stein(135, 170, 120, 68, 2) + stein(259, 170, 120, 68, 3) + '</svg>'; } },
+      bild: function (v) { var t = v === '' ? '?' : v; return '<svg viewBox="0 0 390 250" preserveAspectRatio="xMidYMid meet">' + LEHM + stein(135, 10, 120, 68, t, v === '', true) + stein(73, 90, 120, 68, 3) + stein(197, 90, 120, 68, 5) + stein(11, 170, 120, 68, 1) + stein(135, 170, 120, 68, 2) + stein(259, 170, 120, 68, 3) + '</svg>'; } },
     { typ: 'wahl', frage: 'Wie geht es weiter?', loesung: { art: 'form', form: 'quadrat', farbe: 'blau' },
       wahl: [{ art: 'form', form: 'dreieck', farbe: 'gelb' }, { art: 'form', form: 'quadrat', farbe: 'blau' }, { art: 'form', form: 'kreis', farbe: 'blau' }, { art: 'form', form: 'quadrat', farbe: 'gruen' }],
       bild: function (a) {

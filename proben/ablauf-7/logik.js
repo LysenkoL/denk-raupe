@@ -40,6 +40,7 @@
     var a = AUFGABEN[i];
     entwurf[i] = a.typ === 'zahl' ? (antwort[i] ? String(antwort[i].wert) : '') : a.typ === 'ordnen' ? (antwort[i] ? antwort[i].werte.slice() : [null, null, null]) : antwort[i];
     perleSeit = Date.now(); leerTipps = 0; sperre = Date.now() + 300; hilfeAn = false;
+    markiert = a.typ === 'zahl' && antwort[i] !== null;
     if (a.neu && !beispielGesehen) { starteBeispiel(); return; }
     phase = 'loesen'; zeichnen();
   }
@@ -128,45 +129,58 @@
     document.getElementById('app').setAttribute('data-phase', phase);
     document.getElementById('reihe-kind').innerHTML = kopf(false) + rk;
     document.getElementById('reihe-zwilling').innerHTML = kopf(true) + rz;
-    document.getElementById('reihe-zwilling').hidden = false;
+    document.getElementById('reihe-zwilling').hidden = false; document.getElementById('reihe-zwilling').style.visibility = '';
     korbZeichnen();
     if (neuIndex >= 0) { var kk = document.querySelector('#reihe-kind .kopf'); if (kk) kk.classList.add('freut'); }
     neuIndex = -1;
   }
   // В примере: одно гнездо и один лист, без близнеца, корзинки и ряда набора
-  function zeichnenAstEinzeln(wert, blattKlasse) {
-    var ast = document.querySelector('.ast'); ast.classList.add('einzeln'); document.getElementById('app').setAttribute('data-werkzeug', 'voll');
-    document.getElementById('app').setAttribute('data-phase', 'beispiel');
-    document.getElementById('reihe-kind').innerHTML = '<div class="einzel">' + kopf(false) +
-      '<span class="slot" id="bsp-nest"><span class="nest"></span>' + (wert ? perle(wert) : '') + '</span>' +
-      '<span class="blattplatz">' + blattSvg(false, blattKlasse ? ' ' + blattKlasse : '') + '</span></div>';
-    document.getElementById('reihe-zwilling').hidden = true;
+  // В примере видна обычная ветка гусеницы: бусина примера садится в первое гнездо; близнеца и корзинки нет
+  function zeichnenAstEinzeln(wert, klasse) {
+    var app = document.getElementById('app');
+    document.querySelector('.ast').classList.remove('einzeln'); app.setAttribute('data-werkzeug', 'voll'); app.setAttribute('data-phase', 'beispiel');
+    var r = kopf(false);
+    for (var i = 0; i < N; i++) r += '<span class="slot' + (i === 0 ? ' aktuell' + (klasse ? ' ' + klasse : '') : '') + '"' + (i === 0 ? ' id="bsp-nest"' : '') + '><span class="nest"></span>' + (i === 0 && wert ? perle(wert) : '') + '</span>';
+    document.getElementById('reihe-kind').innerHTML = r;
+    // близнеца в примере не видно, но его место остаётся — окно задания не меняет размер
+    var rz = document.getElementById('reihe-zwilling'); rz.innerHTML = r.replace(' id="bsp-nest"', ''); rz.style.visibility = 'hidden';
+    if (klasse === 'neu') { var k = document.querySelector('#reihe-kind .kopf'); if (k) k.classList.add('freut'); }
+    korbZeichnen();
   }
   function korbZeichnen() {
-    document.getElementById('korb').innerHTML = '<img src="' + (korb ? BILD.korbVoll : BILD.korbLeer) + '" alt="">' + (korb ? '<span class="zahl">' + korb + '</span>' : ''); return;
+    var kb = document.getElementById('korb'), war = kb.dataset.zahl || '0';
+    kb.innerHTML = korb ? '<img src="' + BILD.korbVoll + '" alt=""><span class="zahl">' + korb + '</span>' : '';
+    kb.classList.toggle('kommt', war === '0' && korb > 0); kb.dataset.zahl = String(korb); return;
     document.getElementById('korb').innerHTML = '<svg width="54" height="40" viewBox="0 0 54 40" aria-hidden="true"><path d="M8 14 Q27 -6 46 14" stroke="#9A6A3A" stroke-width="3" fill="none"/><path d="M4 14 H50 L44 38 H10 Z" fill="#C8955C"/><path d="M8 22 H46 M9 30 H45" stroke="#A9773F" stroke-width="2"/>' + (korb ? '<path d="M14 14 C14 6 22 2 30 4 C28 10 22 14 14 14 Z" fill="var(--blatt)"/>' : '') + '</svg><span class="zahl">' + korb + '</span>';
   }
 
-  // ── Лоток: инструменты сверху, стеклянная бусина внизу ──
-  function abgabeHtml(w, loeschen) {
-    return '<div class="abgabe-platz">' + (loeschen ? '<button type="button" class="loeschen" ' + loeschen + ' aria-label="Löschen">' + kugel(0, 0, LOESCH_SYMBOL) + '</button>' : '') + '<span class="schale"><button type="button" class="abgabe' + (w ? '' : ' leer') + (w && Date.now() - perleSeit < 250 ? ' auf' : '') + '" data-abgabe="1" aria-label="' + (w ? 'Antwort der Raupe geben' : 'Noch keine Antwort') + '">' + perle(w) + '</button></span></div>';
+  // ── Лоток: белые плитки с обводкой и кромкой в цвете цифры; жемчужина ответа падает на лист под лотком ──
+  var KANTE = ['#8EA3B9','#A0002A','#AC5700','#E3E000','#3AB818','#00602F','#0096DA','#191770','#F31A85','#551F00'];
+  var RAND = ['#B9C5D3','#EC003F','#FE8100','#F2DC00','#5CCB3E','#068846','#2BB6F5','#2B289F','#F27DB6','#7A3004'];
+  function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function farbStil(d) { return ' style="--rand:' + RAND[d] + ';--kante:' + KANTE[d] + ';--schatten:' + rgba(KANTE[d], .42) + '"'; }
+  var zuletztPerle = null, markiert = false;
+  function abgabeHtml(w) {
+    var key = w ? JSON.stringify(w) : null, wechsel = '';
+    if (key && key !== zuletztPerle) wechsel = zuletztPerle === null ? ' faellt' : ' wechselt';
+    zuletztPerle = key;
+    return '<div class="abgabe-platz"><span class="schale' + (wechsel === ' faellt' ? ' wippt' : '') + '"><button type="button" class="abgabe' + (w ? '' : ' leer') + wechsel + (markiert && w ? ' markiert' : '') + '" data-abgabe="1" aria-label="' + (w ? 'Antwort der Raupe geben' : 'Noch keine Antwort') + '">' + perle(w) + '</button></span></div>';
   }
-  // Шарики 0–9 по порядку числового ряда, как в эталоне: 0–4 сверху, 5–9 снизу
+  // Цифры по порядку числового ряда: 0–4 сверху, 5–9 снизу; «стереть» справа на две строки
   function zifferTasten() {
     var h = '<div class="tasten">';
-    for (var d = 0; d <= 9; d++) h += '<button class="mtaste" type="button" data-ziffer="' + d + '" aria-label="' + d + '">' + kugel(d, d) + '</button>';
-    h += '<button class="loesch-taste" type="button" data-loeschen="1" aria-label="Löschen"><svg viewBox="0 0 60 44" aria-hidden="true"><path d="M20 6 H50 a6 6 0 0 1 6 6 V32 a6 6 0 0 1 -6 6 H20 L5 22 Z" fill="#fff"/><path d="M30 15 L42 29 M42 15 L30 29" stroke="#E0457B" stroke-width="5.5" stroke-linecap="round"/></svg></button>';
+    for (var d = 0; d <= 9; d++) h += '<button class="mtaste" type="button" data-ziffer="' + d + '" aria-label="' + d + '"' + farbStil(d) + '>' + d + '</button>';
+    h += '<button class="loesch-taste" type="button" data-loeschen="1" aria-label="Löschen"><svg viewBox="0 0 60 44" aria-hidden="true"><path d="M20 6 H50 a6 6 0 0 1 6 6 V32 a6 6 0 0 1 -6 6 H20 L5 22 Z" fill="#fff" stroke="#E0457B" stroke-width="3.5" stroke-linejoin="round"/><path d="M30 15 L42 29 M42 15 L30 29" stroke="#E0457B" stroke-width="5" stroke-linecap="round"/></svg></button>';
     return h + '</div>';
   }
-  var LOESCH_SYMBOL = '<g transform="translate(50 49)"><path d="M-17 -12 H17 a5 5 0 0 1 5 5 V7 a5 5 0 0 1 -5 5 H-17 L-28 0 Z" fill="none" stroke="#4A2A12" stroke-width="5.5" stroke-linejoin="round"/><path d="M-6 -5 L6 5 M6 -5 L-6 5" stroke="#4A2A12" stroke-width="5.5" stroke-linecap="round"/></g>';
   function wahlInhalt(o) {
-    if (o.art === 'zahl') return kugel(o.wert, o.wert);
+    if (o.art === 'zahl') return '<span class="wahlzahl">' + o.wert + '</span>';
     return '<svg viewBox="0 0 60 60" aria-hidden="true">' + formPfad(o.form, 30, 32, 20, FORM[o.farbe]) + '</svg>';
   }
   function lotto(a, e) {
     var h = '<div class="lotto"><div class="werkzeug">';
     if (a.typ === 'zahl') h += zifferTasten();
-    else if (a.typ === 'wahl') h += '<div class="wahl">' + a.wahl.map(function (o, k) { return '<button type="button" data-k="' + k + '" class="' + (o.art === 'zahl' ? 'kugelwahl' : 'mkarte') + (gleich(o, e) ? ' gewaehlt' : '') + '" aria-label="Antwort ' + (k + 1) + '">' + wahlInhalt(o) + '</button>'; }).join('') + '</div>';
+    else if (a.typ === 'wahl') h += '<div class="wahl">' + a.wahl.map(function (o, k) { return '<button type="button" data-k="' + k + '" class="' + (o.art === 'zahl' ? 'kugelwahl' : 'mkarte') + (gleich(o, e) ? ' gewaehlt' : '') + '" aria-label="Antwort ' + (k + 1) + '"' + (o.art === 'zahl' ? farbStil(o.wert % 10) : '') + '>' + wahlInhalt(o) + '</button>'; }).join('') + '</div>';
     else if (a.typ === 'ordnen') {
       var rest = a.karten.map(function (k) { return e.indexOf(k) === -1 ? k : null; });
       h += '<div class="karten">' + rest.map(function (k) { return k === null ? '<span class="karte leer"></span>' : '<button type="button" class="karte" data-karte="' + k + '">' + k + '</button>'; }).join('') + '</div>';
@@ -193,14 +207,14 @@
       return;
     }
     var a = AUFGABEN[aktuell], e = entwurf[aktuell];
-    var notiz = runden > 0 && offen(aktuell) && !geaendert[aktuell] ? 'Hier ist etwas anders. Schau noch einmal.' : '';
+    var notiz = runden > 0 && offen(aktuell) && !geaendert[aktuell] ? 'Hier ist noch ein Blatt. Schau noch einmal.' : '';
     var bildHtml = a.typ === 'ordnen' ? ordnenSlots(e) : hilfeMaske(aktuell, a.bild(e));
     document.getElementById('app').setAttribute('data-werkzeug', a.typ === 'tippen' ? 'leer' : 'voll');
     t.innerHTML = '<div class="papier"><div class="frage-zeile"><span></span><h1 class="frage">' + a.frage + '</h1>' + LATERNE.replace('data-hilfe="1"', 'data-hilfe="1" aria-pressed="' + hilfeAn + '"') + '</div>' +
       '<div class="bild" id="bild">' + bildHtml + '</div>' + (notiz ? '<p class="hinweis">' + notiz + '</p>' : '') + '</div>' + lotto(a, e);
     hilfePlanen();
   }
-  var LATERNE = '<button class="laterne" type="button" data-hilfe="1" aria-label="Hilfe"><img src="' + BILD.laterne + '" alt=""></button>'; var LATERNE_ALT = '<button class="laterne" type="button" data-hilfe="1" aria-label="Hilfe"><svg width="28" height="32" viewBox="0 0 30 34" aria-hidden="true"><rect x="8" y="2" width="14" height="5" rx="2" fill="#8A5A2B"/><rect x="5" y="7" width="20" height="21" rx="7" fill="#FFF0B8" stroke="#8A5A2B" stroke-width="2.4"/><circle cx="15" cy="17" r="4.5" fill="#FFB800"/><rect x="7" y="28" width="16" height="4" rx="2" fill="#8A5A2B"/></svg></button>';
+  var LATERNE = '<button class="laterne" type="button" data-hilfe="1"><span class="rund"><img src="' + BILD.laterne + '" alt=""></span><span class="name">Hilfe</span></button>'; var LATERNE_ALT = '<button class="laterne" type="button" data-hilfe="1" aria-label="Hilfe"><svg width="28" height="32" viewBox="0 0 30 34" aria-hidden="true"><rect x="8" y="2" width="14" height="5" rx="2" fill="#8A5A2B"/><rect x="5" y="7" width="20" height="21" rx="7" fill="#FFF0B8" stroke="#8A5A2B" stroke-width="2.4"/><circle cx="15" cy="17" r="4.5" fill="#FFB800"/><rect x="7" y="28" width="16" height="4" rx="2" fill="#8A5A2B"/></svg></button>';
   function ordnenSlots(werte, attr) {
     var s = '<div class="ordnen">';
     werte.forEach(function (w, k) {
@@ -248,7 +262,7 @@
     fingerWeg();
     var w = intro.schritt === 1 ? intro.wahl : (intro.ziffern === '' ? null : { art: 'zahl', wert: Number(intro.ziffern) });
     zeichnenAstEinzeln(intro.gesendet || null, intro.blatt);
-    var punkte = '<div class="schritt-punkte"><span class="' + (intro.schritt === 1 ? 'an' : '') + '"></span><span class="' + (intro.schritt === 2 ? 'an' : '') + '"></span></div>';
+    var punkte = '';
     var feld, werkzeug;
     if (intro.schritt === 1) {
       feld = '<div class="muster-gross"><div class="vorlage">' + wahlInhalt(INTRO_FORMEN[1]) + '</div><span class="gleich">=</span><div class="ziel">' + (intro.wahl ? wahlInhalt(intro.wahl) : '') + '</div></div>';
@@ -280,7 +294,7 @@
     fingerWeg();
     var richtig = intro.schritt === 1 ? gleich(w, INTRO_FORMEN[1]) : w.wert === 24;
     flug(w, el, document.getElementById('bsp-nest'), function () {
-      intro.gesendet = w; intro.blatt = richtig ? 'weg' : 'wackelt';
+      intro.gesendet = w; intro.blatt = richtig ? 'neu' : 'wackelt';
       zeichneIntro();
       if (!richtig) { intro.blatt = ''; intro.gesendet = null; setTimeout(function () { if (phase === 'intro') { zeichneIntro(); introFinger(); } }, 900); return; }
       setTimeout(function () {
@@ -299,7 +313,7 @@
     zeichnenAstEinzeln(bsp.gesendet, bsp.blatt);
     var karten = BSP_AUFGABEN[bsp.nr].map(function (k) { return bsp.slots.indexOf(k) !== -1 ? '<span class="karte leer"></span>' : '<button type="button" class="karte" data-bkarte="' + k + '">' + k + '</button>'; }).join('');
     var w = bsp.slots.indexOf(null) === -1 ? { art: 'folge', werte: bsp.slots.slice() } : null;
-    var punkte = '<div class="schritt-punkte"><span class="' + (bsp.nr === 0 ? 'an' : '') + '"></span><span class="' + (bsp.nr === 1 ? 'an' : '') + '"></span></div>';
+    var punkte = '';
     document.getElementById('tisch').innerHTML = '<div class="papier"><div class="frage-zeile"><span></span><h1 class="frage">So geht\'s: Von klein nach groß</h1>' + punkte + '</div><div class="bild">' + ordnenSlots(bsp.slots, ' data-bslot="1"') + '</div></div>' +
       '<div class="lotto"><div class="werkzeug"><div class="karten">' + karten + '</div></div>' + abgabeHtml(w) + '</div>';
   }
@@ -315,7 +329,7 @@
     var soll = BSP_AUFGABEN[bsp.nr].slice().sort(function (x, y) { return x - y; });
     var richtig = gleich(w.werte, soll);
     flug(w, el, document.getElementById('bsp-nest'), function () {
-      bsp.gesendet = w; bsp.blatt = richtig ? 'weg' : 'wackelt'; zeichneBeispiel();
+      bsp.gesendet = w; bsp.blatt = richtig ? 'neu' : 'wackelt'; zeichneBeispiel();
       if (!richtig) { setTimeout(function () { if (phase === 'beispiel') { bsp.gesendet = null; bsp.blatt = ''; zeichneBeispiel(); } }, 900); return; }
       setTimeout(function () {
         if (phase !== 'beispiel') return;
@@ -370,13 +384,14 @@
     var el = ev.target.closest('button, [data-raupe]');
     if (!el) return;
     var d = el.dataset;
-    if (el.matches('.mtaste, .mkarte, .kugelwahl, .karte, .oslot, .loeschen, .loesch-taste, .kachel, .laterne, .rund')) hopp(el);
+    if (el.matches('.mtaste, .mkarte, .kugelwahl, .karte, .oslot, .loeschen, .loesch-taste, .kachel, .laterne, .knopf')) hopp(el);
     if (d.lotto) { document.getElementById('app').setAttribute('data-lotto', d.lotto); document.querySelectorAll('[data-lotto]').forEach(function (b) { if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.dataset.lotto === d.lotto)); }); return; }
     if (d.auto !== undefined) { autoSenden = d.auto === '1'; document.querySelectorAll('[data-auto]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.auto === d.auto)); }); return; }
     if (d.thema) { themaSetzen(d.thema); return; }
     if (d.panel) { panelAuf(document.getElementById('autor').hidden); return; }
     if (d.weiter) { var ph = document.querySelector('.platzhalter'); if (ph) ph.remove(); return; }
-    if (d.zurueck) { platzhalter('regal'); return; }
+    if (d.zurueck) { aufhoerenFragen(); return; }
+    if (d.aufhoeren) { var ph2 = document.querySelector('.platzhalter'); if (ph2) ph2.remove(); platzhalter('regal'); return; }
     if (d.stub) { platzhalter(d.stub); return; }
     if (d.neustart) { neu(true); return; }
     if (d.schnell !== undefined) { schnelleHilfe = d.schnell === '1'; autorZeichnen(); hilfePlanen(); return; }
@@ -409,8 +424,8 @@
       hilfeAn = !hilfeAn; zeichnen(); return;
     }
     if (d.abgabe) { abgeben(el); return; }
-    if (d.ziffer !== undefined) { setzeEntwurf(aktuell, e.length >= 2 ? d.ziffer : (e === '0' ? d.ziffer : e + d.ziffer)); zeichnen(); return; }
-    if (d.loeschen) { setzeEntwurf(aktuell, e.slice(0, -1)); zeichnen(); return; }
+    if (d.ziffer !== undefined) { if (markiert) { e = ''; markiert = false; } setzeEntwurf(aktuell, e.length >= 2 ? d.ziffer : (e === '0' ? d.ziffer : e + d.ziffer)); zeichnen(); return; }
+    if (d.loeschen) { setzeEntwurf(aktuell, markiert ? '' : e.slice(0, -1)); markiert = false; zeichnen(); return; }
     if (d.karte !== undefined) { var frei = e.indexOf(null); if (frei !== -1) { e[frei] = Number(d.karte); setzeEntwurf(aktuell, e); zeichnen(); } return; }
     if (d.oslot !== undefined) { e[Number(d.oslot)] = null; setzeEntwurf(aktuell, e); zeichnen(); return; }
     var gewaehlt = null;
@@ -465,6 +480,12 @@
     welt: ['Hier kommt später deine Welt.', function () { return BAUMHAUS; }],
     pause: ['Pause. Deine Raupe wartet auf dich.', function () { return '<img src="' + BILD.raupeLiegt + '" alt="">'; }]
   };
+  function aufhoerenFragen() {
+    fingerWeg();
+    var el = document.createElement('div'); el.className = 'platzhalter'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+    el.innerHTML = '<div class="karte-gross"><img src="' + BILD.raupe + '" alt=""><p>Wirklich aufhören?</p><div class="zwei"><button type="button" data-weiter="1">Weiterspielen</button><button type="button" class="leise" data-aufhoeren="1">Aufhören</button></div></div>';
+    document.getElementById('app').appendChild(el); el.querySelector('button').focus();
+  }
   function platzhalter(art) {
     fingerWeg();
     var st = STUB[art], el = document.createElement('div');
@@ -475,7 +496,7 @@
   }
 
   // ── Тема: цвета неба, холмов, доски и кнопок; лоток ставится по теме, ребёнок может сменить ──
-  var THEMA_LOTTO = { sonnig: 'nacht', bonbon: 'koralle', sommer: 'minze' };
+  var THEMA_LOTTO = { sonnig: 'porzellan', bonbon: 'porzellan', sommer: 'porzellan' };
   function knoepfeMarkieren(attr, wert) {
     document.querySelectorAll('.autor [data-' + attr + ']').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset[attr] === wert)); });
   }
@@ -516,16 +537,6 @@
   var _zeichnen = zeichnen;
   zeichnen = function () { _zeichnen(); hintergrund(); };
   window.addEventListener('resize', function () { groesse(); hintergrund(); });
-  // Доска знает пропорции своего задания: высота доски идёт от рисунка, а не от экрана
-  function bildSeite() {
-    var b = document.querySelector('#tisch .bild'); if (!b) return;
-    var svg = b.querySelector(':scope > svg'), ar = 2;
-    if (svg && svg.viewBox.baseVal && svg.viewBox.baseVal.width) ar = svg.viewBox.baseVal.width / svg.viewBox.baseVal.height;
-    else if (b.querySelector('.ordnen')) ar = 3;
-    else if (b.querySelector('.muster-gross')) ar = 2.3;
-    b.style.setProperty('--ar', ar.toFixed(3));
-  }
-  new MutationObserver(bildSeite).observe(document.getElementById('tisch'), { childList: true });
   document.documentElement.style.setProperty('--blatt-bild', 'url(' + BILD.blatt + ')');
   document.documentElement.style.setProperty('--filz-bild', 'url(' + BILD.filz + ')');
   var startThema = (location.hash.match(/thema=(\w+)/) || [])[1];
