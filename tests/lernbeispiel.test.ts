@@ -8,6 +8,12 @@ import { gleich, type Antwort } from '../src/perlen/antwort';
 import type { Mauer } from '../src/aufgaben/zahlenmauer';
 import type { Muster } from '../src/aufgaben/muster';
 import type { WerIstEs } from '../src/aufgaben/wer-ist-es';
+import type { BildGleichung } from '../src/aufgaben/bild-gleichungen';
+import type { Malaufgabe } from '../src/aufgaben/malaufgaben';
+import type { Hunderterfeld } from '../src/aufgaben/hunderterfeld';
+import type { Zahlenstrahl } from '../src/aufgaben/zahlenstrahl';
+import type { Paeckchen } from '../src/aufgaben/entdeckerpaeckchen';
+import type { Rechenstrich } from '../src/aufgaben/rechenstrich';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -48,6 +54,38 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
     const ziel = FORMATE['wer-ist-es'].loesungen(w)[0] as { wert: number };
     const gleicheArt = (r: WerIstEs['raupen'][number]) => (h.art === 'brille' ? r.brille : r.hut !== 'kein');
     return [w.hinweise.length, w.raupen.filter((r, i) => i !== ziel.wert - 1 && gleicheArt(r)).length];
+  },
+  // Gruppe Г1б
+  /** Bild-Gleichungen: Zahl der Zeilen, dann Zahl der Früchte */
+  'bild-gleichungen': (b) => {
+    const g = b as BildGleichung;
+    return [g.zeilen.length, g.zeilen.flatMap((z) => z.fruechte).length];
+  },
+  /** Malaufgaben: Zahl der Reihen, dann Zahl der Plättchen */
+  malaufgaben: (b) => {
+    const m = b as Malaufgabe;
+    return [m.reihen.length, m.reihen.reduce((x, y) => x + y, 0)];
+  },
+  /** Hunderterfeld: Abstand vom gezeigten Feld, dann Größe der Zahl */
+  hunderterfeld: (b) => {
+    const h = b as Hunderterfeld;
+    return [Math.min(...h.marken.map((m) => Math.abs(m.feld - h.frage))), h.frage + 1];
+  },
+  /** Zahlenstrahl: je weniger Zahlen dastehen, desto schwerer; dann Abstand des Pfeils von der nächsten Zahl */
+  zahlenstrahl: (b) => {
+    const s = b as Zahlenstrahl;
+    return [-s.marken.length, Math.min(...s.marken.map((m) => Math.abs(m.strich - s.pfeil)))];
+  },
+  /** Entdeckerpäckchen: Zahl der Zeilen, dann größte Zahl (mit der Lösung) */
+  entdeckerpaeckchen: (b) => {
+    const p = b as Paeckchen;
+    const l = FORMATE.entdeckerpaeckchen.loesungen(p)[0] as { wert: number };
+    return [p.zeilen.length, Math.max(l.wert, ...p.zeilen.flat().map((x) => x ?? 0))];
+  },
+  /** Rechenstrich: Zahl der Sprünge, dann wie weit sie zusammen gehen */
+  rechenstrich: (b) => {
+    const r = b as Rechenstrich;
+    return [r.spruenge.length, r.spruenge.reduce((x, s) => x + (s.laenge ?? 0), 0)];
   },
 };
 const kleiner = (a: number[], b: number[]) => {

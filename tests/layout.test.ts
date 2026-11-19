@@ -1036,7 +1036,7 @@ describe('Musterseite', () => {
       expect(await page.textContent('h1')).toBe(sp === 'de' ? 'Designsystem' : 'Дизайн-система');
       // Formate: jedes mit Bild ohne Hilfe, Hilfe 2 und 3 und den Texten für Eltern in der gewählten Sprache
       const formate = await page.$$eval('.format-probe', (els) => els.map((e) => ({ id: e.getAttribute('data-format'), bilder: e.querySelectorAll('svg').length, text: e.textContent })));
-      expect(formate.map((f) => f.id).sort()).toEqual([...PROBE_FORMATE].sort());
+      expect(formate.map((f) => f.id).sort()).toEqual(Object.keys(FORMATE).sort());
       for (const f of formate) {
         expect(f.bilder).toBe(3);
         expect(f.text).toMatch(sp === 'de' ? /So helfen Sie/ : /Як допомогти/);
