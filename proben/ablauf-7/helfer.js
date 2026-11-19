@@ -1,7 +1,7 @@
   var FARBE = ['#EEF1F4','#EC003F','#FE8100','#FFFD4F','#71E053','#068846','#42C4FF','#2B289F','#F598C6','#7A3004'];
   var WEISS = [false,true,false,false,false,true,false,true,false,true]; // белая цифра на этом цвете
   var FORM = { rot: '#EC003F', blau: '#42C4FF', gelb: '#FFD43B', gruen: '#068846' };
-  var TON = '#4A2A12'; // тёмно-коричневые цифры на глине
+  var TON = '#2A2F4F'; // тёмные чернила на белой глине (без коричневого)
 
   // Смешать цвет с белым (k>0) или чёрным (k<0)
   function mische(hex, k) {
@@ -25,7 +25,7 @@
   function hut(x, y, s, farbe) { return '<path d="M' + (x - s) + ' ' + y + ' Q' + x + ' ' + (y - s * 1.6) + ' ' + (x + s) + ' ' + y + ' Z" fill="' + farbe + '"/><rect x="' + (x - s * 1.25) + '" y="' + (y - s * .15) + '" width="' + s * 2.5 + '" height="' + s * .35 + '" rx="' + s * .17 + '" fill="' + farbe + '"/>'; }
   function ziffer(n, x, y, gr, farbeIdx) {
     var weiss = WEISS[farbeIdx];
-    return '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="' + gr + '" font-weight="900" fill="' + (weiss ? '#fff' : '#1E1A12') + '" stroke="' + (weiss ? 'rgba(20,20,40,.55)' : 'rgba(255,255,255,.85)') + '" stroke-width="' + gr * .12 + '" paint-order="stroke" stroke-linejoin="round" font-family="Nunito, \'Avenir Next\', system-ui, sans-serif">' + n + '</text>';
+    return '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="' + gr + '" font-weight="800" fill="' + (weiss ? '#fff' : '#1E1A12') + '" stroke="' + (weiss ? 'rgba(20,20,40,.55)' : 'rgba(255,255,255,.85)') + '" stroke-width="' + gr * .12 + '" paint-order="stroke" stroke-linejoin="round" font-family="Inter, system-ui, sans-serif">' + n + '</text>';
   }
 
   // Стеклянная бусина ответа. Пустая (null) — пунктирное гнездо.
@@ -48,7 +48,7 @@
       if (w.art === 'form') s += formPlastisch(w.form, 50, 53, 24, FORM[w.farbe]);
       if (w.art === 'raupe') s += '<circle cx="50" cy="60" r="23" fill="#7CC24A"/><circle cx="42" cy="58" r="3.2" fill="#182218"/><circle cx="58" cy="58" r="3.2" fill="#182218"/>' +
         (w.brille ? '<circle cx="42" cy="58" r="7.5" fill="none" stroke="#182218" stroke-width="2.5"/><circle cx="58" cy="58" r="7.5" fill="none" stroke="#182218" stroke-width="2.5"/>' : '') + hut(50, 39, 15, FORM[w.hut]);
-      if (w.art === 'folge') w.werte.forEach(function (zz, k) { s += zz === null ? '<circle cx="' + (26 + k * 24) + '" cy="52" r="4" fill="#B9A27E"/>' : '<text x="' + (26 + k * 24) + '" y="63" text-anchor="middle" font-size="30" font-weight="900" fill="' + TON + '" font-family="Nunito, system-ui, sans-serif">' + zz + '</text>'; });
+      if (w.art === 'folge') w.werte.forEach(function (zz, k) { s += zz === null ? '<circle cx="' + (26 + k * 24) + '" cy="52" r="4" fill="#B9A27E"/>' : '<text x="' + (26 + k * 24) + '" y="63" text-anchor="middle" font-size="30" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">' + zz + '</text>'; });
     }
     // Стекло: ясный блик сверху слева, светлый отсвет по нижнему краю
     s += '<path d="M24 36 C26 22 40 13 54 14 C44 18 33 26 30 40 C29 44 23 43 24 36 Z" fill="url(#' + id + 'l)"/><circle cx="66" cy="22" r="3.5" fill="#fff" opacity=".85"/>';
@@ -68,12 +68,12 @@
 
   // ── Задания: белая глина на персиковом войлоке ──
   function stein(x, y, w, h, inhalt, leer) {
-    if (leer) return '<rect x="' + x + '" y="' + (y + 3) + '" width="' + w + '" height="' + h + '" rx="18" fill="rgba(140,80,40,.18)"/>' +
-      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="18" fill="rgba(255,250,242,.55)" stroke="#FFFFFF" stroke-width="3.5" stroke-dasharray="10 7"/>' +
-      '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 15) + '" text-anchor="middle" font-size="44" font-weight="900" fill="' + TON + '" font-family="Nunito, system-ui, sans-serif">' + inhalt + '</text>';
+    if (leer) return '<rect x="' + x + '" y="' + (y + 3) + '" width="' + w + '" height="' + h + '" rx="18" fill="rgba(40,50,90,.10)"/>' +
+      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="18" style="fill:color-mix(in srgb, var(--brett-kante) 16%, #fff);stroke:var(--brett-kante)" stroke-width="3.5" stroke-dasharray="10 7"/>' +
+      '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 15) + '" text-anchor="middle" font-size="44" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">' + inhalt + '</text>';
     return '<rect x="' + x + '" y="' + (y + 6) + '" width="' + w + '" height="' + h + '" rx="18" fill="#D9CDBD"/>' +
       '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="18" fill="url(#lehm)"/>' +
-      '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 15) + '" text-anchor="middle" font-size="44" font-weight="900" fill="' + TON + '" font-family="Nunito, system-ui, sans-serif">' + inhalt + '</text>';
+      '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 15) + '" text-anchor="middle" font-size="44" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">' + inhalt + '</text>';
   }
   var LEHM = '<defs><linearGradient id="lehm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".7" stop-color="#F7F2EA"/><stop offset="1" stop-color="#EDE5D8"/></linearGradient></defs>';
   var RAUPEN = [['rot', false], ['blau', true], ['rot', false], ['gelb', true], ['rot', true], ['blau', false]];
@@ -85,11 +85,12 @@
     { typ: 'wahl', frage: 'Wie geht es weiter?', loesung: { art: 'form', form: 'quadrat', farbe: 'blau' },
       wahl: [{ art: 'form', form: 'dreieck', farbe: 'gelb' }, { art: 'form', form: 'quadrat', farbe: 'blau' }, { art: 'form', form: 'kreis', farbe: 'blau' }, { art: 'form', form: 'quadrat', farbe: 'gruen' }],
       bild: function (a) {
-        var reihe = ['dreieck', 'quadrat', 'dreieck', 'quadrat', 'dreieck'], s = '<svg viewBox="0 0 430 120" preserveAspectRatio="xMidYMid meet">' + LEHM;
+        var reihe = ['dreieck', 'quadrat', 'dreieck', 'quadrat', 'dreieck'], s = '<svg viewBox="0 0 430 120" preserveAspectRatio="xMidYMid meet">' + LEHM +
+          '<rect x="2" y="70" width="426" height="34" rx="17" style="fill:color-mix(in srgb, var(--brett-kante) 45%, #fff)"/><rect x="2" y="96" width="426" height="8" rx="4" style="fill:var(--brett-kante)"/>';
         reihe.forEach(function (f, i) { var x = 40 + i * 70; s += '<rect x="' + (x - 31) + '" y="' + 32 + '" width="62" height="62" rx="16" fill="#D9CDBD"/><rect x="' + (x - 31) + '" y="27" width="62" height="62" rx="16" fill="url(#lehm)"/>' + formPlastisch(f, x, 59, 19, f === 'dreieck' ? FORM.gelb : FORM.blau); });
         var x = 390;
         s += a ? '<rect x="' + (x - 31) + '" y="32" width="62" height="62" rx="16" fill="#D9CDBD"/><rect x="' + (x - 31) + '" y="27" width="62" height="62" rx="16" fill="url(#lehm)"/>' + formPlastisch(a.form, x, 59, 19, FORM[a.farbe])
-          : '<rect x="' + (x - 31) + '" y="27" width="62" height="62" rx="16" fill="rgba(255,250,242,.55)" stroke="#fff" stroke-width="3.5" stroke-dasharray="9 6"/><text x="' + x + '" y="73" text-anchor="middle" font-size="38" font-weight="900" fill="' + TON + '" font-family="Nunito, system-ui, sans-serif">?</text>';
+          : '<rect x="' + (x - 31) + '" y="27" width="62" height="62" rx="16" style="fill:color-mix(in srgb, var(--brett-kante) 16%, #fff);stroke:var(--brett-kante)" stroke-width="3.5" stroke-dasharray="9 6"/><text x="' + x + '" y="73" text-anchor="middle" font-size="38" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">?</text>';
         return s + '</svg>';
       } },
     { typ: 'tippen', frage: 'Wer ist es?', loesung: raupeWert(5),
@@ -105,7 +106,7 @@
             '<circle cx="' + (x + 74) + '" cy="' + (yy + 56) + '" r="2.8" fill="#182218"/><circle cx="' + (x + 87) + '" cy="' + (yy + 56) + '" r="2.8" fill="#182218"/>' +
             (r[1] ? '<circle cx="' + (x + 74) + '" cy="' + (yy + 56) + '" r="7" fill="none" stroke="#182218" stroke-width="2.4"/><circle cx="' + (x + 88) + '" cy="' + (yy + 56) + '" r="7" fill="none" stroke="#182218" stroke-width="2.4"/>' : '') +
             hut(x + 80, yy + 40, 16, FORM[r[0]]) +
-            '<text x="' + (x + 16) + '" y="' + (yy + 28) + '" font-size="21" font-weight="900" fill="' + TON + '" font-family="Nunito, system-ui, sans-serif">' + nr + '</text></g>';
+            '<text x="' + (x + 16) + '" y="' + (yy + 28) + '" font-size="21" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">' + nr + '</text></g>';
         });
         return s + '</svg>';
       } },
@@ -122,8 +123,8 @@
     { typ: 'wahl', frage: 'Welche Zahl passt?', loesung: { art: 'zahl', wert: 6 },
       wahl: [{ art: 'zahl', wert: 4 }, { art: 'zahl', wert: 6 }, { art: 'zahl', wert: 8 }],
       bild: function (a) {
-        var mitte = a ? '<svg x="160" y="18" width="100" height="100" viewBox="0 0 100 100">' + perle(a).replace(/^<svg[^>]*>/, '') : '<circle cx="210" cy="68" r="44" fill="rgba(255,250,242,.55)" stroke="#fff" stroke-width="3.5" stroke-dasharray="10 7"/><text x="210" y="84" text-anchor="middle" font-size="44" font-weight="900" fill="' + TON + '" font-family="Nunito, system-ui, sans-serif">?</text>';
-        var z = function (x, t) { return '<text x="' + x + '" y="88" text-anchor="middle" font-size="60" font-weight="900" fill="' + TON + '" font-family="Nunito, system-ui, sans-serif">' + t + '</text>'; };
+        var mitte = a ? '<svg x="160" y="18" width="100" height="100" viewBox="0 0 100 100">' + perle(a).replace(/^<svg[^>]*>/, '') : '<circle cx="210" cy="68" r="44" style="fill:color-mix(in srgb, var(--brett-kante) 16%, #fff);stroke:var(--brett-kante)" stroke-width="3.5" stroke-dasharray="10 7"/><text x="210" y="84" text-anchor="middle" font-size="44" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">?</text>';
+        var z = function (x, t) { return '<text x="' + x + '" y="88" text-anchor="middle" font-size="60" font-weight="800" fill="' + TON + '" font-family="Inter, system-ui, sans-serif">' + t + '</text>'; };
         return '<svg viewBox="0 0 420 140" preserveAspectRatio="xMidYMid meet">' + z(70, '5') + z(130, '&lt;') + mitte + z(290, '&lt;') + z(350, '7') + '</svg>';
       } }
   ];

@@ -39,7 +39,7 @@
     aktuell = i; manuell = !!vonHand && antwort[i] !== null;
     var a = AUFGABEN[i];
     entwurf[i] = a.typ === 'zahl' ? (antwort[i] ? String(antwort[i].wert) : '') : a.typ === 'ordnen' ? (antwort[i] ? antwort[i].werte.slice() : [null, null, null]) : antwort[i];
-    perleSeit = Date.now(); leerTipps = 0; sperre = Date.now() + 300;
+    perleSeit = Date.now(); leerTipps = 0; sperre = Date.now() + 300; hilfeAn = false;
     if (a.neu && !beispielGesehen) { starteBeispiel(); return; }
     phase = 'loesen'; zeichnen();
   }
@@ -113,7 +113,7 @@
   // ── Ветка ──
   function slotHtml(i) {
     var cls = 'slot' + (phase === 'loesen' && i === aktuell ? ' aktuell' : '') + (i === neuIndex ? ' neu' : '') + (runden > 0 && offen(i) && !geaendert[i] ? ' zu-mark' : '');
-    return '<button class="' + cls + '" type="button" data-slot="' + i + '" aria-label="Aufgabe ' + (i + 1) + '"><span class="nest"></span>' + (antwort[i] ? perle(antwort[i]) : '') + '</button>';
+    return '<button class="' + cls + '" type="button" data-slot="' + i + '" aria-label="Aufgabe ' + (i + 1) + '"><i class="treffer" aria-hidden="true"></i><span class="nest"></span>' + (antwort[i] ? perle(antwort[i]) : '') + '</button>';
   }
   function zeichnenAst() {
     var ast = document.querySelector('.ast'); ast.classList.remove('einzeln');
@@ -135,7 +135,7 @@
   }
   // В примере: одно гнездо и один лист, без близнеца, корзинки и ряда набора
   function zeichnenAstEinzeln(wert, blattKlasse) {
-    var ast = document.querySelector('.ast'); ast.classList.add('einzeln');
+    var ast = document.querySelector('.ast'); ast.classList.add('einzeln'); document.getElementById('app').setAttribute('data-werkzeug', 'voll');
     document.getElementById('app').setAttribute('data-phase', 'beispiel');
     document.getElementById('reihe-kind').innerHTML = '<div class="einzel">' + kopf(false) +
       '<span class="slot" id="bsp-nest"><span class="nest"></span>' + (wert ? perle(wert) : '') + '</span>' +
@@ -143,7 +143,7 @@
     document.getElementById('reihe-zwilling').hidden = true;
   }
   function korbZeichnen() {
-    document.getElementById('korb').innerHTML = '<img src="' + (korb ? BILD.korbVoll : BILD.korbLeer) + '" alt=""><span class="zahl">' + korb + '</span>'; return;
+    document.getElementById('korb').innerHTML = '<img src="' + (korb ? BILD.korbVoll : BILD.korbLeer) + '" alt="">' + (korb ? '<span class="zahl">' + korb + '</span>' : ''); return;
     document.getElementById('korb').innerHTML = '<svg width="54" height="40" viewBox="0 0 54 40" aria-hidden="true"><path d="M8 14 Q27 -6 46 14" stroke="#9A6A3A" stroke-width="3" fill="none"/><path d="M4 14 H50 L44 38 H10 Z" fill="#C8955C"/><path d="M8 22 H46 M9 30 H45" stroke="#A9773F" stroke-width="2"/>' + (korb ? '<path d="M14 14 C14 6 22 2 30 4 C28 10 22 14 14 14 Z" fill="var(--blatt)"/>' : '') + '</svg><span class="zahl">' + korb + '</span>';
   }
 
@@ -185,17 +185,18 @@
     if (phase === 'bereit' || phase === 'fertig') {
       var inhalt = phase === 'fertig'
         ? '<p class="jubel">Beide Raupen sind gleich!</p><div class="ende-wahl">' +
-          '<button type="button" class="kachel"><img src="' + BILD.raupe + '" alt=""><span>Meine Welt</span></button>' +
-          '<button type="button" class="kachel haupt" data-noch="1"><img src="' + BILD.korbVoll + '" alt=""><span>Noch ein Satz</span></button>' +
-          '<button type="button" class="kachel"><img src="' + BILD.raupeLiegt + '" alt=""><span>Pause</span></button></div>' + blattRegen()
+          '<button type="button" class="kachel" data-stub="welt">' + BAUMHAUS + '<span>Meine Welt</span></button>' +
+          '<button type="button" class="kachel haupt" data-noch="1"><img src="' + BILD.raupe + '" alt=""><span>Noch ein Satz</span></button>' +
+          '<button type="button" class="kachel" data-stub="pause">' + SCHLAF + '<span>Pause</span></button></div>' + blattRegen()
         : '<button class="vergleichen" type="button" data-vergleichen="1">Vergleichen</button>';
       t.innerHTML = '<div class="papier voll"><div class="bereit">' + inhalt + '</div></div>';
       return;
     }
     var a = AUFGABEN[aktuell], e = entwurf[aktuell];
     var notiz = runden > 0 && offen(aktuell) && !geaendert[aktuell] ? 'Hier ist etwas anders. Schau noch einmal.' : '';
-    var bildHtml = a.typ === 'ordnen' ? ordnenSlots(e) : a.bild(e);
-    t.innerHTML = '<div class="papier"><div class="frage-zeile"><span></span><h1 class="frage">' + a.frage + '</h1>' + LATERNE + '</div>' +
+    var bildHtml = a.typ === 'ordnen' ? ordnenSlots(e) : hilfeMaske(aktuell, a.bild(e));
+    document.getElementById('app').setAttribute('data-werkzeug', a.typ === 'tippen' ? 'leer' : 'voll');
+    t.innerHTML = '<div class="papier"><div class="frage-zeile"><span></span><h1 class="frage">' + a.frage + '</h1>' + LATERNE.replace('data-hilfe="1"', 'data-hilfe="1" aria-pressed="' + hilfeAn + '"') + '</div>' +
       '<div class="bild" id="bild">' + bildHtml + '</div>' + (notiz ? '<p class="hinweis">' + notiz + '</p>' : '') + '</div>' + lotto(a, e);
     hilfePlanen();
   }
@@ -372,7 +373,11 @@
     if (el.matches('.mtaste, .mkarte, .kugelwahl, .karte, .oslot, .loeschen, .loesch-taste, .kachel, .laterne, .rund')) hopp(el);
     if (d.lotto) { document.getElementById('app').setAttribute('data-lotto', d.lotto); document.querySelectorAll('[data-lotto]').forEach(function (b) { if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.dataset.lotto === d.lotto)); }); return; }
     if (d.auto !== undefined) { autoSenden = d.auto === '1'; document.querySelectorAll('[data-auto]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.auto === d.auto)); }); return; }
+    if (d.thema) { themaSetzen(d.thema); return; }
     if (d.panel) { panelAuf(document.getElementById('autor').hidden); return; }
+    if (d.weiter) { var ph = document.querySelector('.platzhalter'); if (ph) ph.remove(); return; }
+    if (d.zurueck) { platzhalter('regal'); return; }
+    if (d.stub) { platzhalter(d.stub); return; }
     if (d.neustart) { neu(true); return; }
     if (d.schnell !== undefined) { schnelleHilfe = d.schnell === '1'; autorZeichnen(); hilfePlanen(); return; }
     if (fliegt || phase === 'vergleich') return;
@@ -398,7 +403,11 @@
     if (phase !== 'loesen') return;
     if (Date.now() < sperre && el.closest('#tisch')) return;
     var a = AUFGABEN[aktuell], e = entwurf[aktuell];
-    if (d.hilfe) return; // помощь в этой пробе не разобрана
+    if (d.hilfe) {
+      // Ступень 1 для нового формата — его пример; для остальных в пробе — ступень 2: лишнее в полутени, нужное в тёплой рамке
+      if (a.typ === 'ordnen') { starteBeispiel(); return; }
+      hilfeAn = !hilfeAn; zeichnen(); return;
+    }
     if (d.abgabe) { abgeben(el); return; }
     if (d.ziffer !== undefined) { setzeEntwurf(aktuell, e.length >= 2 ? d.ziffer : (e === '0' ? d.ziffer : e + d.ziffer)); zeichnen(); return; }
     if (d.loeschen) { setzeEntwurf(aktuell, e.slice(0, -1)); zeichnen(); return; }
@@ -419,20 +428,85 @@
   function autorZeichnen() {
     document.querySelectorAll('[data-schnell]').forEach(function (b) { b.setAttribute('aria-pressed', String((b.dataset.schnell === '1') === schnelleHilfe)); });
   }
-  // Размеры считаются сразу от ширины и высоты — одна раскладка на все экраны
+  // ── Помощь на рисунке (ступень 2): нужные места в тёплой рамке, остальное в полутени ──
+  var hilfeAn = false;
+  var HILFE = [
+    [390, 250, [[129, 4, 132, 84], [67, 84, 256, 84]]],          // Zahlenmauer: верхний камень и два под ним
+    [430, 120, [[3, 21, 144, 80]]],                               // Muster: первые две плитки — повторяющийся кусок
+    [420, 300, [[140, -4, 140, 66]]],                             // Wer ist es?: две подсказки
+    null,                                                         // по порядку: помощь — пример
+    [420, 220, [[30, 108, 270, 72]]],                             // сидящие птицы
+    [420, 140, [[32, 30, 76, 70], [312, 30, 76, 70]]]             // 5 и 7
+  ];
+  function hilfeMaske(i, svg) {
+    var h = HILFE[i];
+    if (!hilfeAn || !h) return svg;
+    var w = h[0], hh = h[1], d = 'M-60 -60 H' + (w + 60) + ' V' + (hh + 60) + ' H-60 Z', rahmen = '';
+    h[2].forEach(function (r) {
+      d += ' M' + r[0] + ' ' + r[1] + ' h' + r[2] + ' v' + r[3] + ' h' + (-r[2]) + ' Z';
+      rahmen += '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] + '" rx="18" fill="none" stroke="#FFB000" stroke-width="5"/>';
+    });
+    var maske = '<g pointer-events="none"><path d="' + d + '" fill-rule="evenodd" style="fill:var(--brett)" opacity=".78"/>' + rahmen + '</g>';
+    var k = svg.lastIndexOf('</svg>');
+    return svg.slice(0, k) + maske + svg.slice(k);
+  }
+
+  // ── Картинки для конца набора: дом на дереве и спящая гусеница ──
+  var BAUMHAUS = '<svg viewBox="0 0 120 110" aria-hidden="true"><rect x="52" y="58" width="16" height="46" rx="5" fill="#9A6A3F"/><ellipse cx="60" cy="104" rx="40" ry="6" fill="#7FCB45"/>' +
+    '<circle cx="60" cy="40" r="34" fill="#57B533"/><circle cx="34" cy="50" r="22" fill="#7FCB45"/><circle cx="86" cy="50" r="22" fill="#7FCB45"/><circle cx="60" cy="30" r="22" fill="#8ED24F"/>' +
+    '<rect x="44" y="44" width="32" height="26" rx="5" fill="#FFC21F"/><path d="M40 46 L60 30 L80 46 Z" fill="#FF7A59"/><rect x="55" y="54" width="10" height="16" rx="4" fill="#8B5CF6"/>' +
+    '<circle cx="28" cy="40" r="4" fill="#FF6FA8"/><circle cx="92" cy="44" r="4" fill="#FFF"/><circle cx="74" cy="18" r="4" fill="#FF6FA8"/></svg>';
+  var SCHLAF = '<span style="position:relative;display:inline-block"><img src="' + BILD.raupeLiegt + '" alt="" style="height:min(84px,13vh)">' +
+    '<svg viewBox="0 0 40 40" aria-hidden="true" style="position:absolute;right:-18px;top:-10px;width:34px;height:34px;filter:none"><text x="4" y="30" font-size="20" font-weight="800" fill="#7E6CF0" font-family="Inter, system-ui, sans-serif">z</text><text x="18" y="18" font-size="15" font-weight="800" fill="#7E6CF0" font-family="Inter, system-ui, sans-serif">z</text></svg></span>';
+
+  // Заглушка для экранов, которых в пробе ещё нет: ребёнок видит, что кнопка работает, и возвращается
+  var STUB = {
+    regal: ['Hier kommen später alle Spiele.', function () { return '<img src="' + BILD.korbVoll + '" alt="">'; }],
+    welt: ['Hier kommt später deine Welt.', function () { return BAUMHAUS; }],
+    pause: ['Pause. Deine Raupe wartet auf dich.', function () { return '<img src="' + BILD.raupeLiegt + '" alt="">'; }]
+  };
+  function platzhalter(art) {
+    fingerWeg();
+    var st = STUB[art], el = document.createElement('div');
+    el.className = 'platzhalter'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+    el.innerHTML = '<div class="karte-gross">' + st[1]() + '<p>' + st[0] + '</p><button type="button" data-weiter="1">Weiterspielen</button></div>';
+    document.getElementById('app').appendChild(el);
+    el.querySelector('button').focus();
+  }
+
+  // ── Тема: цвета неба, холмов, доски и кнопок; лоток ставится по теме, ребёнок может сменить ──
+  var THEMA_LOTTO = { sonnig: 'nacht', bonbon: 'koralle', sommer: 'minze' };
+  function knoepfeMarkieren(attr, wert) {
+    document.querySelectorAll('.autor [data-' + attr + ']').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset[attr] === wert)); });
+  }
+  function themaSetzen(t) {
+    if (!THEMA_LOTTO[t]) return;
+    var app = document.getElementById('app');
+    app.setAttribute('data-thema', t); app.setAttribute('data-lotto', THEMA_LOTTO[t]);
+    knoepfeMarkieren('thema', t); knoepfeMarkieren('lotto', THEMA_LOTTO[t]);
+  }
+
+  // ── Размеры: один расчёт на все экраны. Расклад (столбик или две колонки) выбирается здесь же, CSS только читает. ──
   function groesse() {
-    var w = document.getElementById('app').clientWidth - 28, h = window.innerHeight;
-    var quer = w > h * 1.05 && w >= 700, niedrig = h < 520;
-    var pBreite = (w - 40) / (N + 1.5) - 6, pHoehe = h * (niedrig ? .11 : quer ? .07 : .08);
-    var p = Math.round(Math.max(30, Math.min(84, pBreite, pHoehe)));
-    var r = document.documentElement.style;
-    r.setProperty('--p', p + 'px'); r.setProperty('--luecke', Math.round(p * .08) + 'px');
-    r.setProperty('--ueber', Math.round(Math.max(40, p * .8)) + 'px');
-    var lottoB = quer ? Math.min(480, Math.max(320, w * .34)) : Math.min(w, 480);
-    var taste = Math.max(38, Math.min(74, (lottoB - 50) / 6, h * (quer ? .12 : .068)));
-    r.setProperty('--taste', Math.round(taste) + 'px');
-    r.setProperty('--ab', Math.round(Math.max(50, Math.min(96, taste * 1.25))) + 'px');
-    r.setProperty('--lotto-b', Math.round(lottoB) + 'px');
+    var app = document.getElementById('app'), cs = getComputedStyle(app);
+    var W = app.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), H = window.innerHeight;
+    var quer = W >= H * 1.05 && W >= 640, niedrig = H < 520;
+    app.setAttribute('data-lage', quer ? 'quer' : 'hoch');
+    if (niedrig) app.setAttribute('data-niedrig', ''); else app.removeAttribute('data-niedrig');
+    var r = document.documentElement.style, px = function (n, v) { r.setProperty(n, Math.round(v) + 'px'); };
+    var g = Math.max(8, Math.min(16, H * .014));
+    // кнопки верхней полосы и помощи: 56 по STIL, на крупных экранах до 68
+    var knopf = Math.max(56, Math.min(68, W * .055, H * .075));
+    // бусины на ветке: голова 1,3p, гнёзда p + 0,08p; в две колонки ветки стоят между кнопками
+    var astW = quer ? W - 2 * knopf - knopf * 1.9 - 4 * g : W;
+    var p = (astW - 24) / (1.3 + N * 1.08);
+    p = Math.max(30, Math.min(84, p, H * (niedrig ? .13 : quer ? .075 : .068)));
+    // лоток: в две колонки — своя колонка, в столбик — под доской
+    var lottoB = quer ? Math.min(480, Math.max(300, W * .34)) : Math.min(W, 640, Math.max(470, W * .62));
+    var taste = Math.max(44, Math.min(84, (lottoB - 24 - 30) / 5.95, H * (niedrig ? .125 : quer ? .1 : .062)));
+    var ab = Math.max(56, Math.min(96, taste * 1.25));
+    px('--g', g); px('--knopf', knopf); px('--p', p); px('--luecke', p * .08); px('--treffer', Math.max(0, (48 - p) / 2));
+    px('--lotto-b', lottoB); px('--taste', taste); px('--ab', ab);
   }
   // Фон: луг под открытым небом (картинка луга, если есть; иначе небо и трава кодом)
   function hintergrund() {
@@ -442,8 +516,20 @@
   var _zeichnen = zeichnen;
   zeichnen = function () { _zeichnen(); hintergrund(); };
   window.addEventListener('resize', function () { groesse(); hintergrund(); });
+  // Доска знает пропорции своего задания: высота доски идёт от рисунка, а не от экрана
+  function bildSeite() {
+    var b = document.querySelector('#tisch .bild'); if (!b) return;
+    var svg = b.querySelector(':scope > svg'), ar = 2;
+    if (svg && svg.viewBox.baseVal && svg.viewBox.baseVal.width) ar = svg.viewBox.baseVal.width / svg.viewBox.baseVal.height;
+    else if (b.querySelector('.ordnen')) ar = 3;
+    else if (b.querySelector('.muster-gross')) ar = 2.3;
+    b.style.setProperty('--ar', ar.toFixed(3));
+  }
+  new MutationObserver(bildSeite).observe(document.getElementById('tisch'), { childList: true });
   document.documentElement.style.setProperty('--blatt-bild', 'url(' + BILD.blatt + ')');
   document.documentElement.style.setProperty('--filz-bild', 'url(' + BILD.filz + ')');
+  var startThema = (location.hash.match(/thema=(\w+)/) || [])[1];
+  if (startThema) themaSetzen(startThema);
   groesse(); autorZeichnen(); neu(true); hintergrund();
 })();
 </script>

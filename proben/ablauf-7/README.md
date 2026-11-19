@@ -4,7 +4,8 @@
 
 - `kopf.html`, `stil.css`, `helfer.js`, `logik.js` — исходники; `bauen.py` склеивает их в один HTML с картинками из `src/bilder/k1/`.
 - Сборка: `python3 proben/ablauf-7/bauen.py /tmp/ablauf-7.html`, затем открыть файл в браузере или опубликовать.
-- Проверка на 9 размерах: `node proben/ablauf-7/pruefen.js /tmp/ablauf-7.html /tmp/kadry` (Playwright уже стоит в облачной среде); проходит весь набор и снимает кадры.
+- Проверка на 12 размерах: `NODE_PATH=$(npm root -g) node proben/ablauf-7/pruefen.cjs /tmp/ablauf-7.html /tmp/kadry [sonnig|bonbon|sommer]` (Playwright уже стоит в облачной среде); проходит весь набор, снимает кадры и печатает замеры: прокрутка, вылет за экран, кнопки меньше нормы, заполнение доски.
+- Тему можно открыть сразу: `ablauf-7.html#thema=bonbon`.
 - `freistellen.py` — вырезание фигур из листов генератора (Pillow, numpy).
 
 Что решено и что открыто — `docs/STIL.md`, разделы «Управление набором — одна стеклянная бусина», «Облик экрана задания» (список «Открыто» и «Решено автором 19.11.2026, вечер»).

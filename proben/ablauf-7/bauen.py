@@ -15,7 +15,11 @@ bild = {
 # Новые картинки «Круг 2», если уже лежат в src/bilder/k1 (фон-луг подхватывается сам)
 for datei, name in [('wiese.webp', 'wiese')]:
     if os.path.exists(A + datei): bild[name] = uri(A + datei, 'image/webp')
+# Локальный Inter (правило 5 CLAUDE.md): встраивается, чтобы шрифт был одинаковым на любом устройстве
+F = os.path.join(H, '..', '..', 'src', 'fonts') + os.sep
+fonts = ''.join("@font-face { font-family: Inter; font-style: normal; font-weight: %d; font-display: block; src: url(%s) format('woff2'); }\n" % (g, uri(F + 'Inter-%s.woff2' % n, 'font/woff2'))
+                for n, g in [('Medium', 500), ('SemiBold', 600), ('ExtraBold', 800)])
 lies = lambda n: open(os.path.join(H, n), encoding='utf8').read()
-html = lies('kopf.html').replace('/*CSS*/', lies('stil.css')).replace('/*BILD*/', json.dumps(bild)) + lies('helfer.js') + lies('logik.js')
+html = lies('kopf.html').replace('/*FONTS*/', fonts).replace('/*CSS*/', lies('stil.css')).replace('/*BILD*/', json.dumps(bild)) + lies('helfer.js') + lies('logik.js')
 open(ziel, 'w', encoding='utf8').write(html)
 print(ziel, len(html))
