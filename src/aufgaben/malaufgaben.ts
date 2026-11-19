@@ -58,6 +58,9 @@ const RAND = 18;
 const MIN_B = 300;
 
 const px = (k: number) => k * ABSTAND + (k >= 5 ? LUECKE : 0);
+/** Reihen etwas weiter auseinander als die Plättchen in der Reihe: so sieht man die Reihen, und die Rahmen der Hilfe berühren sich nicht */
+const ZEILE = 40;
+const py = (k: number) => k * ZEILE + (k >= 5 ? LUECKE : 0);
 
 /** ein Plättchen: Kante unten, Licht oben links */
 function plaettchen(cx: number, cy: number): string {
@@ -71,7 +74,7 @@ function plaettchen(cx: number, cy: number): string {
 function zeichne(m: Malaufgabe, o: ZeichenOptionen): string {
   const breiteste = Math.max(...m.reihen);
   const feldB = px(breiteste - 1) + ABSTAND;
-  const feldH = px(m.reihen.length - 1) + ABSTAND;
+  const feldH = py(m.reihen.length - 1) + ABSTAND;
   const W = Math.max(MIN_B, feldB + 2 * RAND + 8);
   const x0 = (W - feldB) / 2;
   const y0 = 6 + RAND;
@@ -79,9 +82,9 @@ function zeichne(m: Malaufgabe, o: ZeichenOptionen): string {
   const schritt = o.hilfe >= 3 || !!o.vorrechnen;
   let s = tablett(x0 - RAND, 6, feldB + 2 * RAND, feldH + 2 * RAND);
   m.reihen.forEach((n, r) => {
-    const y = y0 + px(r);
+    const y = y0 + py(r);
     let reihe = '';
-    const rahmen = laterneRahmen(x0 - 6, y - 4, px(n - 1) + ABSTAND + 12, ABSTAND + 8, 18);
+    const rahmen = laterneRahmen(x0 - 6, y - 3, px(n - 1) + ABSTAND + 12, ABSTAND + 6, 18);
     if (hervor && r === 0) reihe += rahmen;
     else if (schritt) reihe += `<g data-hilfe="schritt">${rahmen}</g>`;
     for (let k = 0; k < n; k++) reihe += plaettchen(x0 + px(k) + ABSTAND / 2, y + ABSTAND / 2 - 1);

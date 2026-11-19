@@ -2,7 +2,7 @@ import { FIGUR_TOKEN, HOLZ, HOLZ_KANTE, LATERNE, LATERNE_KANTE, TINTE, TINTE_LEI
 import type { Antwort } from '../perlen/antwort';
 import type { Einstellung, Format, ZeichenOptionen } from './format';
 import type { Zufall } from '../core/zufall';
-import { antwortNest, brett, gruppe, mengenBild, pfeilSpitze, stufeGrenze, svgRahmen, zahl } from './bildteile';
+import { antwortNest, gruppe, kachel, mengenBild, pfeilSpitze, stufeGrenze, svgRahmen, zahl } from './bildteile';
 
 /**
  * Rechenstrich (Nr. 98, Bild): ein leerer Zahlenstrich ohne Striche, eine Startzahl und zwei Sprünge.
@@ -145,7 +145,7 @@ function schild(cx: number, y: number, s: { zeichen: Richtung; laenge: number | 
   }
   const text = `${z}${s.laenge}`;
   const b = 22 + text.length * 14;
-  return brett(cx - b / 2, y + 2, b, 40, 12) + zahl(cx, y + 22, text, 24);
+  return kachel(cx - b / 2, y + 2, b, 40, 12) + zahl(cx, y + 22, text, 24);
 }
 
 function zeichne(r: Rechenstrich, o: ZeichenOptionen): string {

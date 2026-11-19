@@ -81,45 +81,48 @@ export function gruppe(art: 'teil' | 'schatten' | null, inhalt: string): string 
   return `<g>${inhalt}</g>`;
 }
 
-/** Größe des Mengenbilds: Zehnerstangen nebeneinander, dann die Einer in Fünfern */
-const STANGE_B = 11;
-const STANGE_H = 58;
-const STANGE_ABSTAND = 5;
-const PUNKT_R = 5.2;
-const PUNKT_ABSTAND = 13;
+/** Größe des Mengenbilds: Perlen in Zehnerstangen nebeneinander, dann die Einer in Fünfern */
+const PERLE_R = 5.6;
+const PERLE_ABSTAND = 13;
+const FUENFER_LUECKE = 5;
+const STANGE_ABSTAND = 7;
+/** Höhe einer Spalte aus k Perlen (Lücke nach der fünften) */
+const spaltenHoehe = (k: number) => k * PERLE_ABSTAND + (k > 5 ? FUENFER_LUECKE : 0);
 
 /**
  * Menge ohne Ziffer (Hilfe Stufe 3: „один шаг проступает на рисунке, точки — пятёрками“): jede volle Zehn
- * eine Stange aus zehn Perlen mit Lücke nach fünf, die Einer als Punkte, fünf übereinander, dann die nächsten
- * fünf. So zählt das Kind selbst, und keine Zahl der Lösung steht im Bild.
+ * eine Stange aus zehn Perlen mit Lücke nach fünf, die Einer als gleich große Perlen, fünf übereinander, dann
+ * die nächsten fünf. So zählt das Kind selbst, und keine Zahl der Lösung steht im Bild.
  */
 export function mengenBild(n: number, x: number, y: number, farbe: string = FIGUR_TOKEN.halstuch, kante: string = FIGUR_TOKEN['halstuch-kante']): { svg: string; breite: number; hoehe: number } {
   const zehner = Math.floor(n / 10);
   const einer = n % 10;
+  const D = 2 * PERLE_R;
+  const perle = (cx: number, cy: number) =>
+    `<circle cx="${cx}" cy="${cy + 1.3}" r="${PERLE_R}" fill="${kante}"/><circle cx="${cx}" cy="${cy}" r="${PERLE_R}" fill="${farbe}"/><circle cx="${cx - 1.8}" cy="${cy - 1.9}" r="1.6" fill="${WEISS}" opacity="0.5"/>`;
+  const spalte = (cx: number, k: number) => {
+    let t = '';
+    for (let p = 0; p < k; p++) t += perle(cx, y + PERLE_R + p * PERLE_ABSTAND + (p >= 5 ? FUENFER_LUECKE : 0));
+    return t;
+  };
   let s = '';
   let cx = x;
   for (let k = 0; k < zehner; k++) {
-    s += `<g data-menge="zehn"><rect x="${cx}" y="${y + 2}" width="${STANGE_B}" height="${STANGE_H}" rx="${STANGE_B / 2}" fill="${kante}"/>`;
-    s += `<rect x="${cx}" y="${y}" width="${STANGE_B}" height="${STANGE_H}" rx="${STANGE_B / 2}" fill="${farbe}"/>`;
-    // zehn Perlen in der Stange, Lücke nach fünf
-    for (let p = 0; p < 10; p++) {
-      const py = y + 4 + p * 5 + (p >= 5 ? 2 : 0) + 1.8;
-      s += `<circle cx="${cx + STANGE_B / 2}" cy="${py}" r="1.6" fill="${WEISS}" opacity="0.55"/>`;
-    }
-    s += '</g>';
-    cx += STANGE_B + STANGE_ABSTAND;
+    // Stange: Holzleiste hinter zehn Perlen
+    s += `<g data-menge="zehn"><rect x="${cx + PERLE_R - 2.5}" y="${y - 3}" width="5" height="${spaltenHoehe(10) + 4}" rx="2.5" fill="${HOLZ_KANTE}"/>${spalte(cx + PERLE_R, 10)}</g>`;
+    cx += D + STANGE_ABSTAND;
   }
-  if (zehner > 0 && einer > 0) cx += 4;
+  if (zehner > 0 && einer > 0) cx += 6;
   for (let k = 0; k < einer; k++) {
-    const spalte = Math.floor(k / 5);
-    const reihe = k % 5;
-    const px = cx + spalte * PUNKT_ABSTAND + PUNKT_R;
-    const py = y + 4 + reihe * (PUNKT_ABSTAND - 1.5) + PUNKT_R;
-    s += `<g data-menge="eins"><circle cx="${px}" cy="${py + 1.2}" r="${PUNKT_R}" fill="${kante}"/><circle cx="${px}" cy="${py}" r="${PUNKT_R}" fill="${farbe}"/></g>`;
+    const sp = Math.floor(k / 5);
+    const r = k % 5;
+    const px = cx + sp * (D + 4) + PERLE_R;
+    s += `<g data-menge="eins">${perle(px, y + PERLE_R + r * PERLE_ABSTAND)}</g>`;
   }
-  const einerB = einer > 0 ? (einer > 5 ? 2 : 1) * PUNKT_ABSTAND : 0;
+  const einerB = einer > 0 ? (einer > 5 ? 2 * D + 4 : D) : 0;
   const breite = Math.max(1, cx - x - (einer === 0 && zehner > 0 ? STANGE_ABSTAND : 0) + einerB);
-  return { svg: s, breite, hoehe: STANGE_H };
+  const hoehe = zehner > 0 ? spaltenHoehe(10) - (PERLE_ABSTAND - D) : spaltenHoehe(Math.min(einer, 5)) - (PERLE_ABSTAND - D);
+  return { svg: s, breite, hoehe: Math.max(D, hoehe) };
 }
 
 /** Zahl der Zehnerstangen und Einerpunkte im Bild (für Tests) */

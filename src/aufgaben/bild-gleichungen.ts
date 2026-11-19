@@ -178,7 +178,7 @@ export function frucht(f: Frucht, cx: number, cy: number, g = 1): string {
 }
 
 const FR = 54;
-const PLUS = 26;
+const PLUS = 30;
 const GLEICH = 30;
 const KB = 64;
 const KH = 46;
@@ -249,14 +249,15 @@ function zeichne(b: BildGleichung, o: ZeichenOptionen): string {
     const f = b.zeilen[start].fruechte[0];
     const m = mengenBild(wert(f), 0, 0);
     const bb = 54 + 30 + m.breite + 26;
+    const ph = Math.max(m.hoehe + 24, 62);
     const x = (W - bb) / 2;
     const ty = y + 12;
-    let t = `<rect x="${x}" y="${ty}" width="${bb}" height="${m.hoehe + 24}" rx="16" fill="${LATERNE}" stroke="${LATERNE_KANTE}" stroke-width="3.5"/>`;
-    t += frucht(f, x + 34, ty + (m.hoehe + 24) / 2, 0.8);
-    t += zeichenForm('gleich', x + 70, ty + (m.hoehe + 24) / 2, 14, TINTE_LEISE);
-    t += mengenBild(wert(f), x + 86, ty + 12).svg;
+    let t = `<rect x="${x}" y="${ty}" width="${bb}" height="${ph}" rx="16" fill="${LATERNE}" stroke="${LATERNE_KANTE}" stroke-width="3.5"/>`;
+    t += frucht(f, x + 34, ty + ph / 2, 0.8);
+    t += zeichenForm('gleich', x + 70, ty + ph / 2, 14, TINTE_LEISE);
+    t += mengenBild(wert(f), x + 86, ty + (ph - m.hoehe) / 2).svg;
     s += `<g data-hilfe="schritt">${t}</g>`;
-    y = ty + m.hoehe + 24;
+    y = ty + ph;
   }
   return svgRahmen(W, y + 10, s, 'Bild-Gleichungen');
 }

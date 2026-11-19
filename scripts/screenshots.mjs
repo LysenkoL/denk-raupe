@@ -54,6 +54,25 @@ const HILFE_BILDER = [
   ['hilfe3-zahlenmauer-bis100', hilfeSitzung('zahlenmauer', 2, 3, 100)],
 ];
 
+/**
+ * Gruppe Г1б: Formate, die noch in keinem Satz stehen. Die erste Aufgabe des festen Satzes wird durch eine
+ * Aufgabe des Formats ersetzt (Stufe 2, bis 100) – ohne Hilfe, mit Hilfe 2 und 3.
+ */
+const G1B = ['bild-gleichungen', 'malaufgaben', 'hunderterfeld', 'zahlenstrahl', 'entdeckerpaeckchen', 'rechenstrich'];
+function g1bSitzung(id, hilfe) {
+  const s = neueSitzung(20261115);
+  const aufgaben = s.aufgaben.map((a, j) => (j === 0 ? aufgabeAus(FORMATE[id], 11, 2, { zahlenraum: 100 }) : a));
+  if (!hilfe) return { ...s, aufgaben, aktuell: 0 };
+  const daneben = (a) => {
+    const l = FORMATE[a.format].loesungen(a.bedingung)[0];
+    return a.wahl ? a.wahl.find((w) => !gleich(w, l)) : { art: 'zahl', wert: (l.wert + 1) % 100 };
+  };
+  const voll = aufgaben.reduce((satz, a, j) => setzeAntwort(satz, j, daneben(a)), s.satz);
+  const geprueft = vergleiche(voll, (j, antwort) => stimmt(FORMATE[aufgaben[j].format], aufgaben[j], antwort)).satz;
+  return { ...s, aufgaben, satz: setzeAntwort(geprueft, 0, null), aktuell: 0, hilfeOffen: aufgaben.map((_, j) => (j === 0 ? hilfe : 0)) };
+}
+const G1B_BILDER = G1B.flatMap((id) => [0, 2, 3].map((hilfe) => [`format-${id}${hilfe ? `-hilfe${hilfe}` : ''}`, g1bSitzung(id, hilfe)]));
+
 /** `bekannt`: alle Formate bekannt (kein Lernbeispiel von selbst); sonst alle neu; `s`: dieser Satz statt des festen */
 async function vorbereiten(page, bekannt = true, s = sitzung) {
   // Musterseite fasst den Speicher nicht an – sonst könnte die App beim ersten Laden einen eigenen Satz speichern
@@ -70,7 +89,7 @@ async function vorbereiten(page, bekannt = true, s = sitzung) {
           tx.oncomplete = () => (req.result.close(), ok());
         };
       }),
-    [s, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) : {} }],
+    [s, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(Object.keys(FORMATE).map((id) => [id, 'bekannt'])) : {} }],
   );
   await page.goto(url + '#/');
   await page.reload();
@@ -151,6 +170,12 @@ for (const [name, w, h] of GERAETE) {
   for (const [bild, s] of HILFE_BILDER) {
     await vorbereiten(page, true, s);
     // der Knopf „Vergleichen“ steht fest unten: Bild (und Kasten der ähnlichen Aufgabe) in die Mitte holen
+    await page.evaluate(() => (document.querySelector('.hilfe-box') ?? document.querySelector('.aufgabe-bild')).scrollIntoView({ block: 'center' }));
+    await page.screenshot({ path: `screenshots/${name}-${bild}.png` });
+  }
+  // Gruppe Г1б: jedes Format ohne Hilfe, mit Hilfe 2 und 3
+  for (const [bild, s] of G1B_BILDER) {
+    await vorbereiten(page, true, s);
     await page.evaluate(() => (document.querySelector('.hilfe-box') ?? document.querySelector('.aufgabe-bild')).scrollIntoView({ block: 'center' }));
     await page.screenshot({ path: `screenshots/${name}-${bild}.png` });
   }

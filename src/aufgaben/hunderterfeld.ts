@@ -113,12 +113,14 @@ function zeichne(h: Hunderterfeld, o: ZeichenOptionen): string {
   const W = ende.x + ZELLE + RAND;
   const H = ende.y + ZELLE + RAND;
   const hervor = o.hilfe >= 2 || !!o.vorrechnen;
-  const leer = mix(PAPIER, STEIN, 0.6);
+  // leere Felder: helles Papier mit weicher Kante – gut zu zählen, aber leiser als die Felder mit Zahl
+  const leer = mix(PAPIER, STEIN, 0.18);
   let s = tablett(0, 0, W, H, 16);
   for (let f = 0; f < n; f++) {
     if (f === h.frage || h.marken.some((m) => m.feld === f)) continue;
     const p = lage(f);
-    s += `<rect x="${p.x}" y="${p.y}" width="${ZELLE}" height="${ZELLE}" rx="7" fill="${leer}"/>`;
+    s += `<rect x="${p.x}" y="${p.y + 2}" width="${ZELLE}" height="${ZELLE - 2}" rx="7" fill="${STEIN}"/>`;
+    s += `<rect x="${p.x}" y="${p.y}" width="${ZELLE}" height="${ZELLE - 2}" rx="7" fill="${leer}"/>`;
   }
   h.marken.forEach((m, k) => {
     const p = lage(m.feld);
@@ -127,20 +129,31 @@ function zeichne(h: Hunderterfeld, o: ZeichenOptionen): string {
     t += kachel(p.x, p.y, ZELLE, ZELLE - 3.5, 7) + zahl(p.x + ZELLE / 2, p.y + ZELLE / 2 - 1.5, m.wert, m.wert >= 100 ? 16 : 19);
     s += gruppe(!hervor ? null : k === 0 ? 'teil' : 'schatten', t);
   });
+  const q = lage(h.frage);
+  s += `<g data-frage="">${antwortNest(q.x - 3, q.y - 3, ZELLE + 6, ZELLE + 2.5, o, h.frage + 1, 19)}</g>`;
+  // Schritt: Hüpfer von Feld zu Feld (über den Rändern, die Zahlen bleiben frei), einer je Feld
   if (o.hilfe >= 3 || o.vorrechnen) {
     const weg = hilfeWeg(h).map(mitte);
-    let t = `<polyline points="${weg.map((p) => `${p.x},${p.y}`).join(' ')}" fill="none" stroke="${LATERNE_KANTE}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`;
-    weg.slice(1, -1).forEach((p) => (t += `<circle cx="${p.x}" cy="${p.y}" r="5" fill="${LATERNE_KANTE}"/>`));
-    const a = weg[weg.length - 2];
-    const b = weg[weg.length - 1];
-    const winkel = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
-    t += pfeilSpitze(b.x, b.y, winkel, LATERNE_KANTE, 13);
+    let t = '';
+    for (let k = 1; k < weg.length; k++) {
+      const a = weg[k - 1];
+      const b = weg[k];
+      const dx = Math.sign(b.x - a.x);
+      const dy = Math.sign(b.y - a.y);
+      const kurz = ZELLE / 2 - 7;
+      const x1 = a.x + dx * kurz;
+      const y1 = a.y + dy * kurz;
+      const x2 = b.x - dx * kurz;
+      const y2 = b.y - dy * kurz;
+      // Bogen nach oben (waagerecht) oder nach rechts (senkrecht)
+      const cx = (x1 + x2) / 2 + (dy !== 0 ? 16 : 0);
+      const cy = (y1 + y2) / 2 - (dx !== 0 ? 16 : 0);
+      t += `<path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="${LATERNE_KANTE}" stroke-width="4.5" stroke-linecap="round"/>`;
+      const winkel = (Math.atan2(y2 - cy, x2 - cx) * 180) / Math.PI;
+      t += pfeilSpitze(x2, y2, winkel, LATERNE_KANTE, 9);
+    }
     s += `<g data-hilfe="schritt">${t}</g>`;
   }
-  const q = lage(h.frage);
-  const nestHtml = antwortNest(q.x - 3, q.y - 3, ZELLE + 6, ZELLE + 2.5, o, h.frage + 1, 19);
-  // das Fragefeld liegt über dem Pfad (Ende des Pfads am Rand des Nests)
-  s += `<g data-frage="">${nestHtml}</g>`;
   return svgRahmen(W, H + 6, s, 'Hunderterfeld');
 }
 
