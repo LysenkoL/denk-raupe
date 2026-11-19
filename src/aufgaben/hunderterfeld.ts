@@ -126,11 +126,11 @@ function zeichne(h: Hunderterfeld, o: ZeichenOptionen): string {
     const p = lage(m.feld);
     let t = '';
     if (hervor && k === 0) t += laterneRahmen(p.x - 4, p.y - 4, ZELLE + 8, ZELLE + 11, 10);
-    t += kachel(p.x, p.y, ZELLE, ZELLE - 3.5, 7) + zahl(p.x + ZELLE / 2, p.y + ZELLE / 2 - 1.5, m.wert, m.wert >= 100 ? 16 : 19);
+    t += kachel(p.x, p.y, ZELLE, ZELLE - 3.5, 7) + zahl(p.x + ZELLE / 2, p.y + ZELLE / 2 - 1.5, m.wert, m.wert >= 100 ? 18 : 22);
     s += gruppe(!hervor ? null : k === 0 ? 'teil' : 'schatten', t);
   });
   const q = lage(h.frage);
-  s += `<g data-frage="">${antwortNest(q.x - 3, q.y - 3, ZELLE + 6, ZELLE + 2.5, o, h.frage + 1, 19)}</g>`;
+  s += `<g data-frage="">${antwortNest(q.x - 3, q.y - 3, ZELLE + 6, ZELLE + 2.5, o, h.frage + 1, 22)}</g>`;
   // Schritt: Hüpfer von Feld zu Feld (über den Rändern, die Zahlen bleiben frei), einer je Feld
   if (o.hilfe >= 3 || o.vorrechnen) {
     const weg = hilfeWeg(h).map(mitte);
@@ -146,11 +146,14 @@ function zeichne(h: Hunderterfeld, o: ZeichenOptionen): string {
       const x2 = b.x - dx * kurz;
       const y2 = b.y - dy * kurz;
       // Bogen nach oben (waagerecht) oder nach rechts (senkrecht)
-      const cx = (x1 + x2) / 2 + (dy !== 0 ? 16 : 0);
-      const cy = (y1 + y2) / 2 - (dx !== 0 ? 16 : 0);
-      t += `<path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="${LATERNE_KANTE}" stroke-width="4.5" stroke-linecap="round"/>`;
+      const cx = (x1 + x2) / 2 + (dy !== 0 ? 26 : 0);
+      const cy = (y1 + y2) / 2 - (dx !== 0 ? 26 : 0);
+      // heller Saum unter dem Bogen: auf Zahl und leerem Feld gleich gut zu sehen
+      const bogen = `M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`;
+      t += `<path d="${bogen}" fill="none" stroke="${PAPIER}" stroke-width="9" stroke-linecap="round"/>`;
+      t += `<path d="${bogen}" fill="none" stroke="${LATERNE_KANTE}" stroke-width="5" stroke-linecap="round"/>`;
       const winkel = (Math.atan2(y2 - cy, x2 - cx) * 180) / Math.PI;
-      t += pfeilSpitze(x2, y2, winkel, LATERNE_KANTE, 9);
+      t += pfeilSpitze(x2, y2, winkel, LATERNE_KANTE, 11);
     }
     s += `<g data-hilfe="schritt">${t}</g>`;
   }

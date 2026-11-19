@@ -249,7 +249,7 @@ describe('Hunderterfeld (Nr. 74)', () => {
       const ende = weg[weg.length - 1];
       expect(Math.floor(ende / 10)).toBe(Math.floor(b.frage / 10));
       const svg = H.zeichne(b, { hilfe: 3, gewaehlt: null });
-      expect(zaehle(svg.slice(svg.indexOf('data-hilfe="schritt"')), /<path d="M/g)).toBe(2 * (weg.length - 1));
+      expect(zaehle(svg.slice(svg.indexOf('data-hilfe="schritt"')), /<path d="M/g)).toBe(3 * (weg.length - 1));
     }
   });
 });

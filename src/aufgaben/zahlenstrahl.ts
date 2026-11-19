@@ -147,10 +147,13 @@ function zeichne(s: Zahlenstrahl, o: ZeichenOptionen): string {
   const px = x(s.pfeil);
   const nestB = 64;
   const nx = Math.min(Math.max(px - nestB / 2, 4), W - nestB - 4);
-  t += `<rect x="${px - 3.5}" y="${62}" width="7" height="${LINIE_Y - 26 - 62}" rx="3.5" fill="${FIGUR_TOKEN['halstuch-kante']}"/>`;
-  t += pfeilSpitze(px, LINIE_Y - 14, 90, FIGUR_TOKEN['halstuch-kante'], 15);
-  t += `<rect x="${px - 3.5}" y="${60}" width="7" height="${LINIE_Y - 28 - 60}" rx="3.5" fill="${FIGUR_TOKEN.halstuch}"/>`;
-  t += `<circle cx="${px - 1}" cy="${70}" r="1.6" fill="${WEISS}" opacity="0.5"/>`;
+  // Schaft (Kante unten rechts) direkt am Nest, Spitze kurz über der Leiste
+  const oben = 58;
+  const spitze = LINIE_Y - 12;
+  t += `<rect x="${px - 3.5}" y="${oben + 1.5}" width="10" height="${spitze - 14 - oben}" rx="5" fill="${FIGUR_TOKEN['halstuch-kante']}"/>`;
+  t += `<rect x="${px - 5}" y="${oben}" width="10" height="${spitze - 14 - oben}" rx="5" fill="${FIGUR_TOKEN.halstuch}"/>`;
+  t += pfeilSpitze(px, spitze, 90, FIGUR_TOKEN['halstuch-kante'], 19);
+  t += `<circle cx="${px - 2}" cy="${oben + 8}" r="2" fill="${WEISS}" opacity="0.5"/>`;
   const werte = loesungen(s);
   t += antwortNest(nx, 8, nestB, 48, o, werte.length === 1 && werte[0].art === 'zahl' ? werte[0].wert : 0, 26);
   return svgRahmen(W, LINIE_Y + 72, t, 'Zahlenstrahl');
