@@ -180,14 +180,60 @@ export function kenntnisNachSatz(formate: Profil['formate'], neu: readonly Eintr
   return out;
 }
 
+/** eine Aufgabe des Satzes vor dem Erzeugen: welches Format, welche Stufe */
+export interface PlanEintrag {
+  format: FormatId;
+  stufe: number;
+}
+
 /** Probesatz (Etappe 3): je ein Zahlenmauer-, Wer-ist-es- und Muster-Aufgabe in zufälliger Reihenfolge */
 export const PROBE_FORMATE: FormatId[] = ['zahlenmauer', 'wer-ist-es', 'muster'];
 
-/** `e`: Einstellung der Eltern; bis es sie gibt (Aufgabe C3), der Standard */
-export function neueSitzung(samen: number, e: Einstellung = STANDARD_EINSTELLUNG): Sitzung {
+/**
+ * Plan des Probesatzes, genau wie bis Г1: die drei Formate gemischt, Stufe 1 oder 2. Nur noch für Tests und
+ * Bildschirmfotos (feste Sätze, in denen die Zahlenmauer vorkommt); das Kind bekommt gemischte Sätze (`mischPlan`).
+ */
+export function probePlan(samen: number): PlanEintrag[] {
   const z = zufall(samen);
-  const ids = z.mischen(PROBE_FORMATE);
-  const aufgaben = ids.map((id, i) => aufgabeAus(FORMATE[id], (samen + i * 104729) >>> 0, z.ganz(1, 2), e));
+  return z.mischen(PROBE_FORMATE).map((format) => ({ format, stufe: z.ganz(1, 2) }));
+}
+
+/** Aufgaben in einem gewöhnlichen Satz und im allerersten (docs/TZ.md, „Самопроверка“, Nr. 9 und „Суть“) */
+export const SATZ_LAENGE = 5;
+export const ERSTER_SATZ = 3;
+
+/**
+ * Gemischter Satz aus ALLEN eingetragenen Formaten (src/aufgaben/index.ts) – ein neues Format kommt von selbst
+ * hinein. Harte Regel 4 des Briefs: Vielfalt nach Fähigkeiten. Gewählt wird in Durchgängen über die gemischte Liste:
+ * erst Formate aus einem neuen Bereich mit neuer Fähigkeit, dann mit neuer Fähigkeit, und erst wenn es nicht genug
+ * Fähigkeiten gibt, ein weiteres Format (zuletzt auch ein Format zweimal). `pflicht`: dieses Format kommt sicher
+ * hinein (Platz für eine zurückgelegte Aufgabe). Stufe vorerst 1 oder 2 zufällig – bis die Stufe je Fähigkeit
+ * geführt wird.
+ */
+export function mischPlan(samen: number, n: number, pflicht?: FormatId, ids: readonly FormatId[] = Object.keys(FORMATE) as FormatId[]): PlanEintrag[] {
+  const z = zufall((samen ^ 0x2545f491) >>> 0);
+  const liste = z.mischen(ids);
+  const wahl: FormatId[] = pflicht ? [pflicht] : [];
+  const faehig = () => new Set(wahl.map((id) => FORMATE[id].faehigkeit));
+  const bereiche = () => new Set(wahl.map((id) => FORMATE[id].bereich));
+  const durchgaenge: ((id: FormatId) => boolean)[] = [
+    (id) => !wahl.includes(id) && !bereiche().has(FORMATE[id].bereich) && !faehig().has(FORMATE[id].faehigkeit),
+    (id) => !wahl.includes(id) && !faehig().has(FORMATE[id].faehigkeit),
+    (id) => !wahl.includes(id),
+    () => true,
+  ];
+  for (const passt of durchgaenge)
+    for (let runde = 0; runde < n && wahl.length < n; runde++)
+      for (const id of liste) if (wahl.length < n && passt(id)) wahl.push(id);
+  return z.mischen(wahl).map((format) => ({ format, stufe: z.ganz(1, 2) }));
+}
+
+/**
+ * Satz nach Plan; `e`: Einstellung der Eltern (bis es sie gibt, Aufgabe C3, der Standard). Ohne Plan: der Probesatz
+ * (`probePlan`). Samen der Aufgabe k: Satzsamen + k · 104729 – so ändern sich die Aufgaben nicht, wenn der Plan gleich ist.
+ */
+export function neueSitzung(samen: number, e: Einstellung = STANDARD_EINSTELLUNG, plan: PlanEintrag[] = probePlan(samen)): Sitzung {
+  const aufgaben = plan.map((p, i) => aufgabeAus(FORMATE[p.format], (samen + i * 104729) >>> 0, p.stufe, e));
   return {
     version: 2,
     samen,
@@ -250,9 +296,15 @@ export function zurueckEinsetzen(s: Sitzung, reihe: readonly Zurueckgelegt[], e:
   return { ...s, aufgaben, satz: { ...s.satz, perlen }, hilfeOffen, puls, zurueckAus };
 }
 
-/** Nächster Satz für dieses Kind: neu erzeugt, dazu eine zurückgelegte Aufgabe aus dem Profil (`zurueckEinsetzen`) */
-export function naechsteSitzung(samen: number, p: Profil, e: Einstellung = STANDARD_EINSTELLUNG): Sitzung {
-  return zurueckEinsetzen(neueSitzung(samen, e), p.zurueckgelegt, e);
+/**
+ * Nächster Satz für dieses Kind: gemischt aus allen Formaten (`mischPlan`) – der allererste aus 3 Aufgaben, jeder
+ * weitere aus 5 –, dazu eine zurückgelegte Aufgabe aus dem Profil (`zurueckEinsetzen`): ihr Format kommt sicher in
+ * den Plan, damit sie einen Platz findet. `plan`: fester Plan statt des gemischten (Tests, Probe-Seite #/alle).
+ */
+export function naechsteSitzung(samen: number, p: Profil, e: Einstellung = STANDARD_EINSTELLUNG, plan?: PlanEintrag[]): Sitzung {
+  const wartet = p.zurueckgelegt.find((z) => passt(z, e));
+  const pl = plan ?? mischPlan(samen, p.saetze === 0 ? ERSTER_SATZ : SATZ_LAENGE, wartet?.aufgabe.format);
+  return zurueckEinsetzen(neueSitzung(samen, e, pl), p.zurueckgelegt, e);
 }
 
 /**

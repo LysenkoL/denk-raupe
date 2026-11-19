@@ -7,7 +7,7 @@ import { FORMATE } from '../src/aufgaben';
 import { aufgabeAus, lernbeispiel, stimmt, type Aufgabe, type FormatId, type HilfeStufe, type Zahlenraum } from '../src/aufgaben/format';
 import { hilfePunkte, type Mauer } from '../src/aufgaben/zahlenmauer';
 import { setzeAntwort, vergleiche } from '../src/satz/vergleich';
-import { neueSitzung, neuesProfil, PROBE_FORMATE, type Profil, type Sitzung } from '../src/satz/sitzung';
+import { neueSitzung, neuesProfil, probePlan, PROBE_FORMATE, type Profil, type Sitzung } from '../src/satz/sitzung';
 import { gleich, type Antwort } from '../src/perlen/antwort';
 import { KIND } from '../src/i18n/kind';
 
@@ -38,6 +38,8 @@ afterAll(async () => {
 });
 
 const SAMEN = 20261115;
+/** alle eingetragenen Formate (ein neuer gemischter Satz kann jedes bringen) */
+const ALLE = Object.keys(FORMATE) as FormatId[];
 
 /**
  * Seite mit festem Satz; `formate` = Kenntnis im Profil (Standard: alle bekannt); `gespeichert` = so liegt es schon im Speicher;
@@ -50,7 +52,7 @@ async function oeffnen(
 ): Promise<{ page: Page; sitzung: Sitzung }> {
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: o.bewegung ? 'no-preference' : 'reduce' });
   const sitzung = o.gespeichert?.sitzung ?? neueSitzung(o.samen ?? SAMEN);
-  const alleBekannt = Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt']));
+  const alleBekannt = Object.fromEntries(ALLE.map((id) => [id, 'bekannt']));
   const profil = o.gespeichert?.profil ?? { ...neuesProfil(), ton: false, formate: o.formate ?? alleBekannt };
   // Musterseite fasst den Speicher nicht an – sonst könnte die App beim ersten Laden einen eigenen Satz speichern
   await page.goto(url + '#/stil');
@@ -76,7 +78,7 @@ async function oeffnen(
   return { page, sitzung };
 }
 
-const bekanntesProfil = () => ({ ...neuesProfil(), ton: false, formate: Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) });
+const bekanntesProfil = () => ({ ...neuesProfil(), ton: false, formate: Object.fromEntries(ALLE.map((id) => [id, 'bekannt'])) });
 
 /** fester Satz, dessen Zahlenmauer eine andere größte Zahl hat (Stufe 2: Grenze = Zahlenraum) */
 function satzMitMauer(stufe: number, zahlenraum: Zahlenraum): { sitzung: Sitzung; i: number } {
@@ -225,7 +227,9 @@ for (const [name, w, h] of GERAETE) {
  * `samen`: andere Aufgabe desselben Formats (z. B. eine Mauer mit vielen Punkten).
  */
 function satzMitHilfe(id: FormatId, stufe: number, hilfe: HilfeStufe, zahlenraum: Zahlenraum = 20, samen?: number): Sitzung {
-  const s = neueSitzung(SAMEN);
+  // Probesatz; ein Format, das nicht darin ist, kommt an den ersten Platz
+  const plan = probePlan(SAMEN);
+  const s = neueSitzung(SAMEN, undefined, plan.some((p) => p.format === id) ? plan : [{ format: id, stufe }, ...plan.slice(1)]);
   const i = s.aufgaben.findIndex((a) => a.format === id);
   const aufgaben = s.aufgaben.map((a, j) => (j === i ? aufgabeAus(FORMATE[id], samen ?? a.samen, stufe, { zahlenraum }) : a));
   const daneben = (a: Aufgabe): Antwort => {
@@ -244,7 +248,11 @@ function vollePunkte(): number {
 
 /** Hilfe auf dem Bild je Format: [Name, Format, Stufe, Hilfe, Zahlenraum, Samen] */
 const HILFE_FAELLE: [string, FormatId, number, HilfeStufe, Zahlenraum, number?][] = [
-  ...PROBE_FORMATE.flatMap((id) => ([2, 3] as const).map((hilfe) => [`${id}, Hilfe ${hilfe}`, id, 2, hilfe, 20] as [string, FormatId, number, HilfeStufe, Zahlenraum])),
+  ...ALLE.flatMap((id) => ([2, 3] as const).map((hilfe) => [`${id}, Hilfe ${hilfe}`, id, 2, hilfe, 20] as [string, FormatId, number, HilfeStufe, Zahlenraum])),
+  // größte Bilder der Zahl-Formate: Stufe 3 bis 100 mit Punkten der Hilfe
+  ...(['wie-viele', 'rechenbild', 'rechenmaschine', 'groesser-kleiner', 'verdoppeln', 'klecks'] as FormatId[]).map(
+    (id) => [`${id} Stufe 3 bis 100, Hilfe 3`, id, 3, 3, 100] as [string, FormatId, number, HilfeStufe, Zahlenraum],
+  ),
   ['wer-ist-es Stufe 1, Hilfe 3 an der ähnlichen Aufgabe', 'wer-ist-es', 1, 3, 20],
   ['zahlenmauer bis 100, Hilfe 3 mit vielen Punkten', 'zahlenmauer', 2, 3, 100, vollePunkte()],
 ];
@@ -538,7 +546,7 @@ describe('Ablauf eines Satzes', () => {
     const id = sitzung.aufgaben[1].format;
     const p = await gespeichert<Profil>(page, 'profil');
     expect(p.formate[id]).toBe('nochmal');
-    expect(Object.values(p.formate).filter((k) => k === 'bekannt')).toHaveLength(2);
+    expect(Object.values(p.formate).filter((k) => k === 'bekannt')).toHaveLength(ALLE.length - 1);
     await page.click('.neuer-satz');
     await page.waitForTimeout(150);
     const neu = await gespeichert<Sitzung>(page, 'sitzung');
@@ -609,21 +617,22 @@ describe('Ablauf eines Satzes', () => {
     expect(await page.textContent('.hilfe-knopf')).toBe(KIND.hilfe);
     expect(await page.textContent('.meldung')).toBe('');
 
-    for (let i = 0; i < 3; i++) await eingeben(page, neu, i, loesung(neu, i));
+    for (let i = 0; i < neu.aufgaben.length; i++) await eingeben(page, neu, i, loesung(neu, i));
     await vergleichen(page);
     await page.waitForSelector('.ende');
     await page.waitForTimeout(150);
     // zwei goldene Blätter und ein gewöhnliches für die zurückgekehrte Aufgabe
     const korb = await page.$$eval('.korb [data-blatt]', (els) => els.map((e) => [e.getAttribute('data-blatt'), e.innerHTML.replace(/id="[^"]*"|url\(#[^)]*\)/g, '')]));
-    expect(korb.map(([art]) => art)).toEqual(['gold', 'gold', 'normal']);
+    // der neue Satz ist gemischt (5 Aufgaben): goldene für alle außer der zurückgekehrten
+    expect(korb.map(([art]) => art)).toEqual([...neu.aufgaben.slice(1).map(() => 'gold'), 'normal']);
     // golden sieht anders aus als gewöhnlich (Farbe und Adern), zwei goldene gleich
     expect(korb[0][1]).toBe(korb[1][1]);
-    expect(korb[2][1]).not.toBe(korb[0][1]);
+    expect(korb.at(-1)![1]).not.toBe(korb[0][1]);
     const s2 = await gespeichert<Sitzung>(page, 'sitzung');
     expect(s2.satz.perlen.map((p) => p.blatt)).toEqual(neu.aufgaben.map((_, i) => (i === j ? 'gehoben' : 'gold')));
     const p2 = await gespeichert<Profil>(page, 'profil');
     expect(p2.zurueckgelegt).toEqual([]);
-    expect(p2.blaetter).toBe(4 + 5);
+    expect(p2.blaetter).toBe(4 + 2 * (neu.aufgaben.length - 1) + 1);
     const h = await gespeichert<{ eintraege: { ergebnis: string; zurueckAus?: unknown }[] }>(page, 'historie');
     expect(h.eintraege.map((e) => e.ergebnis)).toEqual(['gold', 'zurueck', 'gold', ...neu.aufgaben.map((_, i) => (i === j ? 'hilfe' : 'gold'))]);
     expect(h.eintraege[3 + j].zurueckAus).toEqual({ satz: 0, nr: 1 });
