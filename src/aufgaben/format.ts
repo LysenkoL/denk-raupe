@@ -11,7 +11,22 @@ import type { AuftragSchluessel } from '../i18n/kind';
  * `aufgabeAus` nimmt nur Aufgaben mit genau einer Lösung (Test: 10 000 je Stufe und Zahlenraum).
  */
 
-export type FormatId = 'zahlenmauer' | 'wer-ist-es' | 'muster' | 'wie-viele' | 'rechenbild' | 'rechenmaschine' | 'klecks' | 'groesser-kleiner' | 'verdoppeln';
+export type FormatId =
+  | 'zahlenmauer'
+  | 'wer-ist-es'
+  | 'muster'
+  | 'wie-viele'
+  | 'rechenbild'
+  | 'rechenmaschine'
+  | 'klecks'
+  | 'groesser-kleiner'
+  | 'verdoppeln'
+  | 'bild-gleichungen'
+  | 'malaufgaben'
+  | 'hunderterfeld'
+  | 'zahlenstrahl'
+  | 'entdeckerpaeckchen'
+  | 'rechenstrich';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';

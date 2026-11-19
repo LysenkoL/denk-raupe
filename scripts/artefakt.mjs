@@ -19,7 +19,8 @@ const rest = dateien.filter((f) => !/\.(js|css)$/.test(f));
 if (rest.length) throw new Error(`nicht eingebettet: ${rest.join(', ')}`);
 
 // Seiteninhalt ohne <html>/<head>/<body> (die Seite wird beim Veröffentlichen damit umschlossen)
-const html = `<title>Denk-Raupe Probe</title>
+const html = `<meta charset="utf-8">
+<title>Denk-Raupe Probe</title>
 <meta name="theme-color" content="#FDFBF4">
 <style>${css}</style>
 <div id="app"></div>
