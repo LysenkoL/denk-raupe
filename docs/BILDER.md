@@ -39,6 +39,22 @@ A sheet of four pictures in a 2 by 2 grid with plenty of white space between the
 ```
 
 
+**Круг 2 (19.11.2026, вечер): ещё не сгенерировано.** Фон-луг вместо комнаты с окном и лист кнопок с пальцем-подсказкой. Новый чат, приложить лист гусеницы, потом:
+
+**5. Фон: луг под открытым небом** (`wiese.png`)
+
+```
+Background picture for a children's tablet game, landscape 16:9. A bright sunny open meadow under a big clear blue sky with a few soft white clouds. Soft rolling green hills far away, a few round trees on the left and right edges, a few small flowers in the grass only near the bottom corners. The upper half is mostly calm sky, the lower half is calm, even, juicy green grass. No house, no window, no wood, no table, no fence, no path, no characters, no objects in the middle. Everything important stays in the middle third, so the picture still works when the left and right sides are cut off for a phone. Same soft 3D look and warm sunny light as the caterpillar in the first image, bright clean colours, never neon. No text.
+```
+
+**6. Лист кнопок и палец-подсказка** (`knoepfe-blatt.png`)
+
+```
+A sheet of six separate objects for a children's game interface, arranged in a neat grid of 2 rows and 3 columns, all about the same size, with plenty of white space between them so each can be cut out. Style: polished stylised 3D like a high-quality animated film for children, the same warm sunny light and cheerful look as the caterpillar in the first image, juicy saturated colours, soft highlights. Not felt, not wood, not photorealistic. Top row from left to right: a round glossy sky-blue button with a big simple white arrow pointing left; a round glossy honey-yellow button with a big simple white gear; a round glossy green button with a small glowing lantern on it. Bottom row from left to right: a round glossy pink button with a big simple white cross inside a rounded arrow shape pointing left, like a delete key; a chubby friendly pink eraser; a cute cartoon child's hand with the index finger pointing straight up and the other fingers softly curled, light skin with rosy shading, a small green sleeve cuff at the wrist. Plain pure white background, no shadows on the ground, nothing else, no text, no letters, no numbers.
+```
+
+Готовые файлы класть в `src/bilder/k1/` (`wiese.webp` — фон; кнопки вырезать `proben/ablauf-7/freistellen.py`). Проба 7 подхватывает `wiese.webp` сама.
+
 Лист предметов взят в двух вариантах: листья и корзинки — из гладкого «сочного» варианта, фонарик с крышкой-жёлудем — из соседнего. Совмещать лучшие предметы из разных листов можно (решение автора 19.11.2026).
 
 ## 2. Что рисует код — генерировать не нужно

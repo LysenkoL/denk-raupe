@@ -1,0 +1,322 @@
+/* Экран набора по эталону автора: окно с лугом, две ветки сверху, на столе персиковый войлок с заданием
+   и бирюзовый лоток с матовыми шариками; под лотком жёлтая чаша — место стеклянной бусины ответа.
+   Сознательно одна светлая тема: дневной игровой мир. */
+:root {
+  color-scheme: light;
+  --tinte: #2B1A0C;
+  --ton: #4A2A12;
+  --leise: #6B4A2E;
+  --filz: #F6C6A2;
+  --filz-kante: #DDA27A;
+  --tuerkis: #1EA9A2;
+  --tuerkis-hell: #2EC2BA;
+  --tuerkis-dunkel: #13827C;
+  --honig: #F7B81A;
+  --honig-dunkel: #D58F00;
+  --creme: #FFF6E4;
+  --fokus: #2B289F;
+  --wahl: #F2A900;
+  --schatten: rgba(70, 40, 10, .28);
+  --font: Nunito, "Avenir Next", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --feder: cubic-bezier(.34, 1.56, .64, 1);
+}
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; color: var(--tinte); font: 700 17px/1.3 var(--font); background-color: #CDE9F8; background-repeat: no-repeat; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; background: none; border: 0; padding: 0; }
+:focus-visible { outline: 3px solid var(--fokus); outline-offset: 3px; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 6px; padding-block: 6px 12px; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); max-width: 1360px; margin: 0 auto; }
+
+/* Панель автора — не часть игры */
+.autor-zeile { display: flex; align-items: center; gap: 8px; font: 600 13px/1.25 system-ui, sans-serif; position: relative; z-index: 30; }
+.autor-knopf { background: rgba(30,40,30,.78); color: #F3F6F1; border-radius: 999px; padding: 5px 12px; }
+.autor { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; position: absolute; left: 0; top: calc(100% + 6px); width: min(720px, calc(100vw - 28px)); background: #fff; color: #2E3A2E; border-radius: 16px; padding: 12px; box-shadow: 0 10px 30px rgba(30,40,30,.25); }
+.autor .gruppe { display: flex; align-items: center; gap: 6px; }
+.autor .seg { display: inline-flex; background: #F3F6F1; border-radius: 999px; padding: 2px; box-shadow: inset 0 0 0 1px #C9D3C6; }
+.autor .seg button { padding: 5px 10px; border-radius: 999px; }
+.autor .seg button[aria-pressed="true"] { background: #2E3A2E; color: #F3F6F1; }
+.autor .klein { background: #F3F6F1; box-shadow: inset 0 0 0 1px #C9D3C6; border-radius: 999px; padding: 5px 10px; }
+.autor .info { flex-basis: 100%; color: #5B6656; font-weight: 500; line-height: 1.35; }
+
+/* Ветки с гусеницей и близнецом — прямо на фоне окна */
+.ast { position: relative; display: flex; justify-content: center; align-items: center; min-width: 0; padding: 2px 0 4px; }
+.reihen { display: flex; flex-direction: column; gap: calc(var(--p) * .12); min-width: 0; }
+.reihe { position: relative; display: flex; align-items: flex-end; padding-right: 14px; }
+.reihe::before { content: ""; position: absolute; left: calc(var(--kopf) * .45); right: -18px; bottom: calc(var(--p) * .08); height: calc(var(--p) * .26); border-radius: 999px;
+  background: repeating-linear-gradient(100deg, rgba(0,0,0,0) 0 14px, rgba(60,30,10,.18) 14px 16px), linear-gradient(180deg, #A9744A, #84532C 55%, #64391C); box-shadow: 0 3px 4px rgba(50,25,5,.3); z-index: 0; }
+.reihe::after { content: ""; position: absolute; right: -34px; bottom: calc(var(--p) * -.05); width: calc(var(--p) * .7); height: calc(var(--p) * .55); background: var(--blatt-bild) center / contain no-repeat; transform: rotate(-18deg); z-index: 0; }
+.kopf { height: calc(var(--p) * 1.62); width: auto; flex: none; position: relative; z-index: 3; margin-right: calc(var(--p) * -.3); margin-bottom: calc(var(--p) * -.1); filter: drop-shadow(0 3px 3px rgba(40,30,10,.3)); pointer-events: none; }
+.slot { width: var(--p); height: var(--p); border-radius: 50%; position: relative; z-index: 1; margin-left: var(--luecke); display: grid; place-items: center; flex: none; }
+.slot .nest { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #FFF9EC, #F3E3C4 70%, #E6CFA8); box-shadow: 0 3px 4px rgba(70,45,15,.35), inset 0 -3px 4px rgba(150,110,60,.25); }
+.slot .nest::after { content: ""; position: absolute; inset: 15%; border-radius: 50%; background: radial-gradient(circle at 50% 70%, #F6EAD3, #E8D4B1); box-shadow: inset 0 4px 6px rgba(120,85,40,.4); }
+.slot svg.perle { position: relative; width: 86%; height: 86%; z-index: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+.slot.aktuell::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--fokus); z-index: 2; }
+.slot.neu svg.perle { animation: setzen .32s var(--feder); }
+@keyframes setzen { from { transform: scale(.6) } to { transform: none } }
+.slot.zu-mark::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 4px dashed var(--wahl); z-index: 4; pointer-events: none; }
+.blatt { position: absolute; inset: -4%; width: 108%; height: 108%; object-fit: contain; z-index: 3; pointer-events: none; transform: rotate(-12deg); transition: transform .45s var(--feder), opacity .4s; filter: drop-shadow(0 2px 2px rgba(30,60,10,.3)); }
+.blatt.weg { transform: translate(18px, -50px) rotate(-40deg) scale(.6); opacity: 0; }
+.blatt.wackelt { animation: wackeln .55s ease-in-out; }
+@keyframes wackeln { 0%,100% { transform: rotate(-12deg) } 25% { transform: rotate(-22deg) } 55% { transform: rotate(-4deg) } 80% { transform: rotate(-15deg) } }
+.ueberblick { width: var(--ueber, 52px); height: var(--ueber, 52px); flex: none; border-radius: 50%; margin-left: 10px; align-self: center; position: relative; z-index: 2; background: radial-gradient(circle at 40% 30%, #FFF4C8, var(--honig)); box-shadow: 0 4px 0 var(--honig-dunkel), 0 6px 10px var(--schatten); display: grid; place-items: center; }
+.korb { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 0; }
+.korb img { width: clamp(56px, 7vw, 88px); height: auto; filter: drop-shadow(0 3px 3px rgba(40,30,10,.3)); }
+.korb .zahl { margin-top: -10px; background: #fff; border-radius: 999px; padding: 0 10px; font-size: 18px; font-weight: 900; box-shadow: 0 2px 4px rgba(0,0,0,.2); font-variant-numeric: tabular-nums; }
+.korb.hupf { animation: hupf .35s var(--feder); }
+@keyframes hupf { 50% { transform: translateY(-50%) translateY(-8px) } }
+
+/* Стол */
+.tisch { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 14px; min-height: 0; padding-top: 6px; }
+@media (min-aspect-ratio: 1/1) and (min-width: 700px) { .tisch { grid-template-columns: minmax(0, 1fr) clamp(310px, 33vw, 470px); grid-template-rows: minmax(0, 1fr); align-items: center; } }
+
+/* Персиковый войлок с колышками по углам и строчкой по краю */
+.papier { position: relative; min-height: 0; height: 100%; display: flex; flex-direction: column; gap: 6px; padding: 18px 26px 20px; border-radius: 22px;
+  background-color: var(--filz);
+  background-image:
+    radial-gradient(circle at 50% 42%, #D69A63 0 35%, #A8693A 36% 58%, transparent 62%),
+    radial-gradient(circle at 50% 42%, #D69A63 0 35%, #A8693A 36% 58%, transparent 62%),
+    radial-gradient(circle at 50% 42%, #D69A63 0 35%, #A8693A 36% 58%, transparent 62%),
+    radial-gradient(circle at 50% 42%, #D69A63 0 35%, #A8693A 36% 58%, transparent 62%),
+    var(--filz-bild);
+  background-size: 26px 26px, 26px 26px, 26px 26px, 26px 26px, 96px 96px;
+  background-position: 8px 8px, calc(100% - 8px) 8px, 8px calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), 0 0;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  box-shadow: 0 4px 0 var(--filz-kante), 0 12px 22px var(--schatten); outline: 2px dashed rgba(255,255,255,.6); outline-offset: -11px; }
+.papier.voll { grid-column: 1 / -1; grid-row: 1 / -1; }
+.frage-zeile { display: flex; align-items: center; gap: 12px; padding: 0 10px; }
+.frage { margin: 0; flex: 1; font-size: clamp(24px, calc(2vw + 10px), 36px); font-weight: 900; color: var(--ton); text-wrap: balance; }
+.laterne { width: clamp(52px, 6vw, 70px); flex: none; filter: drop-shadow(0 4px 4px rgba(60,30,0,.3)); }
+.laterne img { width: 100%; height: auto; display: block; }
+.laterne:active { transform: translateY(2px); }
+.bild { flex: 1; min-height: 0; position: relative; }
+.bild > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bild [data-raupe] { cursor: pointer; }
+.hinweis { margin: 0; font-size: 16px; color: var(--ton); text-align: center; }
+
+/* Бирюзовый войлочный лоток с ямками */
+.lotto { width: 100%; max-width: 470px; justify-self: center; align-self: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.werkzeug { width: 100%; display: flex; flex-direction: column; align-items: center; border-radius: 26px; padding: 14px;
+  background-color: var(--tuerkis); background-image: var(--filz-bild); background-size: 96px 96px;
+  box-shadow: inset 0 0 0 9px var(--tuerkis-hell), inset 0 0 0 11px rgba(0,60,60,.12), inset 0 10px 18px rgba(0,50,50,.25), 0 5px 0 var(--tuerkis-dunkel), 0 12px 20px var(--schatten); }
+.werkzeug:empty { display: none; }
+.tasten { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; width: 100%; padding: 6px; }
+.mtaste, .wahl .kugelwahl { aspect-ratio: 1; width: 100%; border-radius: 50%; position: relative; display: grid; place-items: center; }
+.mtaste::before, .wahl .kugelwahl::before { content: ""; position: absolute; inset: 2%; border-radius: 50%; background: radial-gradient(circle at 50% 60%, #0E6E69, #13827C 70%); box-shadow: inset 0 4px 6px rgba(0,30,30,.45); }
+.mtaste svg, .kugelwahl svg { position: relative; width: 92%; height: 92%; transition: transform .1s; }
+.mtaste:active svg, .kugelwahl:active svg { transform: translateY(3px) scale(.95); }
+.wahl { display: flex; justify-content: center; gap: 12px; width: 100%; padding: 6px; }
+.wahl .mkarte { width: min(92px, 24%); aspect-ratio: 1; border-radius: 20px; display: grid; place-items: center; position: relative; transition: transform .15s; background: linear-gradient(180deg, #FFFFFF, #F1EADF); box-shadow: 0 5px 0 #D2C4B1, 0 8px 10px rgba(0,40,40,.25); }
+.wahl .mkarte svg { width: 72%; height: 72%; }
+.wahl .mkarte.gewaehlt { transform: translateY(-6px); box-shadow: 0 0 0 5px var(--wahl), 0 11px 0 #D2C4B1, 0 14px 14px rgba(0,40,40,.3); }
+.wahl .kugelwahl { width: min(92px, 28%); background: none; box-shadow: none; }
+.wahl .kugelwahl.gewaehlt svg { transform: translateY(-6px); }
+.wahl .kugelwahl.gewaehlt::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 5px solid var(--wahl); }
+.karten { display: flex; gap: 12px; justify-content: center; min-height: clamp(60px, 9vw, 86px); padding: 6px; }
+.karte, .oslot { width: clamp(66px, 10vw, 100px); height: clamp(58px, 8.4vw, 84px); border-radius: 18px; display: grid; place-items: center; font-size: clamp(30px, 4vw, 44px); font-weight: 900; color: var(--ton); flex: none; }
+.karte { background: linear-gradient(180deg, #FFFFFF, #F1EADF); box-shadow: 0 5px 0 #D2C4B1, 0 8px 10px rgba(0,40,40,.25); }
+.karte.leer { background: rgba(0,60,60,.18); box-shadow: inset 0 4px 6px rgba(0,30,30,.35); }
+.ordnen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: clamp(6px, 2vw, 16px); }
+.oslot { background: rgba(255,250,242,.5); outline: 3.5px dashed #fff; outline-offset: -7px; }
+.oslot.voll { background: linear-gradient(180deg, #FFFFFF, #F1EADF); outline: 0; box-shadow: 0 5px 0 #D2C4B1, 0 8px 10px var(--schatten); }
+.zeichen { font-size: clamp(30px, 4vw, 46px); font-weight: 900; color: var(--ton); }
+
+/* Ряд под лотком: стереть слева, жёлтая чаша с бусиной по центру */
+.abgabe-platz { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%; }
+.abgabe-platz .loeschen { justify-self: start; width: clamp(48px, 5.5vw, 60px); aspect-ratio: 1; border-radius: 50%; }
+.abgabe-platz .loeschen svg { width: 100%; height: 100%; }
+.schale { grid-column: 2; width: calc(var(--ab) * 1.5); height: calc(var(--ab) * 1.18); border-radius: 50%; display: grid; place-items: center; position: relative;
+  background: radial-gradient(ellipse 50% 44% at 50% 44%, #FFF1CF 0 72%, #EBCB8A 88%, transparent 91%), radial-gradient(ellipse at 50% 30%, #FFE070, var(--honig) 50%, var(--honig-dunkel));
+  box-shadow: 0 6px 0 #B97800, 0 12px 18px var(--schatten), inset 0 3px 2px rgba(255,255,255,.6); }
+.abgabe { width: var(--ab); height: var(--ab); border-radius: 50%; position: relative; z-index: 1; }
+.abgabe svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 4px rgba(90,50,0,.35)); }
+.abgabe.leer svg { filter: none; }
+.abgabe.atmet svg { animation: atmen .6s ease-in-out; }
+@keyframes atmen { 50% { transform: scale(1.1) } }
+
+/* Готово к сравнению, сравнение крупно, конец */
+.bereit { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
+.bereit p { margin: 0; font-size: clamp(22px, 2.6vw, 30px); font-weight: 900; color: var(--ton); }
+.vergleichen { min-height: 84px; padding: 0 48px; border-radius: 999px; background: linear-gradient(180deg, #FFD866, var(--honig)); box-shadow: 0 7px 0 var(--honig-dunkel), 0 14px 22px var(--schatten); font-size: 32px; font-weight: 900; color: var(--tinte); }
+.vergleichen:active { transform: translateY(4px); box-shadow: 0 3px 0 var(--honig-dunkel); }
+.gross { flex: 1; display: flex; align-items: center; justify-content: center; --p: var(--pg); --luecke: 6px; animation: auf .3s ease-out; }
+.gross .reihen { gap: calc(var(--pg) * .25); }
+.gross.zu { animation: zu .3s ease-in forwards; }
+@keyframes auf { from { transform: scale(.9); opacity: 0 } }
+@keyframes zu { to { transform: scale(.9) translateY(-30px); opacity: 0 } }
+.ende-wahl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: min(560px, 100%); }
+.ende-wahl button { min-height: 88px; border-radius: 20px; background: #FFF6E4; box-shadow: 0 5px 0 #D2C4B1; font-weight: 900; font-size: 17px; }
+.ende-wahl button.haupt { background: var(--honig); box-shadow: 0 5px 0 var(--honig-dunkel); }
+
+.flug { position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; }
+.flug svg { width: 100%; height: 100%; display: block; }
+.finger { position: fixed; z-index: 40; pointer-events: none; width: 54px; height: 64px; filter: drop-shadow(0 4px 4px rgba(60,40,10,.3)); transition-property: left, top; transition-timing-function: cubic-bezier(.45,.05,.3,1); }
+.finger svg { width: 100%; height: 100%; }
+
+/* Примеры: одно гнездо и один лист, без близнеца и корзинки */
+.einzel { display: flex; align-items: flex-end; gap: 0; position: relative; }
+.einzel .blattplatz { width: var(--p); height: var(--p); position: relative; margin-left: 22px; z-index: 1; }
+.ast.einzeln .korb { display: none; }
+.muster-gross { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 18px; }
+.muster-gross .vorlage, .muster-gross .ziel { width: clamp(96px, 17vw, 160px); aspect-ratio: 1; border-radius: 26px; display: grid; place-items: center; font-size: clamp(46px, 8vw, 76px); font-weight: 900; color: var(--ton); }
+.muster-gross .vorlage { background: linear-gradient(180deg, #FFFFFF, #F1EADF); box-shadow: 0 6px 0 #D2C4B1, 0 10px 14px var(--schatten); }
+.muster-gross .ziel { background: rgba(255,250,242,.5); outline: 4px dashed #fff; outline-offset: -9px; }
+.muster-gross svg { width: 72%; height: 72%; }
+.muster-gross .gleich { font-size: clamp(36px, 5vw, 56px); font-weight: 900; color: var(--ton); }
+.schritt-punkte { display: flex; gap: 8px; }
+.schritt-punkte span { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.7); }
+.schritt-punkte span.an { background: var(--ton); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+/* Низкий экран (телефон горизонтально): близнец прячется, пока ребёнок решает */
+@media (max-height: 520px) {
+  .app { gap: 4px; padding-block: 2px 6px; }
+  .app[data-phase="loesen"] #reihe-zwilling, .app[data-phase="beispiel"] #reihe-zwilling, .app[data-phase="intro"] #reihe-zwilling { display: none; }
+  .papier { padding: 10px 16px 12px; }
+  .frage { font-size: 22px; }
+  .laterne { width: 46px; }
+  .tisch { gap: 10px; padding-top: 2px; }
+  .werkzeug { padding: 8px; border-radius: 20px; box-shadow: inset 0 0 0 6px var(--tuerkis-hell), inset 0 8px 14px rgba(0,50,50,.25), 0 4px 0 var(--tuerkis-dunkel), 0 8px 14px var(--schatten); }
+  .tasten { gap: 3px; padding: 4px; }
+  .lotto { gap: 8px; }
+}
+@media (max-width: 620px) { .korb { right: -4px; top: auto; bottom: -6px; transform: scale(.7); transform-origin: bottom right; } .korb.hupf { animation: none; } }
+
+/* ══ Правки по пробе автора на телефоне ══ */
+
+/* Лоток: три варианта цвета вместо бирюзы (переключатель в панели автора) */
+.app { --lotto: #7A4A26; --lotto-rand: #95603A; --lotto-kante: #4E2C12; --mulde-a: #4F2D14; --mulde-b: #643A1C; }
+.app[data-lotto="keramik"] { --lotto: #FBF7F0; --lotto-rand: #FFFFFF; --lotto-kante: #D6C9B6; --mulde-a: #D9CDBA; --mulde-b: #E9E0D2; }
+.app[data-lotto="wiese"] { --lotto: #5DAA3A; --lotto-rand: #78C450; --lotto-kante: #3D7E22; --mulde-a: #3F8424; --mulde-b: #4E9A30; }
+.werkzeug { background-color: var(--lotto); box-shadow: inset 0 0 0 9px var(--lotto-rand), inset 0 0 0 11px rgba(0,0,0,.1), inset 0 10px 18px rgba(0,0,0,.22), 0 5px 0 var(--lotto-kante), 0 12px 20px var(--schatten); }
+.mtaste::before, .wahl .kugelwahl::before { background: radial-gradient(circle at 50% 60%, var(--mulde-a), var(--mulde-b) 70%); }
+.karte.leer { background: rgba(0,0,0,.16); }
+
+/* Место ответа: бусина лежит на большом глянцевом листе */
+.schale { width: calc(var(--ab) * 2); height: calc(var(--ab) * 1.45); border-radius: 0; box-shadow: none; background: var(--blatt-bild) center / contain no-repeat; filter: drop-shadow(0 6px 8px rgba(40,70,10,.35)); }
+.abgabe.leer svg { filter: drop-shadow(0 1px 2px rgba(0,60,0,.35)); }
+.abgabe.auf svg { animation: auftauchen .35s var(--feder); }
+@keyframes auftauchen { from { transform: scale(.5) translateY(10px); } }
+
+/* Телефон вертикально: задание главное, заголовок и шарики не раздуваются */
+@media not ((min-aspect-ratio: 1/1) and (min-width: 700px)) {
+  .frage { font-size: clamp(20px, 5.4vw, 30px); }
+  .laterne { width: clamp(44px, 11vw, 60px); }
+  .papier { padding: 12px 14px 14px; }
+  .tisch { grid-template-rows: minmax(0, 1fr) auto; gap: 10px; }
+  .lotto { gap: 8px; }
+  .werkzeug { padding: 8px; max-width: 420px; }
+  .tasten { max-width: 360px; gap: 4px; padding: 4px; }
+  .abgabe-platz .loeschen { width: 44px; }
+}
+@media (max-height: 760px) and (max-width: 699px) { .app { --ab: 58px !important; } }
+
+/* Гусеницы и листья не сливаются с лугом: светлый контур и светлая полоса за рядами */
+.kopf, .blatt { filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 3px 3px rgba(30,40,10,.35)); }
+.ast .reihen { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.22)); border-radius: 999px; padding: 6px 22px 8px 8px; box-shadow: 0 0 0 2px rgba(255,255,255,.35); }
+.gross .reihen { background: none; box-shadow: none; }
+
+/* Живость: всё, что нажимается, пружинит; на компьютере приподнимается под мышью */
+.mtaste, .mkarte, .kugelwahl, .karte, .oslot, .loeschen, .kachel, .laterne, .abgabe, .vergleichen, .ueberblick, .slot { transition: transform .14s ease; }
+@media (hover: hover) {
+  .mtaste:hover, .kugelwahl:hover, .loeschen:hover, .laterne:hover { transform: translateY(-3px) scale(1.06); }
+  .mkarte:hover, .karte:hover, .kachel:hover { transform: translateY(-3px); }
+  .abgabe:not(.leer):hover { transform: scale(1.08); }
+  button.slot:hover { transform: translateY(-2px); }
+}
+.hopp { animation: hopp .32s var(--feder); }
+@keyframes hopp { 0% { transform: scale(.86) } 60% { transform: scale(1.08) } 100% { transform: none } }
+.kopf.freut { animation: freut .55s var(--feder); }
+@keyframes freut { 0%,100% { transform: none } 35% { transform: translateY(-14px) rotate(-6deg) } 70% { transform: translateY(0) rotate(3deg) } }
+.funken { position: fixed; z-index: 60; width: 0; height: 0; pointer-events: none; }
+.funken i { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #FFF8C4, #FFC53D 60%, transparent 70%); animation: funke .6s ease-out forwards; transform: rotate(var(--w)) translateX(0); }
+@keyframes funke { to { transform: rotate(var(--w)) translateX(46px) scale(.3); opacity: 0; } }
+
+/* Кнопки «конфетного» вида: толстая кромка, блик, пружинка */
+.vergleichen { position: relative; overflow: hidden; background: linear-gradient(180deg, #FFE27A, #FFC21F 55%, #F2A400); box-shadow: 0 8px 0 #C27D00, 0 16px 24px var(--schatten), inset 0 3px 0 rgba(255,255,255,.7); animation: lockt 2.4s ease-in-out infinite; }
+.vergleichen::after { content: ""; position: absolute; top: -40%; left: -60%; width: 40%; height: 180%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent); transform: rotate(20deg); animation: glanz 2.4s ease-in-out infinite; }
+@keyframes lockt { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-5px) } }
+@keyframes glanz { 0%,40% { left: -60% } 80%,100% { left: 130% } }
+.bereit .jubel { font-size: clamp(26px, 4vw, 40px); animation: auf .5s var(--feder); }
+.ende-wahl { gap: clamp(10px, 2vw, 20px); width: min(620px, 100%); }
+.ende-wahl .kachel { min-height: 0; padding: 12px 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: 26px; background: linear-gradient(180deg, #FFFFFF, #FFF1DA); box-shadow: 0 7px 0 #DCC6A2, 0 14px 20px var(--schatten), inset 0 3px 0 #fff; font-size: clamp(16px, 2.2vw, 20px); color: var(--ton); animation: rein .5s var(--feder) both; }
+.ende-wahl .kachel:nth-child(2) { animation-delay: .1s; } .ende-wahl .kachel:nth-child(3) { animation-delay: .2s; }
+.ende-wahl .kachel img { width: 72%; max-width: 110px; height: auto; filter: drop-shadow(0 4px 4px rgba(60,30,0,.25)); }
+.ende-wahl .kachel.haupt { background: linear-gradient(180deg, #FFE27A, #FFC21F 60%, #F2A400); box-shadow: 0 7px 0 #C27D00, 0 14px 20px var(--schatten), inset 0 3px 0 rgba(255,255,255,.7); color: var(--tinte); }
+.ende-wahl .kachel:active { transform: translateY(4px); }
+@keyframes rein { from { transform: translateY(30px) scale(.8); opacity: 0 } }
+.regen { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 20; }
+.regen img { position: absolute; top: -12%; left: var(--x); width: clamp(36px, 6vw, 60px); animation: faellt var(--d) ease-in var(--v) 2 both; }
+@keyframes faellt { from { transform: translateY(0) rotate(0) } to { transform: translateY(115vh) rotate(260deg) } }
+
+/* Цвета лотка: настройка ребёнка (керамика — пример цвета, который не проходит проверку различимости) */
+.app[data-lotto="holz"] { --lotto: #7A4A26; --lotto-rand: #8F6749; --lotto-kante: #4F3019; --mulde-a: #55341B; --mulde-b: #643D1F; }
+.app[data-lotto="wiese"] { --lotto: #5DAA3A; --lotto-rand: #77B85A; --lotto-kante: #3C6E26; --mulde-a: #417729; --mulde-b: #4C8B30; }
+.app[data-lotto="himmel"] { --lotto: #8FD3F4; --lotto-rand: #A1DAF6; --lotto-kante: #5D899F; --mulde-a: #6494AB; --mulde-b: #75ADC8; }
+.app[data-lotto="minze"] { --lotto: #A8E6CF; --lotto-rand: #B6EAD7; --lotto-kante: #6D9687; --mulde-a: #76A191; --mulde-b: #8ABDAA; }
+.app[data-lotto="koralle"] { --lotto: #F48C7F; --lotto-rand: #F69E93; --lotto-kante: #9F5B53; --mulde-a: #AB6259; --mulde-b: #C87368; }
+.app[data-lotto="nacht"] { --lotto: #24345C; --lotto-rand: #475476; --lotto-kante: #17223C; --mulde-a: #192440; --mulde-b: #1E2B4B; }
+.app[data-lotto="keramik"] { --lotto: #FBF7F0; --lotto-rand: #FCF8F2; --lotto-kante: #A3A19C; --mulde-a: #B0ADA8; --mulde-b: #CECBC5; }
+
+/* ══════ Проба 7: луг, верхняя полоса, ось гусеницы, доска задания, «стереть» в лотке ══════ */
+body { background: linear-gradient(180deg, #5DB8F2 0%, #9ED7FA 34%, #D4F0FF 52%, #B9E58E 58%, #8ACB55 78%, #6DB43E 100%) fixed; }
+.app { grid-template-rows: auto auto minmax(0, 1fr); }
+
+/* Верхняя полоса: назад слева, корзинка и меню справа */
+.leiste { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; position: relative; z-index: 30; }
+.rund { width: clamp(44px, min(11vw, 7vh), 60px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 5px 0 rgba(0,0,0,.18), 0 8px 14px rgba(0,40,80,.25), inset 0 3px 0 rgba(255,255,255,.55); }
+.rund svg { width: 62%; height: 62%; }
+.zurueck { background: radial-gradient(circle at 40% 30%, #8FD8FF, #3AA5EE 60%, #1F86D0); }
+.menue { background: radial-gradient(circle at 40% 30%, #FFE27A, #FFC21F 60%, #EE9F00); grid-column: 4; }
+.leiste .korb { position: static; transform: none; grid-column: 3; display: flex; align-items: center; gap: 4px; flex-direction: row; }
+.leiste .korb img { width: clamp(40px, min(10vw, 6vh), 56px); }
+.leiste .korb .zahl { margin: 0; font-size: clamp(16px, min(4.4vw, 2.8vh), 22px); padding: 2px 12px; }
+.leiste .korb.hupf { animation: hupf2 .35s var(--feder); }
+@keyframes hupf2 { 50% { transform: translateY(-6px) } }
+.autor { left: auto; right: 0; top: calc(100% + 8px); }
+.menue-titel { flex-basis: 100%; font-size: 15px; }
+@media (max-width: 620px) { .korb { right: auto; top: auto; bottom: auto; transform: none; } }
+
+/* Ветки: голова и гнёзда на одной оси. Центр круглого сегмента головы — на 77 % высоты картинки,
+   правый край сегмента — у правого края картинки; гнёзда начинаются вплотную к нему. */
+.ast { padding: 0; }
+.ast .reihen { padding: 4px 18px 6px 6px; }
+.reihe { align-items: flex-end; }
+.kopf { width: calc(var(--p) * 1.3); height: calc(var(--p) * 1.55); object-fit: contain; object-position: right bottom; margin-right: calc(var(--p) * -.1); margin-bottom: calc(var(--p) * .14); }
+.reihe::before { left: calc(var(--p) * .9); bottom: calc(var(--p) * .2); }
+.slot { margin-left: var(--luecke); }
+.kopf + .slot { margin-left: 0; }
+
+/* Доска задания: светлая, без колышков и коричневого */
+.papier { background-color: #EEF7FD; background-image: linear-gradient(180deg, #F7FBFF, #E3F1FB); background-size: auto; background-position: 0 0; background-repeat: no-repeat; outline: 0; border: 4px solid #fff; border-radius: 28px; box-shadow: 0 6px 0 rgba(70,130,180,.25), 0 14px 26px rgba(20,70,110,.22); }
+.frage-zeile { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 4px; }
+.frage { text-align: center; font-size: clamp(20px, min(5.2vw, 3.8vh), 36px); color: #2A3A5A; }
+.frage-zeile > :last-child { justify-self: end; }
+.schritt-punkte span { background: rgba(42,58,90,.2); } .schritt-punkte span.an { background: #2A3A5A; }
+
+/* Помощь — явная круглая кнопка с фонариком, которая слегка светится */
+.laterne { width: clamp(46px, min(11vw, 7vh), 62px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 40% 30%, #FFF6C8, #FFD54A 60%, #F2A900); box-shadow: 0 5px 0 #C98A00, 0 8px 14px rgba(0,40,80,.25), inset 0 3px 0 rgba(255,255,255,.6); filter: none; animation: leuchtet 3s ease-in-out infinite; }
+.laterne img { width: 74%; height: auto; }
+@keyframes leuchtet { 0%,100% { box-shadow: 0 5px 0 #C98A00, 0 8px 14px rgba(0,40,80,.25), inset 0 3px 0 rgba(255,255,255,.6), 0 0 0 0 rgba(255,214,74,.0); } 50% { box-shadow: 0 5px 0 #C98A00, 0 8px 14px rgba(0,40,80,.25), inset 0 3px 0 rgba(255,255,255,.6), 0 0 0 8px rgba(255,214,74,.35); } }
+
+/* Лоток: размер шарика от экрана; «стереть» — розовая клавиша в лотке справа; лёгкий узор */
+.lotto { max-width: var(--lotto-b, 470px); }
+.werkzeug { background-image: radial-gradient(rgba(255,255,255,.16) 2px, transparent 2.7px), var(--filz-bild); background-size: 18px 18px, 96px 96px; }
+.tasten { grid-template-columns: repeat(5, var(--taste)) calc(var(--taste) * .95) !important; gap: 6px; width: auto; max-width: none; justify-content: center; }
+.mtaste { width: var(--taste); min-height: 0; }
+.loesch-taste { grid-column: 6; grid-row: 1 / span 2; border-radius: 22px; display: grid; place-items: center; background: linear-gradient(180deg, #FF9EC3, #F06A9C 60%, #E0457B); box-shadow: 0 5px 0 #B3245A, 0 8px 12px rgba(0,0,0,.25), inset 0 3px 0 rgba(255,255,255,.55); }
+.loesch-taste svg { width: 76%; height: auto; }
+.loesch-taste:active { transform: translateY(3px); box-shadow: 0 2px 0 #B3245A; }
+.abgabe-platz { grid-template-columns: 1fr; justify-items: center; }
+.schale { grid-column: 1; }
+.wahl .mkarte, .wahl .kugelwahl { width: calc(var(--taste) * 1.2); max-width: 24%; }
+@media (max-height: 520px) { .tasten { grid-template-columns: repeat(5, var(--taste)) calc(var(--taste) * .95) !important; } }
+
+/* Карточки конца набора на светлой доске */
+.ende-wahl .kachel { background: linear-gradient(180deg, #FFFFFF, #EAF5FD); box-shadow: 0 7px 0 #B9D3E6, 0 14px 20px rgba(20,70,110,.22), inset 0 3px 0 #fff; color: #2A3A5A; }
+.bereit p, .bereit .jubel { color: #2A3A5A; }
+.ende-wahl .kachel img { width: auto; max-width: 80%; max-height: min(110px, 17vh); }
+.bereit { gap: min(18px, 2.5vh); }
+.bereit .jubel { font-size: clamp(22px, min(4vw, 5vh), 40px); }
+@media (max-height: 520px) { .ende-wahl .kachel { padding: 6px 6px 8px; gap: 2px; } .ende-wahl .kachel img { max-height: 12vh; } .ende-wahl { width: min(520px, 100%); } }
