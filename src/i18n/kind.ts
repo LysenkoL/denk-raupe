@@ -51,6 +51,11 @@ export const KIND = {
     welcheZahlFehlt: 'Welche Zahl fehlt?',
     wieGehtEsWeiter: 'Wie geht es weiter?',
     werIstEs: 'Wer ist es?',
+    wieViele: 'Wie viele sind es?',
+    wieVieleJetzt: 'Wie viele sind es jetzt?',
+    unterDemKlecks: 'Welche Zahl ist unter dem Klecks?',
+    welcheZahlPasst: 'Welche Zahl passt?',
+    verdoppleHalbiere: 'Verdopple oder halbiere.',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {
