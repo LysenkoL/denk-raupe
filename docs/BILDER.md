@@ -8,6 +8,39 @@ Nov 16, 2026
 
 В `src/bilder/`: голова гусеницы в четырёх выражениях, голова близнеца, пять листьев (обычный, золотой, три редких), корзинка пустая и полная. Всего 12 файлов. Они сделаны в прежнем стиле с тёмным контуром и заменяются первым пакетом из `docs/STIL.md`, раздел 12.
 
+### Пакет K1 (19.11.2026)
+
+В `src/bilder/k1/` — картинки, выбранные автором для экрана набора: гусеница и близнец (приподнятые и лёжа), листья зелёный и золотой, фонарик, корзинки пустая и полная, фон, текстура стола, мелкая текстура войлока. Вырезаны из листов автора, белый фон убран, большая сторона до 512 px. Прежние 12 файлов в `src/bilder/` остаются, пока A10 не переведёт экран на новые.
+
+Лист гусеницы — образец стиля автора (целиком и четыре лица); к каждому запросу ниже прикладывался он. Запросы, по которым сделаны остальные листы (сохранены, чтобы стиль можно было повторить):
+
+**1. Близнец — лист персонажа, как у гусеницы** (`zwilling-blatt.png`)
+
+```
+Character sheet of the twin of the caterpillar in the attached image. Exactly the same character: the same body, face, eyes, green velvet material, antennae and proportions. But the twin has NO orange bandana on the head, NO orange scarf, NO brown strap and NO bag. Instead the twin wears only a small neat sky-blue bow tie at the neck. Use exactly the same layout as the attached image: on the left the full body in three-quarter view, on the right four head portraits in a 2 by 2 grid with these expressions: calm smile, thinking, happy laughing, surprised. Style: exactly the same soft 3D toy look as the caterpillar in the first image: matte felt and modelling-clay surfaces with a fine soft fibre texture, rounded soft shapes, warm sunny daylight from the top left, bright clean cheerful colours, never neon, no black outlines. Plain pure white background, no shadows on the ground, no text.
+```
+
+**2. Фон: комната в доме на дереве** (`hintergrund.png`)
+
+```
+Background picture for a children's tablet game, landscape 16:9. The inside of a cosy treehouse room: a big open arched window in the middle shows a sunny meadow with soft green hills, round trees and a clear blue sky with two small white clouds. Warm wooden window frame and wooden walls only at the left and right edges, a small potted plant on each side, a few fresh green leaves hanging into the top corners. The bottom quarter is an empty light warm-wood tabletop across the full width. The middle of the picture is calm and open: no branches across the window, no characters, no objects on the table. Everything important is in the middle third, so the picture still works when the left and right sides are cut off for a phone held upright. Style: exactly the same soft 3D toy look as the caterpillar in the first image: matte felt and modelling-clay surfaces with a fine soft fibre texture, rounded soft shapes, warm sunny daylight from the top left, bright clean cheerful colours, never neon, no black outlines. No text.
+```
+
+**3. Лист мелких предметов — сочно, не войлок** (`dinge-blatt.png`)
+
+```
+A sheet of six separate small objects for a children's game, arranged in a neat grid of 2 rows and 3 columns, all about the same size, with plenty of white space between them so that each can be cut out. Style: polished stylised 3D like a high-quality animated film for children, the same warm sunny light from the top left and the same cheerful look as the caterpillar in the first image, juicy saturated colours, smooth surfaces with soft highlights and a gentle inner glow. Not felt, not fabric, not wool, not clay, no stitches, not photorealistic. Top row from left to right: a fresh juicy green leaf, plump and slightly curved, glossy with a soft shine and one tiny clear dew drop; a precious golden leaf made of shiny polished gold, the same shape, with bright golden reflections and a few small sparkles around it, clearly real gold; a small cute lantern of polished honey-coloured wood with warm glowing glass and a little handle, the light glowing softly. Bottom row from left to right: a small round woven basket of smooth golden straw with a handle, empty; the same basket filled with juicy green leaves and one shiny golden leaf on top; a fresh white daisy with plump petals and a bright yellow centre. Plain pure white background, no shadows on the ground, nothing else, no text, no letters, no numbers.
+```
+
+**4. Передняя часть — гусеница и близнец, два положения** (`vorderteil-blatt.png`)
+
+```
+A sheet of four pictures in a 2 by 2 grid with plenty of white space between them. Use the caterpillar with the orange bandana and scarf and her twin with the sky-blue bow tie from the attached images: same faces, same green velvet material, same antennae. Each picture shows only the FRONT PART of one character: the head, its clothing detail, the first body segment and two small front legs. The body continues to the right, so the front part is seen from the side, the character faces left, and the face is turned three-quarter towards the viewer with a calm friendly smile. On the right side the first body segment ends in a clean round cut, where a round bead will join. Top row: the caterpillar with the orange bandana, on the left lying low and straight, on the right with the front part lifted up and curved like a real caterpillar raising its head. Bottom row: the twin with the sky-blue bow tie, in the same two positions. All four pictures the same size and scale. Style: exactly the same soft 3D toy look as the caterpillar in the first image: matte felt and modelling-clay surfaces with a fine soft fibre texture, rounded soft shapes, warm sunny daylight from the top left, bright clean cheerful colours, never neon, no black outlines. Plain pure white background, no shadows on the ground, nothing else, no text.
+```
+
+
+Лист предметов взят в двух вариантах: листья и корзинки — из гладкого «сочного» варианта, фонарик с крышкой-жёлудем — из соседнего. Совмещать лучшие предметы из разных листов можно (решение автора 19.11.2026).
+
 ## 2. Что рисует код — генерировать не нужно
 
 Бусины, фигуры в заданиях, сетки, стены, часы, монеты, линейка, кубики, стрелки, знаки условий, звёзды на карточках, узоры при перекраске (горошек, полоски), дождь и радуга, кнопки и значки интерфейса.
