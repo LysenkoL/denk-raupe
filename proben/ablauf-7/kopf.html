@@ -1,0 +1,53 @@
+<title>Denk-Raupe Ablauf 7</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/*CSS*/</style>
+
+<div class="app" id="app" data-lotto="koralle">
+  <header class="leiste">
+    <button type="button" class="rund zurueck" aria-label="Zurück"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M29 12 L17 24 L29 36" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="korb" id="korb"></div>
+    <button type="button" class="rund menue" id="autor-knopf" data-panel="1" aria-expanded="false" aria-label="Menü"><svg viewBox="0 0 48 48" aria-hidden="true"><g fill="#fff"><rect x="10" y="13" width="28" height="5" rx="2.5"/><rect x="10" y="21.5" width="28" height="5" rx="2.5"/><rect x="10" y="30" width="28" height="5" rx="2.5"/></g></svg></button>
+    <div class="autor" id="autor" hidden>
+      <strong class="menue-titel">Меню (для пробы)</strong>
+      <span class="info">В игре здесь будут: другие задания (полка), сложность и настройки ребёнка. Сейчас для пробы — настройки ребёнка и кнопки автора.</span>
+    <span class="gruppe">Палец-подсказка
+      <span class="seg" role="group" aria-label="Палец-подсказка">
+        <button type="button" data-schnell="0" aria-pressed="true">через 15 с</button>
+        <button type="button" data-schnell="1" aria-pressed="false">через 3 с (чтобы увидеть)</button>
+      </span>
+    </span>
+    <span class="gruppe">Лоток
+      <span class="seg" role="group" aria-label="Цвет лотка">
+        <button type="button" data-lotto="holz" aria-pressed="false"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7A4A26;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)"></span>тёмное дерево</button>
+        <button type="button" data-lotto="wiese" aria-pressed="false"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#5DAA3A;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)"></span>луг</button>
+        <button type="button" data-lotto="himmel" aria-pressed="false"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#8FD3F4;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)"></span>небо</button>
+        <button type="button" data-lotto="minze" aria-pressed="false"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#A8E6CF;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)"></span>мята</button>
+        <button type="button" data-lotto="koralle" aria-pressed="true"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#F48C7F;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)"></span>коралл</button>
+        <button type="button" data-lotto="nacht" aria-pressed="false"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#24345C;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)"></span>ночь</button>
+        <button type="button" data-lotto="keramik" aria-pressed="false"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#FBF7F0;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)"></span>керамика ✗</button>
+      </span>
+    </span>
+    <span class="gruppe">Отправка
+      <span class="seg" role="group" aria-label="Отправка ответа">
+        <button type="button" data-auto="0" aria-pressed="true">нажатием на бусину</button>
+        <button type="button" data-auto="1" aria-pressed="false">сразу (выбор и картинка)</button>
+      </span>
+    </span>
+      <button type="button" class="klein" data-neustart="1">Начать заново со вступлением</button>
+      <button type="button" class="klein" data-panel="1">Закрыть</button>
+    </div>
+  </header>
+  <section class="ast" aria-label="Raupe und Zwilling">
+    <div class="reihen">
+      <div class="reihe" id="reihe-kind"></div>
+      <div class="reihe" id="reihe-zwilling"></div>
+    </div>
+  </section>
+  <section class="tisch" id="tisch"></section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var BILD = /*BILD*/;
