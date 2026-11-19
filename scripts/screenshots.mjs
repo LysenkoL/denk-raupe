@@ -15,12 +15,15 @@ mkdirSync('screenshots', { recursive: true });
 const server = await createServer({ logLevel: 'silent', server: { port: 0, host: '127.0.0.1' } });
 await server.listen();
 const url = server.resolvedUrls.local[0];
-const { neueSitzung, neuesProfil, PROBE_FORMATE } = await server.ssrLoadModule('/src/satz/sitzung.ts');
+const { neueSitzung, neuesProfil, probePlan } = await server.ssrLoadModule('/src/satz/sitzung.ts');
+const { probeSatzPlan } = await server.ssrLoadModule('/src/screens/alle.ts');
 const { FORMATE } = await server.ssrLoadModule('/src/aufgaben/index.ts');
 const { gleich } = await server.ssrLoadModule('/src/perlen/antwort.ts');
 const { lernbeispiel, aufgabeAus, stimmt } = await server.ssrLoadModule('/src/aufgaben/format.ts');
 const { setzeAntwort, vergleiche } = await server.ssrLoadModule('/src/satz/vergleich.ts');
 const browser = await chromium.launch();
+/** alle eingetragenen Formate */
+const ALLE = Object.keys(FORMATE);
 
 const sitzung = neueSitzung(20261115);
 const loesung = (i) => FORMATE[sitzung.aufgaben[i].format].loesungen(sitzung.aufgaben[i].bedingung)[0];
@@ -35,7 +38,9 @@ const falsch = (i) => {
  * alle Antworten waren falsch, die Antwort dieser Aufgabe ist wieder leer – das Bild zeigt „?“ und die Hilfe.
  */
 function hilfeSitzung(id, stufe, hilfe, zahlenraum = 20) {
-  const s = neueSitzung(20261115);
+  // Probesatz; ein Format, das nicht darin ist, kommt an den ersten Platz
+  const plan = probePlan(20261115);
+  const s = neueSitzung(20261115, undefined, plan.some((p) => p.format === id) ? plan : [{ format: id, stufe }, ...plan.slice(1)]);
   const i = s.aufgaben.findIndex((a) => a.format === id);
   const aufgaben = s.aufgaben.map((a, j) => (j === i ? aufgabeAus(FORMATE[id], a.samen, stufe, { zahlenraum }) : a));
   const daneben = (a) => {
@@ -49,7 +54,7 @@ function hilfeSitzung(id, stufe, hilfe, zahlenraum = 20) {
 
 /** Hilfe 2 und 3 je Format (Stufe 2); dazu Wer ist es? Stufe 1 (Schritt an der ähnlichen Aufgabe) und Zahlenmauer bis 100 */
 const HILFE_BILDER = [
-  ...PROBE_FORMATE.flatMap((id) => [2, 3].map((hilfe) => [`hilfe${hilfe}-${id}`, hilfeSitzung(id, 2, hilfe)])),
+  ...ALLE.flatMap((id) => [2, 3].map((hilfe) => [`hilfe${hilfe}-${id}`, hilfeSitzung(id, 2, hilfe)])),
   ['hilfe3-wer-ist-es-aehnlich', hilfeSitzung('wer-ist-es', 1, 3)],
   ['hilfe3-zahlenmauer-bis100', hilfeSitzung('zahlenmauer', 2, 3, 100)],
 ];
@@ -70,7 +75,7 @@ async function vorbereiten(page, bekannt = true, s = sitzung) {
           tx.oncomplete = () => (req.result.close(), ok());
         };
       }),
-    [s, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) : {} }],
+    [s, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(ALLE.map((id) => [id, 'bekannt'])) : {} }],
   );
   await page.goto(url + '#/');
   await page.reload();
@@ -154,6 +159,22 @@ for (const [name, w, h] of GERAETE) {
     await page.evaluate(() => (document.querySelector('.hilfe-box') ?? document.querySelector('.aufgabe-bild')).scrollIntoView({ block: 'center' }));
     await page.screenshot({ path: `screenshots/${name}-${bild}.png` });
   }
+  // jedes Format als Satz nur aus diesem Format (wie auf der Probe-Seite #/alle), jede Aufgabe; bis 20 und bis 100
+  for (const id of ALLE)
+    for (const zahlenraum of [20, 100]) {
+      const s = neueSitzung(20261116, { zahlenraum }, probeSatzPlan(id));
+      await vorbereiten(page, true, s);
+      for (let i = 0; i < s.aufgaben.length; i++) {
+        await page.click(`.perle[data-i="${i}"]`);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.waitForTimeout(150);
+        await page.screenshot({ path: `screenshots/${name}-format-${id}-bis${zahlenraum}-${i + 1}-stufe${s.aufgaben[i].stufe}.png` });
+      }
+    }
+  // Probe-Seite „Alle Aufgaben“
+  await page.goto(url + '#/alle');
+  await page.waitForSelector('.alle-liste');
+  await page.screenshot({ path: `screenshots/${name}-alle.png`, fullPage: true });
   await page.close();
 }
 const page = await browser.newPage({ viewport: { width: 980, height: 900 } });

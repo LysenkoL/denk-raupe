@@ -81,6 +81,11 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
    * Nur so bleibt eine halbe Zahl (Z belegt, E leer) stehen, solange das Kind an dieser Aufgabe ist.
    */
   let plaetze: { wo: string; p: Plaetze } | null = null;
+  /**
+   * Werkzeug der Engine Bild „gezählt markieren“ (docs/STIL.md, „Движки“): Dinge, die das Kind angetippt hat, je
+   * Aufgabe oder Schritt des Lernbeispiels. Nur auf dem Bildschirm – keine Antwort, nicht gespeichert.
+   */
+  let gezaehlt: { wo: string; nr: Set<number> } | null = null;
 
   app.innerHTML = `<main class="satz">
     <section class="ast-zone" aria-label="${KIND.deineRaupe}"><div class="buehne-platz"></div><div class="werkzeug"></div></section>
@@ -167,7 +172,9 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
         hilfe += `<button class="hilfe-knopf" type="button"${puls}${offen >= hoechsteHilfe(satz()) ? ' disabled' : ''}>${laterneSvg()}<span class="sr">${offen ? KIND.mehrHilfe : KIND.hilfe}</span></button>`;
       }
     }
-    werkzeug.innerHTML = hilfe + tonKnopf;
+    // Probe: Weg zur Seite „Alle Aufgaben“ (#/alle) – nur bis zur Regalseite C4
+    const alle = `<a class="leise-knopf alle-knopf" href="#/alle" aria-label="Alle Aufgaben">Alle</a>`;
+    werkzeug.innerHTML = hilfe + alle + tonKnopf;
   }
 
   function eingabeHtml(a: Aufgabe, antwort: Antwort | null, gesperrt: boolean, geistWert: Antwort | null = null): string {
@@ -286,11 +293,18 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     </div>`;
   }
 
+  /** gezählte Dinge wieder markieren (nach jedem Zeichnen; gehört die Marke zu einer anderen Aufgabe, ist sie weg) */
+  function zaehlMarken(): void {
+    if (gezaehlt && gezaehlt.wo !== eingabeOrt()) gezaehlt = null;
+    for (const e of panel.querySelectorAll('.feld > .aufgabe-bild [data-zaehl]')) e.classList.toggle('gezaehlt', !!gezaehlt?.nr.has(Number(e.getAttribute('data-zaehl'))));
+  }
+
   function zeichneAufgabe(): void {
     zeichneWerkzeug();
     if (ende()) return zeichneEnde();
     if (lernOffen()) {
       zeichneLernbeispiel();
+      zaehlMarken();
       gesetzt = null;
       return;
     }
@@ -313,6 +327,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
         ${p.zurueck ? `<p class="hinweis">${KIND.wartet}</p>` : ''}
       </div>
     </div>`;
+    zaehlMarken();
     gesetzt = null;
   }
 
@@ -405,6 +420,18 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       return alles();
     }
     if (ende()) return;
+    // Werkzeug „gezählt markieren“: ein Ding im eigenen Bild an- oder abhaken (nie im Kasten der ähnlichen Aufgabe)
+    const zaehlDing = t.closest('[data-zaehl]');
+    if (zaehlDing && t.closest('.feld > .aufgabe-bild')) {
+      const wo = eingabeOrt();
+      if (!gezaehlt || gezaehlt.wo !== wo) gezaehlt = { wo, nr: new Set() };
+      const nr = Number(zaehlDing.getAttribute('data-zaehl'));
+      if (gezaehlt.nr.has(nr)) gezaehlt.nr.delete(nr);
+      else gezaehlt.nr.add(nr);
+      zaehlDing.classList.toggle('gezaehlt', gezaehlt.nr.has(nr));
+      setzenTon();
+      return;
+    }
     const lern = lernOffen();
     const f = format();
     const wahlListe = lern ? lernSchritt().a.wahl : aufgabe().wahl;

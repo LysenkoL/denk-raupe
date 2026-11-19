@@ -240,6 +240,10 @@ button.zwilling-perle { cursor: pointer; touch-action: manipulation; }
 }
 .aufgabe-svg { display: block; width: 100%; height: auto; max-height: min(320px, 46dvh); overflow: visible; }
 .aufgabe-bild.tippbar [data-wahl] { cursor: pointer; }
+/* Werkzeug „gezählt markieren“ (Engine Bild): heller Ring, das Ding wird etwas blasser */
+.feld > .aufgabe-bild [data-zaehl] { cursor: pointer; }
+.aufgabe-bild [data-zaehl].gezaehlt .zaehl-ring { opacity: 1; }
+.aufgabe-bild [data-zaehl].gezaehlt .ding { opacity: 0.55; }
 .aufgabe-bild [data-wahl]:focus-visible { outline: none; }
 .aufgabe-bild [data-wahl]:focus-visible rect { stroke: var(--fokus); stroke-width: 5; }
 /* Teil ins Nest: 1,06 → 0,98 → 1; im Lernbeispiel kehrt ein falsches Teil sanft zurück */
@@ -392,6 +396,19 @@ button.zwilling-perle { cursor: pointer; touch-action: manipulation; }
 .satz.am-ende > .aufgabe { padding-bottom: calc(var(--unten) + var(--s4)); }
 
 /* Zwischenseiten (Welt und Pause, bis C1 und C6) */
+/* ---------- Probe „Alle Aufgaben“ (#/alle, nur für die Autorin, bis zur Regalseite C4) ---------- */
+.alle { max-width: 720px; margin: 0 auto; padding: calc(var(--oben) + var(--s4)) var(--s4) var(--s6); display: flex; flex-direction: column; gap: var(--s4); }
+.alle-kopf { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+.alle h1 { margin: 0; font-size: var(--t-frage); font-weight: 800; }
+.alle-hinweis { margin: 0; font-size: var(--t-klein); font-weight: 600; color: var(--tinte-leise); }
+.alle-liste { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--s3); }
+.alle-format { width: 100%; justify-content: flex-start; text-align: left; padding: var(--s2) var(--s4); font-size: var(--t-text); }
+.alle-nr { min-width: 2.2em; height: 2.2em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--stein); box-shadow: 0 3px 0 var(--stein-kante); font-size: var(--t-klein); }
+.alle-name { flex: 1; }
+.alle-pass { font-size: var(--t-klein); color: var(--tinte-leise); }
+/* Probe: Weg zur Seite „Alle“ am Ast (nur auf der Arbeitsverzweigung) */
+.werkzeug .alle-knopf { text-decoration: none; }
+
 .platzhalter { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: var(--s4); }
 .platzhalter-brett {
   display: flex; flex-direction: column; align-items: center; gap: var(--s4); padding: var(--s5); max-width: 420px; text-align: center;

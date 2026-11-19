@@ -8,6 +8,7 @@ import { aufgabeAus, lernbeispiel, stimmt, type Aufgabe, type FormatId, type Hil
 import { hilfePunkte, type Mauer } from '../src/aufgaben/zahlenmauer';
 import { setzeAntwort, vergleiche } from '../src/satz/vergleich';
 import { neueSitzung, neuesProfil, probePlan, PROBE_FORMATE, type Profil, type Sitzung } from '../src/satz/sitzung';
+import { probeSatzPlan, probeStufen } from '../src/screens/alle';
 import { gleich, type Antwort } from '../src/perlen/antwort';
 import { KIND } from '../src/i18n/kind';
 
@@ -1222,6 +1223,81 @@ describe('Stil (A9)', () => {
     await page.waitForSelector('.ende');
     // nichts davon hat einen neuen Satz begonnen
     expect((await gespeichert<Sitzung>(page, 'sitzung')).samen).toBe(samen);
+    await page.close();
+  });
+
+  /** Zahl-Formate der Gruppe Г1: Satz nur aus einem Format, Stufen 1 → 3 (wie auf der Probe-Seite #/alle) */
+  const G1: FormatId[] = ['wie-viele', 'rechenbild', 'rechenmaschine', 'groesser-kleiner', 'verdoppeln', 'klecks'];
+  for (const [name, w, h] of GERAETE)
+    it(`${name}: jedes Zahl-Format, jede Stufe bis 100 – Bild ganz zu sehen, Tippflächen, kein waagerechtes Scrollen`, async () => {
+      for (const id of G1) {
+        const s = neueSitzung(SAMEN, { zahlenraum: 100 }, probeSatzPlan(id));
+        const { page } = await oeffnen(w, h, { gespeichert: { sitzung: s, profil: bekanntesProfil() } });
+        for (let i = 0; i < s.aufgaben.length; i++) {
+          await page.click(`.perle[data-i="${i}"]`);
+          const p = await pruefen(page);
+          expect(p.fehler, `${id} Aufgabe ${i + 1}`).toEqual([]);
+          expect(p.scrollW).toBeLessThanOrEqual(w);
+          const bild = (await page.locator('.aufgabe .feld > .aufgabe-bild svg').boundingBox())!;
+          expect(bild.x).toBeGreaterThanOrEqual(0);
+          expect(bild.x + bild.width).toBeLessThanOrEqual(w + 0.5);
+          // das Bild ist groß genug zum Lesen: fast die ganze Breite des Papiers oder mindestens 180 px hoch
+          const papier = (await page.locator('.aufgabe .feld > .aufgabe-bild').boundingBox())!;
+          expect(bild.width >= (papier.width - 24) * 0.85 || bild.height >= 180, `${id} Aufgabe ${i + 1}: ${Math.round(bild.width)}×${Math.round(bild.height)}`).toBe(true);
+        }
+        await page.close();
+      }
+    });
+});
+
+describe('Probe-Seite „Alle Aufgaben“ (#/alle)', () => {
+  it('jedes Format ist da; ein Format → 5 Aufgaben nur dieses Formats, Stufen 1 → 3; zurück über „Alle“ am Ast', async () => {
+    const { page } = await oeffnen(360, 740);
+    await page.click('.alle-knopf');
+    await page.waitForSelector('.alle-liste');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+    const ids = await page.$$eval('.alle-format', (e) => e.map((x) => x.getAttribute('data-format')));
+    expect([...ids].sort()).toEqual(Object.keys(FORMATE).sort());
+    for (const h of await page.$$eval('.alle-format, .gemischt', (e) => e.map((x) => x.getBoundingClientRect().height))) expect(h).toBeGreaterThanOrEqual(48);
+    await page.click('.alle-format[data-format="klecks"]');
+    await page.waitForSelector('.perle');
+    await page.waitForTimeout(150);
+    const s = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(s.aufgaben.map((a) => a.format)).toEqual(Array(5).fill('klecks'));
+    expect(s.aufgaben.map((a) => a.stufe)).toEqual(probeStufen(3));
+    expect(probeStufen(3)).toEqual([1, 1, 2, 2, 3]);
+    expect(await page.$$eval('.raupe-zeile.kind .perle', (e) => e.length)).toBe(5);
+    // „Gemischter Satz“: das Profil dieser Seite hat noch keinen Satz – der allererste Satz hat 3 Aufgaben
+    await page.click('.alle-knopf');
+    await page.waitForSelector('.gemischt');
+    await page.click('.gemischt');
+    await page.waitForSelector('.perle');
+    await page.waitForTimeout(150);
+    const m = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(m.aufgaben).toHaveLength(3);
+    expect(new Set(m.aufgaben.map((a) => FORMATE[a.format].faehigkeit)).size).toBe(3);
+    await page.close();
+  });
+});
+
+describe('Werkzeug „gezählt markieren“ (Engine Bild)', () => {
+  it('ein Ding antippen: heller Ring; bleibt beim Eingeben der Zahl; die Antwort ändert sich nicht; andere Aufgabe: neu', async () => {
+    const s = neueSitzung(SAMEN, undefined, [{ format: 'wie-viele', stufe: 2 }, { format: 'wie-viele', stufe: 1 }, { format: 'muster', stufe: 1 }]);
+    const { page } = await oeffnen(360, 740, { gespeichert: { sitzung: s, profil: bekanntesProfil() } });
+    const ring = (k: number) => page.$eval(`.feld > .aufgabe-bild [data-zaehl="${k}"]`, (e) => [e.classList.contains('gezaehlt'), getComputedStyle(e.querySelector('.zaehl-ring')!).opacity]);
+    expect(await ring(0)).toEqual([false, '0']);
+    await page.click('.feld > .aufgabe-bild [data-zaehl="0"]');
+    await page.click('.feld > .aufgabe-bild [data-zaehl="2"]');
+    expect(await ring(0)).toEqual([true, '1']);
+    await page.click('[data-ziffer="4"]');
+    expect(await ring(0)).toEqual([true, '1']);
+    expect(await ring(2)).toEqual([true, '1']);
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).satz.perlen[0].antwort).toEqual({ art: 'zahl', wert: 4 });
+    // noch einmal antippen: der Ring geht weg
+    await page.click('.feld > .aufgabe-bild [data-zaehl="2"]');
+    expect(await ring(2)).toEqual([false, '0']);
+    await page.click('.perle[data-i="1"]');
+    expect(await ring(0)).toEqual([false, '0']);
     await page.close();
   });
 });

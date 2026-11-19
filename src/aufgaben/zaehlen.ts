@@ -102,7 +102,9 @@ export function ding(d: Ding, form: DingForm, farbe: DingFarbe, o: { nr?: number
   if (o.markiert) t += `<circle data-hilfe="schritt" cx="${d.x}" cy="${d.y + 1}" r="${DING_R + 4.5}" fill="${WEISS}" stroke="${LATERNE_KANTE}" stroke-width="3"/>`;
   t += `<g class="ding"${d.weg ? ' opacity="0.45"' : ''}>${dingGestalt(form, d.x, d.y, fill)}</g>`;
   if (d.weg) t += `<path data-zeichen="weg" d="M${d.x - DING_R - 2} ${d.y + DING_R + 2}L${d.x + DING_R + 2} ${d.y - DING_R - 2}" stroke="${TINTE}" stroke-width="4.5" stroke-linecap="round"/>`;
-  if (o.nr !== undefined) t += `<circle class="zaehl-ring" cx="${d.x}" cy="${d.y + 1}" r="${DING_R + 3.5}" fill="none" stroke="${WEISS}" stroke-width="4" opacity="0"/>`;
+  // heller Ring „gezählt“: unsichtbar, bis der Bildschirm die Klasse „gezaehlt“ setzt (app.css)
+  if (o.nr !== undefined)
+    t += `<g class="zaehl-ring" opacity="0"><circle cx="${d.x}" cy="${d.y + 1}" r="${DING_R + 5.5}" fill="none" stroke="${LATERNE_KANTE}" stroke-width="2.5"/><circle cx="${d.x}" cy="${d.y + 1}" r="${DING_R + 3}" fill="none" stroke="${WEISS}" stroke-width="3.5"/></g>`;
   return t + '</g>';
 }
 
