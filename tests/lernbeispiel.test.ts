@@ -24,6 +24,8 @@ import type { Messen } from '../src/aufgaben/messen';
 import { ergebnis, type Aufgabenfamilie } from '../src/aufgaben/aufgabenfamilie';
 import type { WelcheAufgabe } from '../src/aufgaben/welche-aufgabe';
 import type { Geheimschrift } from '../src/aufgaben/geheimschrift';
+import { ablesen, type Uhr } from '../src/aufgaben/uhr';
+import type { Geld } from '../src/aufgaben/geld';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -130,6 +132,11 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
   },
   /** Geheimschrift: Paare im Schlüssel, dann Länge der Schrift */
   geheimschrift: (b) => [(b as Geheimschrift).schluessel.length, (b as Geheimschrift).schrift.length],
+  // Gruppe Г2в
+  /** Uhr: volle Stunde vor halber */
+  uhr: (b) => [ablesen(b as Uhr)!.minute],
+  /** Geld: Zahl der Geldstücke */
+  geld: (b) => [(b as Geld).stuecke.length],
 };
 /** Zahl der Lösung (wie groß die Rechnung ist) */
 function antwortVon(id: FormatId, b: unknown): number {

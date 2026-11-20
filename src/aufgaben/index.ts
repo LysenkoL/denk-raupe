@@ -26,6 +26,9 @@ import { MESSEN } from './messen';
 import { AUFGABENFAMILIE } from './aufgabenfamilie';
 import { WELCHE_AUFGABE } from './welche-aufgabe';
 import { GEHEIMSCHRIFT } from './geheimschrift';
+// Gruppe Г2в
+import { UHR } from './uhr';
+import { GELD } from './geld';
 
 /**
  * Alle Formate. Jedes hier eingetragene Format kommt von selbst in die gemischten Sätze (src/satz/sitzung.ts,
@@ -59,4 +62,7 @@ export const FORMATE: Record<FormatId, Format<unknown>> = {
   aufgabenfamilie: AUFGABENFAMILIE as Format<unknown>,
   'welche-aufgabe': WELCHE_AUFGABE as Format<unknown>,
   geheimschrift: GEHEIMSCHRIFT as Format<unknown>,
+  // Gruppe Г2в
+  uhr: UHR as Format<unknown>,
+  geld: GELD as Format<unknown>,
 };

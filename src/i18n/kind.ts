@@ -86,6 +86,9 @@ export const KIND = {
     welcheAufgabeFamilie: 'Welche Aufgabe gehört dazu?',
     welcheAufgabePasst: 'Welche Aufgabe passt?',
     welcherBuchstabe: 'Welcher Buchstabe ist es?',
+    // Gruppe Г2в
+    wieSpaet: 'Wie spät ist es?',
+    wieVielEuro: 'Wie viel Euro sind es?',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {

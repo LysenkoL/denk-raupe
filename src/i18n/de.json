@@ -138,5 +138,13 @@
   "format.geheimschrift.name": "Geheimschrift",
   "format.geheimschrift.uebt": "Buchstaben erkennen und genau vergleichen. Im Schlüssel steht unter jedem Zeichen ein Buchstabe; das Kind sucht das markierte Zeichen. Auf der höchsten Stufe gibt es dieselbe Form in mehreren Farben – Form und Farbe müssen stimmen.",
   "format.geheimschrift.beispiel": "Markiert ist ein blauer Stern. Im Schlüssel steht unter dem blauen Stern ein M, unter dem roten Stern ein T: Die Antwort ist M.",
-  "format.geheimschrift.helfen": "Fragen Sie: „Wo ist dieses Zeichen im Schlüssel? Hat es auch dieselbe Farbe?“ Lassen Sie das Kind den Buchstaben selbst lesen."
+  "format.geheimschrift.helfen": "Fragen Sie: „Wo ist dieses Zeichen im Schlüssel? Hat es auch dieselbe Farbe?“ Lassen Sie das Kind den Buchstaben selbst lesen.",
+  "format.uhr.name": "Uhr",
+  "format.uhr.uebt": "Die Uhr lesen: erst volle und halbe Stunden, dann Viertelstunden. Auf der höchsten Stufe zeigt eine Sonne oder ein Mond die Tageszeit – nachmittags heißt 3 Uhr 15:00, abends 9 Uhr 21:00.",
+  "format.uhr.beispiel": "Der große Zeiger steht auf der 6, der kleine zwischen 7 und 8: Es ist halb 8, also 7:30 – nicht 8:30.",
+  "format.uhr.helfen": "Fragen Sie: „Wohin zeigt der große Zeiger? Zwischen welchen Zahlen steht der kleine?“ Eine echte Uhr zum Drehen hilft sehr. Nennen Sie die Uhrzeit nicht.",
+  "format.geld.name": "Geld",
+  "format.geld.uebt": "Mit Geld rechnen (in ganzen Euro): erst 1-€- und 2-€-Münzen zusammenzählen, dann Münzen und Scheine gemischt. Auf der höchsten Stufe wird bezahlt, und das Kind rechnet das Rückgeld aus.",
+  "format.geld.beispiel": "Ein Ball kostet 7 €, bezahlt wird mit einem 10-€-Schein: 3 € kommen zurück.",
+  "format.geld.helfen": "Fragen Sie: „Mit welchem Geldstück fängst du an?“ Beim Rückgeld: „Wie viel fehlt vom Preis bis zum Schein?“ Spielen Sie gern Kaufladen. Nennen Sie die Zahl nicht."
 }

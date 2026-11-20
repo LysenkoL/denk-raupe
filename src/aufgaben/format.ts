@@ -37,7 +37,10 @@ export type FormatId =
   | 'messen'
   | 'aufgabenfamilie'
   | 'welche-aufgabe'
-  | 'geheimschrift';
+  | 'geheimschrift'
+  // Gruppe Г2в
+  | 'uhr'
+  | 'geld';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';
