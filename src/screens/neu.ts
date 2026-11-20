@@ -76,6 +76,8 @@ function neuerPlan(nur: FormatId | null, samen: number): Aufgabe[] {
 const PFEIL = '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M29 11 L16 24 L29 37" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const MENUE = '<svg viewBox="0 0 48 48" aria-hidden="true"><g fill="currentColor"><rect x="9" y="12" width="30" height="6" rx="3"/><rect x="9" y="21" width="30" height="6" rx="3"/><rect x="9" y="30" width="30" height="6" rx="3"/></g></svg>';
 const LOESCHEN = '<svg viewBox="0 0 60 44" aria-hidden="true"><path d="M20 6 H50 a6 6 0 0 1 6 6 V32 a6 6 0 0 1 -6 6 H20 L5 22 Z" fill="#fff" stroke="#E0457B" stroke-width="3.5" stroke-linejoin="round"/><path d="M30 15 L42 29 M42 15 L30 29" stroke="#E0457B" stroke-width="5" stroke-linecap="round"/></svg>';
+/** Pfeil nach oben im hellen Kreis: „im Bild oben tippen“ */
+const TIPP = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="27" fill="#EAF2FF" stroke="#7F93B5" stroke-width="4"/><path d="M30 44 V18 M19 28 L30 17 L41 28" fill="none" stroke="#3B4A6B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const LEER = '<svg class="nz-perle" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="38" fill="rgba(255,255,255,.4)" stroke="#fff" stroke-width="5" stroke-dasharray="8.92 6"/></svg>';
 const BAUMHAUS = '<svg viewBox="0 0 120 110" aria-hidden="true"><rect x="52" y="58" width="16" height="46" rx="5" fill="#9A6A3F"/><ellipse cx="60" cy="104" rx="40" ry="6" fill="#7FCB45"/><circle cx="60" cy="40" r="34" fill="#57B533"/><circle cx="34" cy="50" r="22" fill="#7FCB45"/><circle cx="86" cy="50" r="22" fill="#7FCB45"/><circle cx="60" cy="30" r="22" fill="#8ED24F"/><rect x="44" y="44" width="32" height="26" rx="5" fill="#FFC21F"/><path d="M40 46 L60 30 L80 46 Z" fill="#FF7A59"/><rect x="55" y="54" width="10" height="16" rx="4" fill="#8B5CF6"/></svg>';
 const SZENE = `<svg class="nz-szene" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -187,6 +189,7 @@ export function renderNeu(app: HTMLElement): void {
         return `<button type="button" class="nz-taste nz-option${gleich(w, s.wahl[i]) ? ' gewaehlt' : ''}" data-k="${k}" aria-pressed="${gleich(w, s.wahl[i])}" aria-label="Antwort ${k + 1}"${z}>${wahlInhalt(w)}</button>`;
       }).join('')}</div>`;
     }
+    else if (art === 'bild') werkzeug = `<div class="nz-tipp">${TIPP}<span>${KIND.tippOben}</span></div>`;
     const w = entwurf(i);
     const key = w ? JSON.stringify(w) : null;
     let wechsel = '';

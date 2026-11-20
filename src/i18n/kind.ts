@@ -35,6 +35,8 @@ export const KIND = {
   bisBald: 'Bis bald!',
   zurueck: 'Zurück',
   loeschen: 'Löschen',
+  /** Lade bei Antwort im Bild (z. B. Wer ist es?): wohin getippt wird */
+  tippOben: 'Tippe im Bild, wer passt.',
   /** Zahl eingeben: Gruppe der Ziffernperlen und Plätze (für Screenreader) */
   zahlEingeben: 'Zahl eingeben',
   /** Plätze der Zahl, Zehner links, Einer rechts: Zeichen auf dem Holz und Name zum Vorlesen */
