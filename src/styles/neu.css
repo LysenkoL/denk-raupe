@@ -15,7 +15,7 @@
   --unten: calc(12px + env(safe-area-inset-bottom, 0px));
   position: fixed; inset: 0; overflow: hidden; color: var(--text); font-family: var(--font); background: #3E5F9A;
   display: grid; gap: var(--g);
-  padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px), calc((100vw - 1360px) / 2)) var(--unten) max(12px, env(safe-area-inset-left, 0px), calc((100vw - 1360px) / 2));
+  padding: calc(14px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px), calc((100vw - 1360px) / 2)) var(--unten) max(12px, env(safe-area-inset-left, 0px), calc((100vw - 1360px) / 2));
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas: "ast" "tisch";
@@ -57,10 +57,10 @@
 
 /* ── Ast: Kopf und Nester auf einer Achse (Werte aus Probe 7) ── */
 .nz-ast { grid-area: ast; align-self: start; justify-self: center; display: flex; flex-direction: column; align-items: center; gap: calc(var(--p) * .35); min-width: 0;
-  padding: 2px 6px 6px; border: 2px solid transparent; border-radius: 26px; transition: background-color .4s, box-shadow .4s, border-color .4s; }
+  padding: 2px 16px 6px 6px; border: 2px solid transparent; border-radius: 26px; transition: background-color .4s, box-shadow .4s, border-color .4s; }
 .nz-zwilling[hidden] { display: none; }
-.nz-reihe { position: relative; display: flex; align-items: flex-end; padding-right: 10px; }
-.nz-reihe::before { content: ""; position: absolute; left: calc(var(--p) * .9); right: -4px; bottom: calc(var(--p) * .2); height: calc(var(--p) * .26); border-radius: 999px;
+.nz-reihe { position: relative; display: flex; align-items: flex-end; }
+.nz-reihe::before { content: ""; position: absolute; left: calc(var(--p) * .9); right: calc(var(--p) * .3); /* Ast endet unter der letzten Perle */ bottom: calc(var(--p) * .2); height: calc(var(--p) * .26); border-radius: 999px;
   background: linear-gradient(180deg, #B07A4C, #8A5730 55%, #67391C); box-shadow: 0 0 0 2px rgba(255, 255, 255, .55), 0 3px 4px rgba(50, 25, 5, .3); }
 .nz-kopf { width: calc(var(--p) * var(--kopf)); height: calc(var(--p) * var(--kopf) * 1.19); object-fit: contain; object-position: right bottom; flex: none; position: relative; z-index: 3;
   margin-right: calc(var(--p) * -.1); margin-bottom: calc(var(--p) * .14); pointer-events: none;
@@ -78,12 +78,11 @@
 .nz-slot.neu .nz-perle { animation: nz-setzen .32s var(--feder); }
 @keyframes nz-setzen { from { transform: scale(.6) } }
 .nz[data-phase="vergleich"] .nz-slot.zu-mark::after { content: none; } /* beim Vergleichen zeigen nur die Blätter, was offen ist */
-.nz-reihe:has(> .platz)::before { right: calc(max(44px, var(--p) * .9) + 4px); } /* ohne Zwilling-Knopf endet der Ast an der letzten Perle */
 .nz-slot.zu-mark::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 4px dashed var(--wahl); z-index: 4; pointer-events: none; }
-.nz-ueberblick { width: max(44px, calc(var(--p) * .9)); height: max(44px, calc(var(--p) * .9)); margin-left: 10px; align-self: center; border-radius: 50%; display: grid; place-items: center;
-  background: radial-gradient(circle at 40% 30%, #FFF4C8, #FFC21F); border: 3px solid #fff; box-shadow: 0 4px 0 #D99400, 0 6px 10px var(--schatten); }
-.nz-ueberblick.platz { visibility: hidden; background: none; border: 0; box-shadow: none; }
-.nz-ueberblick img { width: 86%; height: 86%; object-fit: contain; object-position: center bottom; }
+/* Zwilling-Knopf, wenn alle Perlen da sind: links oben auf dem Brett, gegenüber von „Hilfe“ */
+.nz-ueberblick { position: absolute; top: calc(var(--knopf) * -.3); left: calc(var(--knopf) * -.18); z-index: 5; }
+.nz-ueberblick .nz-rund { border: 4px solid #fff; background: radial-gradient(circle at 40% 30%, #FFF4C8, #FFC21F); box-shadow: 0 4px 0 #D99400, 0 8px 12px -3px rgba(120, 80, 0, .45); }
+.nz-ueberblick img { width: 84%; height: 84%; object-fit: contain; object-position: center bottom; }
 .nz-blatt { position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: contain; z-index: 3; pointer-events: none; transform: rotate(-12deg);
   transition: transform .8s cubic-bezier(.22, 1, .36, 1), opacity .7s ease-out; filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 2px rgba(30, 60, 10, .3)); }
 .nz-slot:nth-child(odd) .nz-blatt { transform: rotate(8deg) scaleX(-1); }
@@ -151,16 +150,15 @@
 .nz-abgabe.markiert::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; background: rgba(120, 170, 255, .35); box-shadow: 0 0 0 3px rgba(80, 140, 255, .6); }
 
 /* ── Bereit, Vergleich, Ende ── */
-.nz-bereit { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: min(18px, 2.5vh); text-align: center; }
-.nz-bereit > :not(.nz-regen) { position: relative; z-index: 21; }
 .nz-vergleichen { min-height: 84px; padding: 0 48px; border-radius: 999px; font-size: clamp(26px, 4vw, 34px); font-weight: 800; color: #3A2400; position: relative; overflow: hidden; border: 4px solid #fff;
   background: linear-gradient(180deg, #FFE27A, #FFC21F 55%, #F2A400); box-shadow: 0 8px 0 #C27D00, 0 16px 24px var(--schatten); animation: nz-lockt 2.4s ease-in-out infinite; }
 .nz-vergleichen:active { transform: translateY(4px); box-shadow: 0 3px 0 #C27D00; }
 @keyframes nz-lockt { 50% { transform: translateY(-5px) } }
 .nz-karte { grid-column: 1 / -1; grid-row: 1 / -1; place-self: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
   width: min(460px, 100%); padding: 24px 28px 30px; border: 3px solid; border-radius: 28px; text-align: center; animation: nz-auf .35s var(--feder); }
+.nz-karte.ende { width: min(640px, 100%); gap: min(18px, 2.5vh); padding: 22px 20px 26px; }
 .nz-karte-text { margin: 0; font-size: clamp(22px, min(6vw, 3.6vh), 30px); font-weight: 800; }
-.nz-vtext { grid-column: 1 / -1; grid-row: 1 / -1; align-self: end; justify-self: center; margin: 0; max-width: min(560px, 100%); padding: 12px 22px;
+.nz-vtext { grid-column: 1 / -1; grid-row: 1 / -1; align-self: center; justify-self: center; margin: 0; max-width: min(560px, 100%); padding: 12px 22px;
   border: 2px solid; border-radius: 22px; text-align: center; font-size: clamp(18px, min(5vw, 3.2vh), 26px); font-weight: 800; text-wrap: balance; animation: nz-auf .35s ease-out; }
 .nz-zwilling.zu { animation: nz-zu .3s ease-in forwards; }
 @keyframes nz-zu { to { transform: scale(.9) translateY(-30px); opacity: 0 } }

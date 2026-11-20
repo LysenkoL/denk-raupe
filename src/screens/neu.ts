@@ -102,8 +102,6 @@ const MENUE = '<svg viewBox="0 0 48 48" aria-hidden="true"><g fill="currentColor
 const LOESCHEN = '<svg viewBox="0 0 60 44" aria-hidden="true"><path d="M20 6 H50 a6 6 0 0 1 6 6 V32 a6 6 0 0 1 -6 6 H20 L5 22 Z" fill="#fff" stroke="#E0457B" stroke-width="3.5" stroke-linejoin="round"/><path d="M30 15 L42 29 M42 15 L30 29" stroke="#E0457B" stroke-width="5" stroke-linecap="round"/></svg>';
 /** Pfeil nach oben im hellen Kreis: „im Bild oben tippen“ */
 const TIPP = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="27" fill="#EAF2FF" stroke="#7F93B5" stroke-width="4"/><path d="M30 44 V18 M19 28 L30 17 L41 28" fill="none" stroke="#3B4A6B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-/** unsichtbarer Platz in Breite des Zwilling-Knopfs: beide Reihen bleiben gleich breit und stehen still */
-const PLATZ = '<span class="nz-ueberblick platz" aria-hidden="true"></span>';
 const LEER = '<svg class="nz-perle" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="38" fill="rgba(255,255,255,.4)" stroke="#fff" stroke-width="5" stroke-dasharray="8.92 6"/></svg>';
 const BAUMHAUS = '<svg viewBox="0 0 120 110" aria-hidden="true"><rect x="52" y="58" width="16" height="46" rx="5" fill="#9A6A3F"/><ellipse cx="60" cy="104" rx="40" ry="6" fill="#7FCB45"/><circle cx="60" cy="40" r="34" fill="#57B533"/><circle cx="34" cy="50" r="22" fill="#7FCB45"/><circle cx="86" cy="50" r="22" fill="#7FCB45"/><circle cx="60" cy="30" r="22" fill="#8ED24F"/><rect x="44" y="44" width="32" height="26" rx="5" fill="#FFC21F"/><path d="M40 46 L60 30 L80 46 Z" fill="#FF7A59"/><rect x="55" y="54" width="10" height="16" rx="4" fill="#8B5CF6"/></svg>';
 
@@ -186,9 +184,6 @@ export function renderNeu(app: HTMLElement): void {
       if (s.runden > 0 && offen(i) && !s.geaendert[i]) cls.push('zu-mark');
       h += `<button type="button" class="${cls.join(' ')}" data-slot="${i}" aria-label="${KIND.perleName(i + 1, null)}"><i class="nz-treffer"></i><span class="nz-nest"></span>${s.antwort[i] ? perle(s.antwort[i]) : ''}</button>`;
     });
-    const alleDa = s.antwort.every((a, k) => a !== null || !offen(k));
-    if (alleDa && s.phase === 'loesen') h += `<button type="button" class="nz-ueberblick" data-ueberblick="1" aria-label="${KIND.vergleichen}"><img src="${zwillingBild}" alt=""></button>`;
-    else h += PLATZ;
     return h;
   }
   function korbZeichnen(): void {
@@ -242,16 +237,19 @@ export function renderNeu(app: HTMLElement): void {
       const innen = `<p class="nz-jubel">${KIND.fertigTitel}</p><div class="nz-ende">
             <button type="button" class="nz-kachel" data-gehe="welt">${BAUMHAUS}<span>${KIND.welt}</span></button>
             <button type="button" class="nz-kachel haupt" data-noch="1"><img src="${raupeBild}" alt=""><span>${KIND.neuerSatz}</span></button>
-            <button type="button" class="nz-kachel" data-gehe="pause"><img src="${raupeLiegtBild}" alt=""><span>Pause</span></button></div>${regen()}`;
+            <button type="button" class="nz-kachel" data-gehe="pause"><img src="${raupeLiegtBild}" alt=""><span>Pause</span></button></div>`;
       gezeigt = -1;
-      tisch.innerHTML = `<div class="nz-brett voll"><div class="nz-bereit">${innen}</div></div>`;
+      // Blätterregen außerhalb der Glaskarte: backdrop-filter würde ihn sonst in der Karte einsperren
+      tisch.innerHTML = `<div class="nz-karte ende">${innen}</div>${regen()}`;
       return;
     }
     const i = s.aktuell, a = s.aufgaben[i], f = format(i);
     const notiz = s.runden > 0 && offen(i) && !s.geaendert[i] ? 'Hier ist noch ein Blatt. Schau noch einmal.' : '';
     const bild = f.zeichne(a.bedingung, { hilfe: s.hilfe ? 2 : 0, gewaehlt: entwurf(i) });
     const frisch = gezeigt !== i; gezeigt = i;
-    tisch.innerHTML = `<div class="nz-brett${frisch ? ' frisch' : ''}"><div class="nz-frage-zeile"><h1 class="nz-frage">${KIND.auftrag[f.auftrag]}</h1>
+    const alleDa = s.antwort.every((x, k) => x !== null || !offen(k));
+    const ueberblick = alleDa ? `<button type="button" class="nz-ueberblick" data-ueberblick="1" aria-label="${KIND.vergleichen}"><span class="nz-rund"><img src="${zwillingBild}" alt=""></span></button>` : '';
+    tisch.innerHTML = `<div class="nz-brett${frisch ? ' frisch' : ''}"><div class="nz-frage-zeile">${ueberblick}<h1 class="nz-frage">${KIND.auftrag[f.auftrag]}</h1>
       <button class="nz-laterne" type="button" data-hilfe="1" aria-pressed="${s.hilfe}"><span class="nz-rund"><img src="${laterneBild}" alt=""></span><span class="nz-name">${KIND.hilfe}</span></button></div>
       <div class="nz-bild" id="nz-bild">${bild}</div>${notiz ? `<p class="nz-hinweis">${notiz}</p>` : ''}</div>${ladeHtml(i)}`;
   }
@@ -326,7 +324,7 @@ export function renderNeu(app: HTMLElement): void {
       const zu = s.blatt[i] === 'zu';
       h += `<span class="nz-slot" data-gslot="${i}" style="--i:${i + 1}"><span class="nz-nest"></span>${perle(l)}<img class="nz-blatt${zu ? '' : ' weg'}" src="${s.blatt[i] === 'gold' ? blattGoldBild : blattBild}" alt=""></span>`;
     });
-    zwilling.innerHTML = h + PLATZ;
+    zwilling.innerHTML = h;
     zwilling.className = 'nz-reihe nz-zwilling kriecht'; zwilling.hidden = false;
     tisch.innerHTML = `<p class="nz-vtext" aria-live="polite">${KIND.zwillingKommt}</p>`;
     const zeile = tisch.querySelector<HTMLElement>('.nz-vtext')!;
@@ -412,11 +410,11 @@ export function renderNeu(app: HTMLElement): void {
     // Ast: im Querformat zwischen den Knöpfen oben, hochkant über die ganze Breite (die Knöpfe sind unten)
     const astW = (quer ? W - 2 * knopf - knopf * 1.9 - 40 : W) - 16; // 16: Glasrand des Vergleichs (Innenabstand + Rand)
     const n = s ? s.aufgaben.length : SATZ;
-    const kopf = quer || niedrig ? 1.4 : 1.65;
-    // Reihe = Kopf (kopf·p − 0,1·p) + n Nester (p + 8 % Lücke, das erste ohne) + 10 px rechts + Zwilling-Knopf (max(44 px, 0,9·p) + 10 px)
+    const kopf = quer || niedrig ? 1.4 : 1.7;
+    // Reihe = Kopf (kopf·p − 0,1·p) + n Nester (p + 8 % Lücke, das erste ohne); der Ast endet an der letzten Perle
     const glieder = kopf - 0.1 + n * 1.08 - 0.08;
-    const breit = Math.min((astW - 20 - 44) / glieder, (astW - 20) / (glieder + 0.9));
-    const p = Math.max(28, Math.min(84, breit, H * (niedrig ? 0.13 : quer ? 0.085 : 0.075)));
+    const breit = (astW - 18) / glieder;
+    const p = Math.max(28, Math.min(84, breit, H * (niedrig ? 0.13 : quer ? 0.085 : 0.06)));
     root.style.setProperty('--kopf', String(kopf));
     const ladeB = quer ? Math.min(480, Math.max(300, W * 0.34)) : Math.min(W, 640, Math.max(470, W * 0.62));
     const taste = Math.max(44, Math.min(84, (ladeB - 54) / 5.95, H * (niedrig ? 0.125 : quer ? 0.1 : 0.062)));

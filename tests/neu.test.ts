@@ -104,6 +104,23 @@ describe('#/neu', () => {
     await page.close();
   });
 
+  it('der Ast endet an der letzten Perle; der Zwilling-Knopf liegt auf dem Brett, nicht in der Reihe', async () => {
+    const page = await oeffnen(390, 844);
+    const [ast, perle] = await page.evaluate(() => {
+      const r = document.querySelector('#nz-reihe')!, a = getComputedStyle(r, '::before');
+      const letzte = [...r.querySelectorAll('.nz-slot')].pop()!.getBoundingClientRect();
+      return [r.getBoundingClientRect().right - parseFloat(a.right), letzte.right];
+    });
+    expect(ast).toBeLessThanOrEqual(perle);
+    for (let k = 0; k < 6; k++) { await antworten(page); await page.click('[data-abgabe]'); await page.waitForTimeout(400); }
+    await page.click('[data-slot="0"]', { force: true }); await page.waitForTimeout(400);
+    expect(await page.locator('#nz-reihe .nz-ueberblick').count()).toBe(0);
+    expect(await page.locator('.nz-brett .nz-ueberblick').count()).toBe(1);
+    await page.click('[data-ueberblick]');
+    expect(await page.locator('[data-vergleichen]').count()).toBe(1);
+    await page.close();
+  });
+
   it('leere Perle schickt nichts; „Zurück“ fragt zuerst', async () => {
     const page = await oeffnen(412, 800);
     await page.click('[data-abgabe]');
