@@ -116,8 +116,10 @@ describe('#/neu', () => {
     await page.click('[data-slot="0"]', { force: true }); await page.waitForTimeout(400);
     expect(await page.locator('#nz-reihe .nz-ueberblick').count()).toBe(0);
     expect(await page.locator('.nz-brett .nz-ueberblick').textContent()).toBe('Vergleichen');
+    // ein Tipp genügt: es wird sofort verglichen, ohne zweite Karte „Vergleichen“
     await page.click('[data-ueberblick]');
-    expect(await page.locator('[data-vergleichen]').count()).toBe(1);
+    expect(await page.locator('[data-vergleichen]').count()).toBe(0);
+    expect(await page.locator('.nz-zwilling:not([hidden])').count()).toBe(1);
     await page.close();
   });
 

@@ -381,7 +381,8 @@ export function renderNeu(app: HTMLElement): void {
     if (d.gehe) { location.hash = `#/${d.gehe}`; return; }
     if (d.noch) { start(); return; }
     if (s.fliegt || s.phase === 'vergleich') return;
-    if (d.ueberblick) { s.phase = 'bereit'; zeichnen(); return; }
+    // der Zwilling-Knopf vergleicht sofort – das Kind hat schon einmal „Vergleichen“ gedrückt, keine zweite Frage
+    if (d.ueberblick) { vergleichen(); return; }
     if (d.slot !== undefined) { const i = Number(d.slot); if (offen(i)) oeffne(i, true); return; }
     if (d.vergleichen) { vergleichen(); return; }
     if (s.phase !== 'loesen') return;
