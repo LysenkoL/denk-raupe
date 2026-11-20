@@ -151,6 +151,9 @@
 .nz-option { width: calc(var(--taste) * 1.25); max-width: 23%; border-radius: calc(var(--taste) * .32); }
 .nz-option svg { width: 70%; height: 70%; }
 .nz-wahlzahl { font-size: calc(var(--taste) * .62); }
+/* Rechnung als Perle (Nr. 89, 92): breitere Kachel, kleinere Schrift, eine Zeile */
+.nz-option:has(.nz-wahlausdruck) { width: calc(var(--taste) * 2.3); max-width: 24%; aspect-ratio: auto; height: calc(var(--taste) * 1.25); }
+.nz-wahlausdruck { font-size: calc(var(--taste) * .4); white-space: nowrap; }
 .nz-option.gewaehlt { transform: translateY(calc(var(--taste) * -.11)); --rand: var(--wahl); --kante: #D98A00;
   box-shadow: 0 calc(var(--taste) * .2) 0 #D98A00, 0 0 0 calc(var(--taste) * .1) rgba(255, 176, 0, .25), 0 calc(var(--taste) * .3) calc(var(--taste) * .25) calc(var(--taste) * -.05) rgba(160, 100, 0, .35); }
 .nz-ablage { display: grid; place-items: center; width: 100%; min-height: calc(var(--knopf) + 8px); margin-top: calc(var(--ab) * -.18); position: relative; z-index: 2; }

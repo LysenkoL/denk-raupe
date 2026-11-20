@@ -3,7 +3,7 @@ import { FORMATE } from '../aufgaben';
 import { aufgabeAus, lernbeispiel, lernPruefen, type Aufgabe, type HilfeStufe } from '../aufgaben/format';
 import { KIND } from '../i18n/kind';
 import { gleich, type Antwort } from '../perlen/antwort';
-import { perlenBild } from '../perlen/perle';
+import { ausdruck, perlenBild } from '../perlen/perle';
 import { formPfad, perleSvg } from '../perlen/maler';
 import { FORM_FARBEN, ZIFFER_KANTEN } from '../design/farbe';
 import { GLAS, KACHEL_RAND } from '../design/glas';
@@ -113,6 +113,8 @@ function farbStil(d: number): string {
 /** Inhalt einer Wahlkachel: Zahl als Ziffer, Form als Form mit dunklem Umriss wie im Bild der Aufgabe (Gelb auf Weiß), sonst die Perle */
 function wahlInhalt(a: Antwort): string {
   if (a.art === 'zahl') return `<span class="nz-wahlzahl">${a.wert}</span>`;
+  if (a.art === 'buchstabe') return `<span class="nz-wahlzahl">${a.wert}</span>`;
+  if (a.art === 'ausdruck') return `<span class="nz-wahlzahl nz-wahlausdruck">${ausdruck(a.links, a.zeichen, a.rechts)}</span>`;
   if (a.art === 'form') {
     const c = FORM_FARBEN[a.farbe] ?? '#888';
     return `<svg viewBox="0 0 60 60" aria-hidden="true">${formPfad(a.form, 30, 31, a.klein ? 14 : 22, c)}</svg>`;

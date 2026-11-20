@@ -122,5 +122,21 @@
   "format.oben-unten.name": "Oben, unten, links, rechts",
   "format.oben-unten.uebt": "Richtungen und Wege: Die Raupe geht für jeden Pfeil einen Stein weiter. Erst ein Pfeil, dann zwei, auf der höchsten Stufe drei auf einem größeren Feld. Links und rechts zu unterscheiden ist ein wichtiger Teil.",
   "format.oben-unten.beispiel": "Pfeile: nach oben, dann nach rechts. Die Raupe geht einen Stein hoch und einen nach rechts; dort liegt ein rotes Dreieck.",
-  "format.oben-unten.helfen": "Das Kind kann den Weg mit dem Finger gehen: „Wohin zeigt der erste Pfeil?“ Bei links und rechts hilft die Frage: „Mit welcher Hand malst du?“ Gehen Sie den Weg nicht vor."
+  "format.oben-unten.helfen": "Das Kind kann den Weg mit dem Finger gehen: „Wohin zeigt der erste Pfeil?“ Bei links und rechts hilft die Frage: „Mit welcher Hand malst du?“ Gehen Sie den Weg nicht vor.",
+  "format.messen.name": "Messen",
+  "format.messen.uebt": "Längen mit dem Lineal messen. Erst beginnt das Stäbchen bei 0 und jede Zahl steht am Lineal; dann stehen nur 0, 5, 10 und 15 da; auf der höchsten Stufe beginnt das Stäbchen nicht bei 0. Wichtig: Gemessen wird ab der 0, nicht ab dem Rand des Lineals.",
+  "format.messen.beispiel": "Das Stäbchen beginnt bei 2 und endet bei 9: Es ist 7 cm lang.",
+  "format.messen.helfen": "Fragen Sie: „Wo fängt das Stäbchen an? Wo hört es auf?“ Das Kind kann die Zentimeter-Abstände zählen. Messen Sie gern zu Hause mit einem echten Lineal nach. Nennen Sie die Zahl nicht.",
+  "format.aufgabenfamilie.name": "Aufgabenfamilie",
+  "format.aufgabenfamilie.uebt": "Zusammenhänge zwischen Aufgaben: Aus drei Zahlen (3, 7, 10) entstehen vier Aufgaben – Tauschaufgabe 7 + 3 und Umkehraufgaben 10 − 3, 10 − 7. Erst wird die Tauschaufgabe gesucht, dann die Umkehraufgabe; bei Zahlenraum 100 auch mit Mal und Geteilt.",
+  "format.aufgabenfamilie.beispiel": "Auf dem Schild: 4 + 5 = 9. Zur Wahl: 9 − 5, 9 + 4, 5 − 4, 8 − 5. Nur 9 − 5 ist aus denselben drei Zahlen und stimmt.",
+  "format.aufgabenfamilie.helfen": "Fragen Sie: „Welche drei Zahlen stehen auf dem Schild? Benutzt diese Aufgabe genau diese Zahlen? Stimmt sie?“ Zeigen Sie nicht auf die Lösung.",
+  "format.welche-aufgabe.name": "Welche Aufgabe passt?",
+  "format.welche-aufgabe.uebt": "Rechengeschichten in Aufgaben übersetzen: Was mit dem Pfeil kommt, kommt dazu; was durchgestrichen ist, geht weg. Auf der höchsten Stufe sind alle Aufgaben zur Wahl aus denselben Zahlen gebaut – das Zeichen muss zur Handlung passen.",
+  "format.welche-aufgabe.beispiel": "Fünf Sterne liegen da, zwei sind durchgestrichen. Zur Wahl: 5 − 2, 5 + 2, 7 − 2. Es passt 5 − 2.",
+  "format.welche-aufgabe.helfen": "Lassen Sie das Kind die Geschichte erzählen: „Wie viele sind am Anfang da? Was passiert dann?“ Nennen Sie die Aufgabe nicht.",
+  "format.geheimschrift.name": "Geheimschrift",
+  "format.geheimschrift.uebt": "Buchstaben erkennen und genau vergleichen. Im Schlüssel steht unter jedem Zeichen ein Buchstabe; das Kind sucht das markierte Zeichen. Auf der höchsten Stufe gibt es dieselbe Form in mehreren Farben – Form und Farbe müssen stimmen.",
+  "format.geheimschrift.beispiel": "Markiert ist ein blauer Stern. Im Schlüssel steht unter dem blauen Stern ein M, unter dem roten Stern ein T: Die Antwort ist M.",
+  "format.geheimschrift.helfen": "Fragen Sie: „Wo ist dieses Zeichen im Schlüssel? Hat es auch dieselbe Farbe?“ Lassen Sie das Kind den Buchstaben selbst lesen."
 }

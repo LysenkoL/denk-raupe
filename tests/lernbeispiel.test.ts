@@ -20,6 +20,10 @@ import { summe, type Wuerfelbau } from '../src/aufgaben/wuerfelbau';
 import type { ZaehlBild } from '../src/aufgaben/zaehl-bild';
 import type { Plan } from '../src/aufgaben/plan';
 import type { ObenUnten } from '../src/aufgaben/oben-unten';
+import type { Messen } from '../src/aufgaben/messen';
+import { ergebnis, type Aufgabenfamilie } from '../src/aufgaben/aufgabenfamilie';
+import type { WelcheAufgabe } from '../src/aufgaben/welche-aufgabe';
+import type { Geheimschrift } from '../src/aufgaben/geheimschrift';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -114,6 +118,18 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
   },
   /** Oben, unten, links, rechts: Zahl der Pfeile, dann der Steine */
   'oben-unten': (b) => [(b as ObenUnten).pfeile.length, (b as ObenUnten).felder.length],
+  // Gruppe Г2б
+  /** Messen: Länge des Stäbchens */
+  messen: (b) => [(b as Messen).laenge],
+  /** Aufgabenfamilie: Zahl der Perlen, dann Ergebnis der Aufgabe */
+  aufgabenfamilie: (b) => [(b as Aufgabenfamilie).perlen.length, ergebnis((b as Aufgabenfamilie).aufgabe) ?? 0],
+  /** Welche Aufgabe passt?: Zahl der Perlen, dann Dinge im Bild */
+  'welche-aufgabe': (b) => {
+    const w = b as WelcheAufgabe;
+    return [w.perlen.length, w.da + (w.art === 'dazu' ? w.aenderung : 0)];
+  },
+  /** Geheimschrift: Paare im Schlüssel, dann Länge der Schrift */
+  geheimschrift: (b) => [(b as Geheimschrift).schluessel.length, (b as Geheimschrift).schrift.length],
 };
 /** Zahl der Lösung (wie groß die Rechnung ist) */
 function antwortVon(id: FormatId, b: unknown): number {

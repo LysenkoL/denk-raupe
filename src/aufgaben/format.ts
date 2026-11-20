@@ -32,7 +32,12 @@ export type FormatId =
   | 'zaehl-bild'
   | 'ecken-seiten'
   | 'plan'
-  | 'oben-unten';
+  | 'oben-unten'
+  // Gruppe Г2б
+  | 'messen'
+  | 'aufgabenfamilie'
+  | 'welche-aufgabe'
+  | 'geheimschrift';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';

@@ -81,6 +81,11 @@ export const KIND = {
     wieVieleWuerfel: 'Wie viele Würfel sind es?',
     wasLiegtImFeld: 'Was liegt in diesem Feld?',
     wasLiegtDort: 'Was liegt dort?',
+    // Gruppe Г2б
+    wieLang: 'Wie lang ist es?',
+    welcheAufgabeFamilie: 'Welche Aufgabe gehört dazu?',
+    welcheAufgabePasst: 'Welche Aufgabe passt?',
+    welcherBuchstabe: 'Welcher Buchstabe ist es?',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {

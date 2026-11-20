@@ -21,6 +21,11 @@ import { ZAEHL_BILD } from './zaehl-bild';
 import { ECKEN_SEITEN } from './ecken-seiten';
 import { PLAN } from './plan';
 import { OBEN_UNTEN } from './oben-unten';
+// Gruppe Г2б
+import { MESSEN } from './messen';
+import { AUFGABENFAMILIE } from './aufgabenfamilie';
+import { WELCHE_AUFGABE } from './welche-aufgabe';
+import { GEHEIMSCHRIFT } from './geheimschrift';
 
 /**
  * Alle Formate. Jedes hier eingetragene Format kommt von selbst in die gemischten Sätze (src/satz/sitzung.ts,
@@ -49,4 +54,9 @@ export const FORMATE: Record<FormatId, Format<unknown>> = {
   'ecken-seiten': ECKEN_SEITEN as Format<unknown>,
   plan: PLAN as Format<unknown>,
   'oben-unten': OBEN_UNTEN as Format<unknown>,
+  // Gruppe Г2б
+  messen: MESSEN as Format<unknown>,
+  aufgabenfamilie: AUFGABENFAMILIE as Format<unknown>,
+  'welche-aufgabe': WELCHE_AUFGABE as Format<unknown>,
+  geheimschrift: GEHEIMSCHRIFT as Format<unknown>,
 };
