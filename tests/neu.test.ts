@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
  * Neuer Satzbildschirm nach Probe 7c (#/neu) im echten Browser: Fenster der Aufgabe, Lade und Blatt bleiben
  * in allen Aufgaben gleich groß und an derselben Stelle; nur die Perle schickt die Antwort; nichts scrollt;
  * der Zwilling erscheint erst beim Vergleichen; „Zurück“ fragt zuerst.
+ * Облик 20.11.2026: голова гусеницы на одном месте во всех фазах; «Zurück» и «Menü» не заходят на лоток и лист.
  */
 const GERAETE: [number, number][] = [[360, 640], [412, 800], [640, 360], [800, 1280], [1280, 800]];
 
@@ -36,6 +37,17 @@ const lage = (page: Page) => page.evaluate(() => ['.nz-brett', '.nz-werkzeug', '
   return [r.left, r.top, r.width, r.height].map(Math.round).join(',');
 }).join(' | '));
 const scrollt = (page: Page) => page.evaluate(() => document.documentElement.scrollHeight > innerHeight + 1 || document.documentElement.scrollWidth > innerWidth + 1);
+/** Kopf der Raupe des Kindes: Lage und Größe (gerundet) */
+const kopf = (page: Page) => page.evaluate(() => {
+  const r = document.querySelector('#nz-reihe .nz-kopf')!.getBoundingClientRect();
+  return [r.left, r.top, r.width, r.height].map(Math.round).join(',');
+});
+/** überlappen sich zwei Rechtecke? */
+const ueber = (page: Page, a: string, b: string) => page.evaluate(([a, b]) => {
+  const p = document.querySelector(a)?.getBoundingClientRect(), q = document.querySelector(b)?.getBoundingClientRect();
+  if (!p || !q) return false;
+  return p.left < q.right && q.left < p.right && p.top < q.bottom && q.top < p.bottom;
+}, [a, b]);
 /** irgendeine Antwort geben: Zahl, Wahl oder Tipp ins Bild */
 async function antworten(page: Page): Promise<void> {
   if (await page.$('.nz-tasten')) await page.click('[data-ziffer="7"]');
@@ -50,9 +62,13 @@ describe('#/neu', () => {
       const n = await page.locator('#nz-reihe .nz-slot').count();
       expect(n).toBe(6);
       const erste = await lage(page);
+      const raupe = await kopf(page);
       for (let k = 0; k < n; k++) {
         expect(await lage(page)).toBe(erste);
+        expect(await kopf(page)).toBe(raupe);
         expect(await scrollt(page)).toBe(false);
+        // die Knöpfe unten (hochkant) liegen neben Lade und Blatt, nie darauf
+        for (const k2 of ['[data-zurueck]', '[data-menue]']) for (const z of ['.nz-werkzeug', '.nz-schale']) expect(await ueber(page, k2, z)).toBe(false);
         await antworten(page);
         // nur die Perle schickt: das Nest bleibt leer, bis die Perle getippt wird
         expect(await page.locator(`[data-slot="${k}"] .nz-perle`).count()).toBe(0);
@@ -62,13 +78,31 @@ describe('#/neu', () => {
         expect(await page.locator(`[data-slot="${k}"] .nz-perle`).count()).toBe(1);
       }
       // beim Lösen kein Zwilling; beim Vergleichen kriecht er auf seinen Ast
-      expect(await page.locator('.nz-zwilling').count()).toBe(0);
+      expect(await page.locator('.nz-zwilling:not([hidden])').count()).toBe(0);
+      expect(await kopf(page)).toBe(raupe);
       await page.click('[data-vergleichen]');
-      expect(await page.locator('.nz-zwilling').count()).toBe(1);
+      expect(await page.locator('.nz-zwilling:not([hidden])').count()).toBe(1);
+      // die Raupe des Kindes bleibt beim Vergleichen, wo sie war – auch wenn danach der Korb erscheint; der Zwilling liegt darunter, gleich breit
+      await page.waitForTimeout(700);
+      expect(await kopf(page)).toBe(raupe);
+      const [r, z] = await page.evaluate(() => ['#nz-reihe', '#nz-zwilling'].map((s) => { const b = document.querySelector(s)!.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.width), Math.round(b.top)]; }));
+      expect(z[0]).toBe(r[0]); expect(z[1]).toBe(r[1]); expect(z[2]).toBeGreaterThan(r[2]);
       expect(await scrollt(page)).toBe(false);
       await page.close();
     });
   }
+
+  it('Knöpfe ohne Unterschrift, aber mit Namen; nur „Hilfe“ ist beschriftet', async () => {
+    const page = await oeffnen(390, 844);
+    expect(await page.locator('[data-zurueck] .nz-name, [data-menue] .nz-name').count()).toBe(0);
+    expect(await page.getAttribute('[data-zurueck]', 'aria-label')).toBe('Zurück');
+    expect(await page.getAttribute('[data-menue]', 'aria-label')).toBe('Menü');
+    expect(await page.locator('.nz-laterne .nz-name').textContent()).toBe('Hilfe');
+    // hochkant liegen die Knöpfe unten
+    const [knopf, h] = await page.evaluate(() => [document.querySelector('[data-zurueck]')!.getBoundingClientRect().bottom, innerHeight]);
+    expect(knopf).toBeGreaterThan(h * 0.85);
+    await page.close();
+  });
 
   it('leere Perle schickt nichts; „Zurück“ fragt zuerst', async () => {
     const page = await oeffnen(412, 800);

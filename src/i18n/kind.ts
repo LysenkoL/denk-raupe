@@ -14,6 +14,13 @@ export const KIND = {
   /** nochmal Vergleichen ohne Änderung – kein Fehler, nur ein Hinweis */
   nichtsGeaendert: 'Du hast noch nichts geändert. Tippe auf eine Perle über einem Blatt.',
   fertigTitel: 'Beide Raupen sind gleich!',
+  /** Karte „Vergleichen“: alle Perlen liegen auf der Raupe */
+  allePerlen: 'Alle Perlen sind da!',
+  /** Vergleich: kurze Zeile unten – erst kommt der Zwilling, dann bleibt vielleicht ein Blatt zu (ohne Zahl) */
+  zwillingKommt: 'Dein Zwilling kommt!',
+  einBlattZu: 'Ein Blatt bleibt zu.',
+  paarBlaetterZu: 'Ein paar Blätter bleiben zu.',
+  menue: 'Menü',
   fertigKorb: 'Die Blätter sind im Korb.',
   spaeter: 'Eine Aufgabe wartet auf später.',
   geheimwort: 'Geheimwort',

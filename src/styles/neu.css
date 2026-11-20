@@ -1,30 +1,44 @@
 /* Neuer Satzbildschirm nach Probe 7c (#/neu). Alle Größen kommen aus groesse() in src/screens/neu.ts als
    Variablen (--p, --taste, --ab, --knopf, --lade-b, --g); die Aufteilung (Spalte oder zwei Spalten) setzt sie
    als data-lage. Hier gibt es keine Media-Queries für die Aufteilung. Fenster der Aufgabe und Lade haben in
-   allen Aufgaben dieselbe Größe; nur der Inhalt passt sich ein. */
+   allen Aufgaben dieselbe Größe; nur der Inhalt passt sich ein.
+   Облик 20.11.2026: фон — картинка мира; все плоскости — светлое стекло (--glas); ряд гусеницы не двигается
+   между фазами; вертикально «Zurück» и «Menü» внизу по бокам от листа. */
 
 .nz {
   --wahl: #FFB000; --text: #23305E; --schatten: rgba(30, 40, 80, .22); --feder: cubic-bezier(.34, 1.56, .64, 1);
   --brett: #FFFBEA; --brett-kante: #F2C94C;
   --dienst: #7F93B5; --dienst-d: #5E7194; --dienst-zeichen: #3B4A6B;
-  --p: 40px; --luecke: 3px; --taste: 48px; --ab: 60px; --knopf: 56px; --lade-b: 420px; --g: 10px; --treffer: 0px;
-  position: fixed; inset: 0; overflow: hidden; color: var(--text); font-family: var(--font); background: #BDE8FF;
+  --p: 40px; --luecke: 3px; --taste: 48px; --ab: 60px; --knopf: 56px; --lade-b: 420px; --g: 10px; --treffer: 0px; --kopf: 1.3;
+  /* светлое стекло: доска, лоток, карточки, сравнение; без размытия — почти непрозрачное (ниже @supports) */
+  --glas: rgba(255, 255, 255, .6); --glas-rand: rgba(255, 255, 255, .85); --glas-schatten: 0 12px 30px rgba(20, 40, 80, .25);
+  --unten: calc(12px + env(safe-area-inset-bottom, 0px));
+  position: fixed; inset: 0; overflow: hidden; color: var(--text); font-family: var(--font); background: #3E5F9A;
   display: grid; gap: var(--g);
-  padding: 8px max(12px, env(safe-area-inset-right, 0px), calc((100vw - 1360px) / 2)) 12px max(12px, env(safe-area-inset-left, 0px), calc((100vw - 1360px) / 2));
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  grid-template-areas: "zurueck . oben" "ast ast ast" "tisch tisch tisch";
+  padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px), calc((100vw - 1360px) / 2)) var(--unten) max(12px, env(safe-area-inset-left, 0px), calc((100vw - 1360px) / 2));
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "ast" "tisch";
 }
-.nz[data-lage="quer"] { grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "zurueck ast oben" "tisch tisch tisch"; }
-.nz[data-phase="vergleich"] .nz-ast { visibility: hidden; }
+.nz[data-lage="quer"] { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); /* Ast genau in der Mitte, auch wenn rechts der Korb dazukommt */ grid-template-areas: "zurueck ast oben" "tisch tisch tisch"; }
+.nz-welt { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--welt-hoch) center / cover no-repeat; }
+.nz[data-lage="quer"] .nz-welt { background-image: var(--welt-quer, var(--welt-hoch)); }
 :where(.nz button) { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; background: none; border: 0; padding: 0; }
 .nz :focus-visible { outline: 3px solid #2B289F; outline-offset: 3px; }
 .nz-szene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 
-/* ── Oben: „Zurück“ und „Menü“ – weiß mit grau-blauem Rand: keine Ziffernfarbe, klar ein Knopf ── */
+/* ── „Zurück“ und „Menü“ – weiß mit grau-blauem Rand, ohne Unterschrift: keine Ziffernfarbe, klar ein Knopf.
+   Hochkant unten in den Ecken neben dem Blatt (unter dem Daumen), quer oben neben der Raupe. ── */
 .nz-oben { display: contents; }
-.nz-oben > [data-zurueck] { grid-area: zurueck; align-self: start; }
-.nz-rechts { grid-area: oben; align-self: start; justify-self: end; display: flex; align-items: flex-start; gap: 8px; }
+.nz-oben > [data-zurueck] { position: fixed; z-index: 6; left: max(12px, env(safe-area-inset-left, 0px)); bottom: var(--unten); }
+.nz-rechts { display: contents; }
+.nz-menueknopf { position: fixed; z-index: 6; right: max(12px, env(safe-area-inset-right, 0px)); bottom: var(--unten); }
+.nz-rechts .nz-korb { position: fixed; z-index: 6; right: calc(max(12px, env(safe-area-inset-right, 0px)) + var(--knopf) + 6px); bottom: var(--unten); }
+.nz:not([data-lage="quer"])[data-phase="loesen"] .nz-korb { visibility: hidden; } /* beim Lösen liegt dort das Blatt */
+.nz:not([data-lage="quer"]):not([data-phase="loesen"]) .nz-tisch { margin-bottom: calc(var(--knopf) + 10px); }
+.nz[data-lage="quer"] .nz-oben > [data-zurueck] { position: static; grid-area: zurueck; align-self: start; }
+.nz[data-lage="quer"] .nz-rechts { grid-area: oben; align-self: start; justify-self: end; display: flex; align-items: flex-start; gap: 8px; }
+.nz[data-lage="quer"] .nz-rechts > * { position: static; }
 .nz-knopf, .nz-laterne { display: grid; justify-items: center; gap: 3px; }
 .nz-rund { width: var(--knopf); height: var(--knopf); border-radius: 50%; display: grid; place-items: center; transition: transform .12s; }
 .nz-knopf .nz-rund { background: radial-gradient(circle at 40% 30%, #FFFFFF, #EEF2F8); color: var(--dienst-zeichen);
@@ -42,11 +56,13 @@
 @keyframes nz-hupf { 50% { transform: translateY(-6px) } }
 
 /* ── Ast: Kopf und Nester auf einer Achse (Werte aus Probe 7) ── */
-.nz-ast { grid-area: ast; display: flex; justify-content: center; align-items: center; min-width: 0; }
+.nz-ast { grid-area: ast; align-self: start; justify-self: center; display: flex; flex-direction: column; align-items: center; gap: calc(var(--p) * .35); min-width: 0;
+  padding: 2px 6px 6px; border: 2px solid transparent; border-radius: 26px; transition: background-color .4s, box-shadow .4s, border-color .4s; }
+.nz-zwilling[hidden] { display: none; }
 .nz-reihe { position: relative; display: flex; align-items: flex-end; padding-right: 10px; }
 .nz-reihe::before { content: ""; position: absolute; left: calc(var(--p) * .9); right: -4px; bottom: calc(var(--p) * .2); height: calc(var(--p) * .26); border-radius: 999px;
   background: linear-gradient(180deg, #B07A4C, #8A5730 55%, #67391C); box-shadow: 0 0 0 2px rgba(255, 255, 255, .55), 0 3px 4px rgba(50, 25, 5, .3); }
-.nz-kopf { width: calc(var(--p) * 1.3); height: calc(var(--p) * 1.55); object-fit: contain; object-position: right bottom; flex: none; position: relative; z-index: 3;
+.nz-kopf { width: calc(var(--p) * var(--kopf)); height: calc(var(--p) * var(--kopf) * 1.19); object-fit: contain; object-position: right bottom; flex: none; position: relative; z-index: 3;
   margin-right: calc(var(--p) * -.1); margin-bottom: calc(var(--p) * .14); pointer-events: none;
   filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 3px 3px rgba(30, 40, 10, .35)); }
 .nz-kopf.freut { animation: nz-freut .55s var(--feder); }
@@ -61,9 +77,12 @@
 .nz-slot.aktuell::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; box-shadow: 0 0 0 3px #fff, 0 0 0 6px #2B289F; z-index: 2; }
 .nz-slot.neu .nz-perle { animation: nz-setzen .32s var(--feder); }
 @keyframes nz-setzen { from { transform: scale(.6) } }
+.nz[data-phase="vergleich"] .nz-slot.zu-mark::after { content: none; } /* beim Vergleichen zeigen nur die Blätter, was offen ist */
+.nz-reihe:has(> .platz)::before { right: calc(max(44px, var(--p) * .9) + 4px); } /* ohne Zwilling-Knopf endet der Ast an der letzten Perle */
 .nz-slot.zu-mark::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 4px dashed var(--wahl); z-index: 4; pointer-events: none; }
-.nz-ueberblick { width: max(48px, calc(var(--p) * .9)); height: max(48px, calc(var(--p) * .9)); margin-left: 10px; align-self: center; border-radius: 50%; display: grid; place-items: center;
+.nz-ueberblick { width: max(44px, calc(var(--p) * .9)); height: max(44px, calc(var(--p) * .9)); margin-left: 10px; align-self: center; border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle at 40% 30%, #FFF4C8, #FFC21F); border: 3px solid #fff; box-shadow: 0 4px 0 #D99400, 0 6px 10px var(--schatten); }
+.nz-ueberblick.platz { visibility: hidden; background: none; border: 0; box-shadow: none; }
 .nz-ueberblick img { width: 86%; height: 86%; object-fit: contain; object-position: center bottom; }
 .nz-blatt { position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: contain; z-index: 3; pointer-events: none; transform: rotate(-12deg);
   transition: transform .8s cubic-bezier(.22, 1, .36, 1), opacity .7s ease-out; filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 2px rgba(30, 60, 10, .3)); }
@@ -75,9 +94,8 @@
 /* ── Tisch: Fenster der Aufgabe und Lade, beide in fester Größe ── */
 .nz-tisch { grid-area: tisch; min-height: 0; display: grid; gap: var(--g); grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
 .nz[data-lage="quer"] .nz-tisch { grid-template-columns: minmax(0, 1fr) var(--lade-b); grid-template-rows: minmax(0, 1fr); }
-.nz[data-phase="vergleich"] .nz-tisch { grid-row: 2 / -1; }
 .nz-brett { position: relative; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; container-type: inline-size;
-  background: linear-gradient(180deg, #fff, var(--brett) 40%); border: 4px solid #fff; border-radius: 28px; box-shadow: 0 7px 0 var(--brett-kante), 0 14px 26px var(--schatten); }
+  border: 3px solid; border-radius: 28px; }
 .nz-brett.voll { grid-column: 1 / -1; grid-row: 1 / -1; }
 .nz-frage-zeile { display: flex; align-items: center; justify-content: center; min-height: calc(var(--knopf) * .8); padding: 0 calc(var(--knopf) * .9); }
 .nz-frage { margin: 0; text-align: center; font-size: clamp(20px, 6cqw, 40px); font-weight: 800; letter-spacing: .01em; text-wrap: balance; }
@@ -94,7 +112,7 @@
 /* Lade: weiße Porzellanplatte mit Kacheln, immer zwei Reihen hoch; darunter das Blatt mit der Perle */
 .nz-lade { width: 100%; max-width: var(--lade-b); justify-self: center; align-self: end; display: flex; flex-direction: column; align-items: center; }
 .nz-werkzeug { width: 100%; height: calc(var(--taste) * 2.6 + 6px); display: flex; align-items: center; justify-content: center; padding: calc(var(--taste) * .22);
-  border-radius: calc(var(--taste) * .5); border: 3px solid #fff; background: linear-gradient(180deg, #FFFFFF, #F2F5FA); box-shadow: 0 6px 0 #DCE2EC, 0 18px 26px -10px rgba(30, 60, 120, .45); }
+  border-radius: calc(var(--taste) * .5); border: 3px solid; }
 .nz-werkzeug:empty { visibility: hidden; }
 /* Antwort im Bild: die Lade bleibt sichtbar und sagt kurz, wo getippt wird – derselbe Bildschirm wie sonst */
 .nz-tipp { display: flex; align-items: center; justify-content: center; gap: calc(var(--taste) * .25); padding: 0 8px; text-align: left;
@@ -116,7 +134,7 @@
 .nz-wahlzahl { font-size: calc(var(--taste) * .62); }
 .nz-option.gewaehlt { transform: translateY(calc(var(--taste) * -.11)); --rand: var(--wahl); --kante: #D98A00;
   box-shadow: 0 calc(var(--taste) * .2) 0 #D98A00, 0 0 0 calc(var(--taste) * .1) rgba(255, 176, 0, .25), 0 calc(var(--taste) * .3) calc(var(--taste) * .25) calc(var(--taste) * -.05) rgba(160, 100, 0, .35); }
-.nz-ablage { display: grid; place-items: center; width: 100%; margin-top: calc(var(--ab) * -.18); position: relative; z-index: 2; }
+.nz-ablage { display: grid; place-items: center; width: 100%; min-height: calc(var(--knopf) + 8px); margin-top: calc(var(--ab) * -.18); position: relative; z-index: 2; }
 .nz-schale { width: calc(var(--ab) * 1.95); height: calc(var(--ab) * 1.4); display: grid; place-items: center; background: center / contain no-repeat;
   filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 8px 8px rgba(20, 60, 10, .35)); }
 .nz-schale.wippt { animation: nz-wippt .5s ease-out; }
@@ -139,8 +157,12 @@
   background: linear-gradient(180deg, #FFE27A, #FFC21F 55%, #F2A400); box-shadow: 0 8px 0 #C27D00, 0 16px 24px var(--schatten); animation: nz-lockt 2.4s ease-in-out infinite; }
 .nz-vergleichen:active { transform: translateY(4px); box-shadow: 0 3px 0 #C27D00; }
 @keyframes nz-lockt { 50% { transform: translateY(-5px) } }
-.nz-gross { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--pg) * .3); --p: var(--pg); --luecke: 6px; }
-.nz-gross.zu { animation: nz-zu .3s ease-in forwards; }
+.nz-karte { grid-column: 1 / -1; grid-row: 1 / -1; place-self: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  width: min(460px, 100%); padding: 24px 28px 30px; border: 3px solid; border-radius: 28px; text-align: center; animation: nz-auf .35s var(--feder); }
+.nz-karte-text { margin: 0; font-size: clamp(22px, min(6vw, 3.6vh), 30px); font-weight: 800; }
+.nz-vtext { grid-column: 1 / -1; grid-row: 1 / -1; align-self: end; justify-self: center; margin: 0; max-width: min(560px, 100%); padding: 12px 22px;
+  border: 2px solid; border-radius: 22px; text-align: center; font-size: clamp(18px, min(5vw, 3.2vh), 26px); font-weight: 800; text-wrap: balance; animation: nz-auf .35s ease-out; }
+.nz-zwilling.zu { animation: nz-zu .3s ease-in forwards; }
 @keyframes nz-zu { to { transform: scale(.9) translateY(-30px); opacity: 0 } }
 /* Der Zwilling kriecht auf seinen Ast: Kopf voran von rechts, eine weiche Fahrt mit Abbremsen;
    dabei läuft eine Welle durch den Körper (Kopf zuerst, dann Perle für Perle) – wie bei einer echten Raupe. */
@@ -148,10 +170,6 @@
 @keyframes nz-kriechen { from { transform: translateX(105vw) } to { transform: none } }
 .nz-zwilling.kriecht .nz-slot, .nz-zwilling.kriecht .nz-kopf { animation: nz-welle .42s ease-in-out calc(var(--i, 0) * 70ms) 4 alternate both; }
 @keyframes nz-welle { from { translate: 0 0 } to { translate: 0 calc(var(--p) * -.14) } }
-/* Vergleich ohne Brett: die beiden Raupen liegen direkt auf der Wiese */
-.nz-brett.frei { background: none; border-color: transparent; box-shadow: none; }
-.nz-gross { animation: nz-gross-auf .45s cubic-bezier(.22, 1, .36, 1); }
-@keyframes nz-gross-auf { from { opacity: 0; transform: translateY(16px) } }
 /* eine neue Aufgabe blendet weich ein (Frage, Bild und Werkzeug), Tippen innerhalb der Aufgabe nicht */
 .nz-brett.frisch .nz-frage, .nz-brett.frisch .nz-bild > svg, .nz-brett.frisch ~ .nz-lade .nz-werkzeug > * { animation: nz-rein .4s cubic-bezier(.22, 1, .36, 1) both; }
 .nz-brett.frisch .nz-bild > svg { animation-delay: .05s; }
@@ -182,6 +200,7 @@
 /* Menü der Probe: Satz wählen (für die Autorin) */
 .nz-menue { position: fixed; right: max(12px, calc((100vw - 1360px) / 2)); top: calc(var(--knopf) + 36px); z-index: 80; width: min(420px, calc(100vw - 24px)); max-height: calc(100vh - var(--knopf) - 50px); overflow: auto;
   display: grid; gap: 6px; padding: 12px; background: #fff; border-radius: 18px; box-shadow: 0 10px 30px rgba(30, 40, 30, .25); }
+.nz:not([data-lage="quer"]) .nz-menue { top: auto; bottom: calc(var(--unten) + var(--knopf) + 12px); max-height: calc(100vh - var(--knopf) - 60px); }
 .nz-wahl-satz { text-align: left; min-height: 44px; padding: 8px 12px; border-radius: 12px; background: #F3F6F9; font-weight: 700; }
 .nz-wahl-satz.haupt { background: #FFE27A; }
 .nz-wahl-satz b { display: inline-block; min-width: 2.2em; color: #5E7194; }
@@ -191,4 +210,9 @@
 .nz-funken { position: fixed; z-index: 60; width: 0; height: 0; pointer-events: none; }
 .nz-funken i { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #FFF8C4, #FFC53D 60%, transparent 70%); animation: nz-funke .6s ease-out forwards; transform: rotate(var(--w)); }
 @keyframes nz-funke { to { transform: rotate(var(--w)) translateX(46px) scale(.3); opacity: 0 } }
+/* Glas zuletzt: gewinnt gegen die Rahmen-Kurzschreibweisen oben (border: 3px solid ohne Farbe) */
+.nz-glas, .nz-brett, .nz-werkzeug, .nz-karte, .nz-vtext,
+.nz[data-phase="vergleich"] .nz-ast, .nz[data-phase="fertig"] .nz-ast {
+  background: var(--glas); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-color: var(--glas-rand); box-shadow: var(--glas-schatten); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .nz { --glas: rgba(255, 255, 255, .86); } }
 @media (prefers-reduced-motion: reduce) { .nz *, .nz *::before, .nz *::after { animation: none !important; transition: none !important; } }
