@@ -83,8 +83,8 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 .knopf .rund svg { width: 52%; height: 52%; }
 .knopf .name { font-size: 13px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(20,40,90,.75), 0 0 1px rgba(20,40,90,.6); }
 .knopf:active .rund { transform: translateY(3px); box-shadow: 0 1px 0 var(--rand-d); }
-.zurueck { --rand: #FF7A59; --rand-d: #D9532F; }
-.menue { --rand: #FFB21F; --rand-d: #D98A00; }
+.zurueck, .menue { --rand: #7F93B5; --rand-d: #5E7194; }
+
 
 /* Корзинка: число листьев появляется с первого листа */
 .korb { display: flex; align-items: center; gap: 2px; }

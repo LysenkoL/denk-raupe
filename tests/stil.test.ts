@@ -142,8 +142,8 @@ describe('Linien und Umrisse (docs/STIL.md, Abschnitte 1 und 5)', () => {
 });
 
 describe('Bilder des Satz-Bildschirms: keine alten, K1 an einer Stelle', () => {
-  it('keine Datei importiert die alten Bilder (kopf*, blatt*, korb*.webp)', () => {
-    for (const f of quellen) expect(readFileSync(f, 'utf8'), f).not.toMatch(/(kopf|blatt|korb)[\w-]*\.webp/);
+  it('keine Datei importiert die alten Bilder (kopf*, blatt*, korb*.webp); Bilder aus K1 (src/bilder/k1/) sind erlaubt', () => {
+    for (const f of quellen) expect(readFileSync(f, 'utf8'), f).not.toMatch(/(?<!k1\/)(kopf|blatt|korb)[\w-]*\.webp/);
   });
 
   it('solange K1 leer ist, zeichnet jede Figur ein SVG; ein Eintrag in K1 ersetzt es durch das Bild', () => {
