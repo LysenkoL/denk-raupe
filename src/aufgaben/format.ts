@@ -26,7 +26,13 @@ export type FormatId =
   | 'hunderterfeld'
   | 'zahlenstrahl'
   | 'entdeckerpaeckchen'
-  | 'rechenstrich';
+  | 'rechenstrich'
+  // Gruppe Г2а
+  | 'wuerfelbau'
+  | 'zaehl-bild'
+  | 'ecken-seiten'
+  | 'plan'
+  | 'oben-unten';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';

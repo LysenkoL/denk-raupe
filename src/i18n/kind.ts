@@ -77,6 +77,10 @@ export const KIND = {
     wieVielePlaettchen: 'Wie viele Plättchen sind es?',
     welcheZahlImFeld: 'Welche Zahl gehört in das Feld?',
     welcheZahlZeigtDerPfeil: 'Welche Zahl zeigt der Pfeil?',
+    // Gruppe Г2а
+    wieVieleWuerfel: 'Wie viele Würfel sind es?',
+    wasLiegtImFeld: 'Was liegt in diesem Feld?',
+    wasLiegtDort: 'Was liegt dort?',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {

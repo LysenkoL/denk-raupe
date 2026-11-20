@@ -15,6 +15,12 @@ import { HUNDERTERFELD } from './hunderterfeld';
 import { ZAHLENSTRAHL } from './zahlenstrahl';
 import { ENTDECKERPAECKCHEN } from './entdeckerpaeckchen';
 import { RECHENSTRICH } from './rechenstrich';
+// Gruppe Г2а
+import { WUERFELBAU } from './wuerfelbau';
+import { ZAEHL_BILD } from './zaehl-bild';
+import { ECKEN_SEITEN } from './ecken-seiten';
+import { PLAN } from './plan';
+import { OBEN_UNTEN } from './oben-unten';
 
 /**
  * Alle Formate. Jedes hier eingetragene Format kommt von selbst in die gemischten Sätze (src/satz/sitzung.ts,
@@ -37,4 +43,10 @@ export const FORMATE: Record<FormatId, Format<unknown>> = {
   zahlenstrahl: ZAHLENSTRAHL as Format<unknown>,
   entdeckerpaeckchen: ENTDECKERPAECKCHEN as Format<unknown>,
   rechenstrich: RECHENSTRICH as Format<unknown>,
+  // Gruppe Г2а
+  wuerfelbau: WUERFELBAU as Format<unknown>,
+  'zaehl-bild': ZAEHL_BILD as Format<unknown>,
+  'ecken-seiten': ECKEN_SEITEN as Format<unknown>,
+  plan: PLAN as Format<unknown>,
+  'oben-unten': OBEN_UNTEN as Format<unknown>,
 };

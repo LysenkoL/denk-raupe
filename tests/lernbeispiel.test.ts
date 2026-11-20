@@ -16,6 +16,10 @@ import type { Hunderterfeld } from '../src/aufgaben/hunderterfeld';
 import type { Zahlenstrahl } from '../src/aufgaben/zahlenstrahl';
 import type { Paeckchen } from '../src/aufgaben/entdeckerpaeckchen';
 import type { Rechenstrich } from '../src/aufgaben/rechenstrich';
+import { summe, type Wuerfelbau } from '../src/aufgaben/wuerfelbau';
+import type { ZaehlBild } from '../src/aufgaben/zaehl-bild';
+import type { Plan } from '../src/aufgaben/plan';
+import type { ObenUnten } from '../src/aufgaben/oben-unten';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -96,6 +100,20 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
     const r = b as Rechenstrich;
     return [r.spruenge.length, r.spruenge.reduce((x, s) => x + (s.laenge ?? 0), 0)];
   },
+  // Gruppe Г2а
+  /** Würfelbau: Zahl der Reihen, dann Zahl der Würfel */
+  wuerfelbau: (b) => [(b as Wuerfelbau).hoehen.length, summe(b as Wuerfelbau)],
+  /** Zähl-Bild: Zahl der Formen, die man ansehen muss */
+  'zaehl-bild': (b) => [(b as ZaehlBild).dinge.length],
+  /** Ecken und Seiten: Zahl der Ecken */
+  'ecken-seiten': (b) => [antwortVon('ecken-seiten', b)],
+  /** Plan: Zahl der Zeilen, der Felder, dann wie weit das Feld von A1 liegt */
+  plan: (b) => {
+    const p = b as Plan;
+    return [p.zeilen, p.spalten * p.zeilen, p.frage[0] + p.frage[1]];
+  },
+  /** Oben, unten, links, rechts: Zahl der Pfeile, dann der Steine */
+  'oben-unten': (b) => [(b as ObenUnten).pfeile.length, (b as ObenUnten).felder.length],
 };
 /** Zahl der Lösung (wie groß die Rechnung ist) */
 function antwortVon(id: FormatId, b: unknown): number {
