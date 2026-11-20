@@ -625,9 +625,11 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       }
     } else {
       const { k, schritte } = lernSchritt();
-      if (k + 1 < schritte.length) lernSetzen({ format: aufgabe().format, schritt: k + 1, antwort: null, versucht: false });
+      // von selbst gezeigt: nur der erste, leichteste Schritt (Autorin 20.11.2026); auf Wunsch alle Schritte
+      const letzter = lernNoetig() ? 0 : schritte.length - 1;
+      if (k < letzter) lernSetzen({ format: aufgabe().format, schritt: k + 1, antwort: null, versucht: false });
       else {
-        // von selbst gezeigt und bis zum Ende gelöst: ab jetzt bekannt (aus neu wie aus nochmal)
+        // von selbst gezeigt und gelöst: ab jetzt bekannt (aus neu wie aus nochmal)
         if (lernNoetig()) profil = { ...profil, formate: { ...profil.formate, [aufgabe().format]: 'bekannt' } };
         lernSetzen(undefined);
       }

@@ -396,7 +396,7 @@ describe('Vergleichen', () => {
 });
 
 describe('Lernbeispiel', () => {
-  it('neues Format: ein Nest, kein Korb; falsch → zurück und Hilfe 2; richtig → „Genau so!“, nächster Schritt; danach bekannt', async () => {
+  it('neues Format: ein Nest, kein Korb; falsch → zurück und Hilfe 2; von selbst nur der erste Schritt, danach bekannt', async () => {
     const s = probe();
     const formate = { ...bekannt().formate, zahlenmauer: 'neu' as const };
     const page = await oeffnen(412, 800, { sitzung: s, profil: bekannt({ formate, blaetter: 3 }) });
@@ -410,25 +410,39 @@ describe('Lernbeispiel', () => {
     expect(await page.textContent('.nz-meldung')).toBe(KIND.nochmalSchauen);
     expect(await page.locator('#nz-bild [data-hilfe="teil"]').count()).toBeGreaterThan(0);
     expect(await page.getAttribute('[data-abgabe]', 'aria-label')).toBe(KIND.nochLeer);
-    for (let k = 0; k < schritte.length; k++) {
-      await geben(page, schritte[k], loesung(schritte[k]));
-      expect(await page.textContent('.nz-meldung')).toBe(KIND.genau);
-      // Neuladen mitten im Beispiel: derselbe Schritt
-      if (k === 0) {
-        await page.waitForTimeout(1100);
-        await page.reload();
-        await page.waitForSelector('.nz-brett');
-        await page.waitForTimeout(320);
-        expect((await gespeichert<Sitzung>(page, 'sitzung')).lernbeispiel?.schritt).toBe(1);
-      } else await page.waitForTimeout(1100);
-    }
+    // Neuladen mitten im Beispiel: derselbe Schritt, derselbe Stand
+    await page.reload();
+    await page.waitForSelector('.nz-brett');
+    await page.waitForTimeout(320);
+    expect(await page.getAttribute('#nz', 'data-modus')).toBe('lern');
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).lernbeispiel).toMatchObject({ schritt: 0, versucht: true });
+    await geben(page, schritte[0], loesung(schritte[0]));
+    expect(await page.textContent('.nz-meldung')).toBe(KIND.genau);
+    await page.waitForTimeout(1100);
+    // von selbst kommt nur der erste Schritt (Autorin 20.11.2026): danach gleich die Aufgabe
     expect(await page.getAttribute('#nz', 'data-modus')).toBe('satz');
     const p = await gespeichert<Profil>(page, 'profil');
     expect(p.formate.zahlenmauer).toBe('bekannt');
     expect(p.blaetter).toBe(3);
     const ss = await gespeichert<Sitzung>(page, 'sitzung');
     expect(ss.satz.perlen.every((x) => x.antwort === null)).toBe(true);
+    expect(ss.lernbeispiel).toBeUndefined();
     expect(await gespeichert(page, 'historie')).toBeUndefined();
+    await page.close();
+  });
+
+  it('auf Wunsch (Laterne): alle Schritte, Schritt für Schritt', async () => {
+    const page = await oeffnen(412, 800);
+    await page.click('[data-hilfe]');
+    const schritte = lernbeispiel(FORMATE.zahlenmauer);
+    expect(schritte.length).toBeGreaterThan(1);
+    for (let k = 0; k < schritte.length; k++) {
+      expect(await page.getAttribute('#nz', 'data-modus')).toBe('lern');
+      expect((await gespeichert<Sitzung>(page, 'sitzung')).lernbeispiel?.schritt).toBe(k);
+      await geben(page, schritte[k], loesung(schritte[k]));
+      await page.waitForTimeout(1100);
+    }
+    expect(await page.getAttribute('#nz', 'data-modus')).toBe('satz');
     await page.close();
   });
 });
