@@ -158,3 +158,63 @@ A sheet of six separate objects for a children's game interface, arranged in a n
 - Имя файла — немецкое слово маленькими буквами без умлаутов: `loewe.webp`.
 - Картинка слова подходит, только если два-три носителя языка называют её одним и тем же словом.
 - Для каждого сгенерированного набора в репозитории хранится лист с промтом, чтобы стиль можно было повторить.
+
+## Круг 3 (19.11.2026)
+
+Стиль тот же, что у `raupe.webp`: мягкое объёмное 3D, бархатная поверхность, свет сверху слева, без контуров; предметы — сочные и глянцевые, как листья и корзинка. Каждая картинка — отдельный запрос в новом чате, к нему приложить `raupe.webp` (для близнеца — ещё `zwilling.webp`, для домика — `korb-voll.webp`). Порядок: фон, палец, близнец, потом кнопки конца набора.
+
+Заменяет «Круг 2»: фон 5 — новой версией ниже (тише, обрезка в обе стороны); лист кнопок 6 не нужен — кнопки рисует код, из него остаётся только палец. Для «садится рядом» годятся готовые `zwilling.webp` и `zwilling-liegt.webp`.
+
+**7. Фон: тихий луг** (`wiese.webp`)
+
+```
+Wide background for a children's game, 16:9. A calm sunny meadow under an open sky: soft light-blue sky with two small clouds, gentle low hills, even green grass. The centre is an empty, quiet area of plain grass and sky; only a few round trees and flowers at the far left and right edges.
+Same soft 3D look and top-left light as the caterpillar in the attached image, but quieter: softer, lighter colours, low contrast, slightly blurred like a background far behind. Fresh and sunny, not grey. No characters, no house, no path, no text.
+```
+
+Фон экрана набора вместо неба и холмов из кода; середина — под доску, края срезаются на телефоне (вертикально) и на планшете (горизонтально).
+
+**8. Палец-подсказка** (`finger.webp`)
+
+```
+A child's hand with the index finger pointing up and the other fingers softly curled, seen from the back of the hand, slightly turned. Soft rounded 3D like a gentle toy, smooth skin with warm rosy shading, short chubby fingers.
+Same soft 3D style and top-left light as the caterpillar in the attached image. No black outlines, no sleeve, no shadow on the ground. Plain pure white background, no text.
+```
+
+Палец в учебном примере: показывает, куда нажать; код поворачивает и «нажимает» им. Заменяет светящийся кружок.
+
+**9. Близнец выглядывает** (`zwilling-guckt.webp`)
+
+```
+The twin caterpillar with the sky-blue bow tie from the attached image: exactly the same face, antennae and green velvet material. Only the head and the top of the bow tie are visible, peeking up curiously from below, eyes looking to the side, a small shy smile. The bottom edge of the picture is a straight clean cut.
+Same soft 3D toy look, warm light from the top left, no black outlines. Plain pure white background, no shadow, no text.
+```
+
+Первый кадр «Vergleichen»: близнец выглядывает из-за края доски (код выдвигает картинку снизу).
+
+**10. Близнец ползёт** (`zwilling-kriecht.webp`)
+
+```
+The twin caterpillar with the sky-blue bow tie from the attached image, front part only: head, bow tie, first body segment and two small front legs, like the attached front-part picture. Crawling pose: head low and stretched forward to the left, one front leg lifted mid-step, happy eager face. On the right the segment ends in a clean round cut where a bead will join.
+Same soft 3D toy look, warm light from the top left, no black outlines. Plain pure white background, no shadow, no text.
+```
+
+Средний кадр: близнец ползёт по своей ветке, бусины-листья тянутся за ним; дальше он садится (`zwilling.webp`).
+
+**11. Гусеница спит** (`raupe-schlaeft.webp`)
+
+```
+The caterpillar with the orange bandana and scarf from the attached image, the same front part as the lying picture: head resting on the two front legs, body continuing to the right. Eyes peacefully closed, a soft happy smile, antennae relaxed and drooping a little, rosy cheeks.
+Same soft 3D toy look, warm light from the top left, no black outlines. Plain pure white background, no shadow, no letters like Z, no text.
+```
+
+Кнопка «Pause» в конце набора вместо рисунка кодом.
+
+**12. Домик на дереве** (`baumhaus.webp`)
+
+```
+A small cosy treehouse sitting in a round, juicy green tree crown, a short thick trunk on a little round patch of grass. The house is honey-coloured wood with a round door, one round warm glowing window and a soft red roof. Simple shape that is still clear when very small.
+Glossy juicy stylised 3D like the attached basket with leaves, warm light from the top left, no black outlines. Plain pure white background, no shadow, no text.
+```
+
+Кнопка «Meine Welt» в конце набора вместо рисунка кодом; позже — образ дома-дерева в мире.
