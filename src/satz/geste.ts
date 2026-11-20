@@ -62,7 +62,7 @@ export function gesteBild(k: number): string {
   const teller = '<rect x="20" y="10" width="260" height="180" rx="36" fill="#fff" stroke="#E6D8B8" stroke-width="5"/>';
   if (v.art === 'form') {
     const c = FORM_FARBEN[v.farbe];
-    return `<svg viewBox="0 0 300 200" role="img" aria-label="Vorlage">${teller}${formPfad(v.form, 150, 102, 70, c, c, 2)}</svg>`;
+    return `<svg viewBox="0 0 300 200" role="img" aria-label="Vorlage">${teller}${formPfad(v.form, 150, 102, 70, c)}</svg>`;
   }
   const wert = (v as { wert: number }).wert;
   return `<svg viewBox="0 0 300 200" role="img" aria-label="${wert}">${teller}<text x="150" y="140" text-anchor="middle" font-size="130" font-weight="800" fill="#23305E" font-family="inherit">${wert}</text></svg>`;

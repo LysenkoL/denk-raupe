@@ -111,12 +111,12 @@ function farbStil(d: number): string {
   const rand = KACHEL_RAND[d];
   return ` style="--rand:${rand};--kante:${ZIFFER_KANTEN[d]};--schatten:${rgba(ZIFFER_KANTEN[d], 0.42)}"`;
 }
-/** Inhalt einer Wahlkachel: Zahl als Ziffer, Form als Form, sonst die Perle */
+/** Inhalt einer Wahlkachel: Zahl als Ziffer, Form als Form mit dunklem Umriss wie im Bild der Aufgabe (Gelb auf Weiß), sonst die Perle */
 function wahlInhalt(a: Antwort): string {
   if (a.art === 'zahl') return `<span class="nz-wahlzahl">${a.wert}</span>`;
   if (a.art === 'form') {
     const c = FORM_FARBEN[a.farbe] ?? '#888';
-    return `<svg viewBox="0 0 60 60" aria-hidden="true">${formPfad(a.form, 30, 31, a.klein ? 12 : 19, c, c, 2)}</svg>`;
+    return `<svg viewBox="0 0 60 60" aria-hidden="true">${formPfad(a.form, 30, 31, a.klein ? 14 : 22, c)}</svg>`;
   }
   return perle(a);
 }
