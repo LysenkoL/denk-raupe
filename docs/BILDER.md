@@ -218,3 +218,74 @@ Glossy juicy stylised 3D like the attached basket with leaves, warm light from t
 ```
 
 Кнопка «Meine Welt» в конце набора вместо рисунка кодом; позже — образ дома-дерева в мире.
+
+## Круг 4 (20.11.2026): фоны-миры
+
+Несколько фонов, которые меняются (главы, выбор ребёнка — `docs/IDEEN.md`). Проверено на пробе 7 и экране `#/neu` с фонами автора: на телефоне доска закрывает середину, фон виден только сверху (кнопки «Zurück» и «Menü» с белыми подписями, гусеница, светлые гнёзда), по краям и снизу (белая клавиатура, зелёный лист с бусиной). Отсюда правила:
+
+- **верх** насыщенный и тёмный; в середине верха ничего светлого: ни облаков, ни солнца — иначе сливаются гнёзда и белые подписи;
+- **середина** спокойная — её закрывает доска;
+- **низ** насыщенный, в тени, не белый и не светло-зелёный — иначе пропадает зелёный лист;
+- **на планшете** справа внизу клавиатура и лист — там пусто; украшения только по левому краю, в левом нижнем углу и справа выше середины;
+- за верхом и низом нет тонких линий, рам, веток (оранжерея не подошла именно поэтому).
+
+Порядок: один мир — один чат. Приложить вечерний луг автора (сад светлячков) как образец стиля. Сначала горизонтальный кадр, потом в том же чате вертикальный. Файлы: `welt-<имя>-quer.webp` и `welt-<имя>-hoch.webp`.
+
+**Общий блок — горизонтальный кадр** (вместо `[WORLD]` строка мира):
+
+```
+Wide background picture for a children's learning game, 16:9. [WORLD]
+Layout rules, very important:
+- Top fifth: a rich, deep, saturated colour. Nothing light or white in the top middle: no clouds, no sun, no bright glow there.
+- Middle: calm, soft and simple. It will be covered by a big panel.
+- Bottom fifth: a rich, darker ground in soft shade. Not white, not light green.
+- Bottom right quarter: calm and simple, no plants or objects there.
+- Decorations only at the far left edge, in the bottom left corner and at the far right edge above the middle.
+- No thin lines, frames, branches or busy patterns at the top and at the bottom.
+Style: the same style and materials as the attached picture, but with the light and colours described here: polished stylised 3D like a high-quality animated film for children, soft rounded shapes, juicy saturated colours, a soft magical glow, never neon. No characters, no animals, no text.
+```
+
+**Общий блок — вертикальный кадр** (тот же чат):
+
+```
+The same place as in the previous picture, now as a tall background for a phone, portrait 9:16.
+- Top quarter: a rich, deep, saturated colour, nothing light or white in it: no clouds, no sun there.
+- Middle: calm and simple. It will be covered by a big panel.
+- Bottom quarter: a rich, darker ground in soft shade, not white, not light green, calm in the middle.
+- Small decorations only in the two bottom corners and at the side edges, fully inside the picture.
+Same style, light and colours as the previous picture. No characters, no animals, no text.
+```
+
+**13. Солнечный луг** (`welt-wiese`)
+
+```
+A sunny summer meadow at midday: a deep clear blue sky at the top, a warm light glow near the horizon, soft rolling hills far away, round fluffy trees at the far edges, the meadow in the foreground lies in the deep cool shade of the trees.
+```
+
+**14. Пруд** (`welt-teich`)
+
+```
+A calm pond on a bright morning: a deep blue sky at the top, soft mist and gentle hills near the horizon, deep turquoise water in the foreground, pink water lilies on lily pads and mossy stones only at the edges.
+```
+
+**15. Осенний сад** (`welt-herbst`)
+
+```
+A golden autumn orchard: a deep warm blue sky at the top, round trees with orange, red and golden leaves at the edges, a few falling leaves only at the sides, the ground in the foreground covered in deep orange and red fallen leaves in soft shade.
+```
+
+**16. Лавандовое поле** (`welt-lavendel`)
+
+```
+A lavender field in summer: a deep blue sky at the top, soft hills far away, rows of deep purple lavender in the foreground, a few big sunflowers only at the far left and right edges.
+```
+
+**17. Сад светлячков** (`welt-gluehwuermchen`)
+
+```
+A magical meadow at golden dusk: a deep violet-blue sky with a few small stars at the top, a warm golden glow near the horizon, glowing fireflies, small glowing mushrooms and daisies only at the edges, the grass in the foreground in deep blue-teal shade.
+```
+
+Горизонтальный кадр сада светлячков у автора уже есть (вечерний луг); для него нужен только вертикальный.
+
+Быстрая проверка готовой картинки: середина верха тёмная, низ не светло-зелёный и не белый, справа внизу пусто. Потом — экран `#/neu` с этим фоном на телефоне и планшете.
