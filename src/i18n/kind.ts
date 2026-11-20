@@ -44,15 +44,20 @@ export const KIND = {
   loeschen: 'Löschen',
   /** Lade bei Antwort im Bild (z. B. Wer ist es?): wohin getippt wird */
   tippOben: 'Tippe im Bild, wer passt.',
-  /** Zahl eingeben: Gruppe der Ziffernperlen und Plätze (für Screenreader) */
+  /** Zahl eingeben: Gruppe der Ziffern (für Screenreader) */
   zahlEingeben: 'Zahl eingeben',
-  /** Plätze der Zahl, Zehner links, Einer rechts: Zeichen auf dem Holz und Name zum Vorlesen */
-  stelle: {
-    H: { zeichen: 'H', name: 'Hunderter' },
-    Z: { zeichen: 'Z', name: 'Zehner' },
-    E: { zeichen: 'E', name: 'Einer' },
+  /** Perle unten im Lade: schickt die Antwort (für Screenreader) */
+  abgeben: 'Antwort der Raupe geben',
+  nochLeer: 'Noch keine Antwort',
+  /** „Zurück“ oben: erst fragen */
+  wirklichAufhoeren: 'Wirklich aufhören?',
+  weiterspielen: 'Weiterspielen',
+  aufhoeren: 'Aufhören',
+  /** allgemeines Beispiel der Geste (A10): einmal, vor der ersten Aufgabe */
+  geste: {
+    gleich: 'Finde das Gleiche.',
+    zahl: 'Tippe die gleiche Zahl.',
   },
-  platzLeer: 'leer',
   ton: 'Ton',
   neuerBuchstabe: 'Ein neuer Buchstabe!',
   /** feste Aufträge der Formate; ein Format nennt nur den Schlüssel (docs/FORMATE.md, Abschnitt 3) */

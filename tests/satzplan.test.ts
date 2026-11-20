@@ -112,3 +112,23 @@ describe('zurückgelegte Aufgabe im gemischten Satz', () => {
     }
   });
 });
+
+describe('A10: erster Satz auf Stufe 1, neue Felder im Profil', () => {
+  it('der allererste Satz: jede Aufgabe auf Stufe 1; danach Stufe 1 und 2 gemischt', () => {
+    let zwei = 0;
+    for (let s = 0; s < 200; s++) {
+      expect(naechsteSitzung(s, neuesProfil()).aufgaben.every((a) => a.stufe === 1)).toBe(true);
+      zwei += naechsteSitzung(s, bekannt()).aufgaben.filter((a) => a.stufe === 2).length;
+    }
+    expect(zwei).toBeGreaterThan(100);
+  });
+  it('Profil Version 3 von vor A10 (ohne Geste und Abgaben) lädt mit Geste offen und null Abgaben, sonst unverändert', async () => {
+    const { ladeProfil } = await import('../src/satz/sitzung');
+    const { geste: _g, abgaben: _a, ...alt } = { ...bekannt(), blaetter: 17 };
+    const p = ladeProfil(structuredClone(alt))!;
+    expect(p.geste).toBe(false);
+    expect(p.abgaben).toEqual({ wahl: 0, bild: 0 });
+    expect(p.blaetter).toBe(17);
+    expect(p.formate).toEqual(bekannt().formate);
+  });
+});

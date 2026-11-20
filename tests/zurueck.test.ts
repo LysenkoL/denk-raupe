@@ -397,7 +397,7 @@ describe('Speicher: die Reihe übersteht Neuladen; Umzüge', () => {
   it('Profil aus Version 2: Reihe leer, alles andere bleibt', () => {
     const v2 = { version: 2, formate: { muster: 'nochmal', zahlenmauer: 'bekannt' }, blaetter: 23, saetze: 4, geheim: { wort: 'BERGE', offen: [1, 4] }, ton: false };
     const p = ladeProfil(structuredClone(v2))!;
-    expect(p).toEqual({ ...v2, version: 3, zurueckgelegt: [] });
+    expect(p).toEqual({ ...v2, version: 3, zurueckgelegt: [], geste: false, abgaben: { wahl: 0, bild: 0 } });
     expect(Object.keys(p).sort()).toEqual(Object.keys(neuesProfil()).sort());
   });
 

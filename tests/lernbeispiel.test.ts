@@ -172,25 +172,15 @@ describe.each(IDS)('Lernbeispiel %s', (id) => {
   });
 });
 
-describe('Rückmeldung bei Zahlen mit zwei Stellen', () => {
-  it('1 auf dem Weg zu 10 ist offen, 2 ist falsch', () => {
-    const f = FORMATE.zahlenmauer;
-    const a = aufgabeAus(f, 0, 1);
-    const m: Mauer = { reihen: [[4, 6], [10]], fehlt: [1, 0], grenze: 10 };
-    const b = { ...a, bedingung: m };
-    expect(lernPruefen(f, b, { art: 'zahl', wert: 1 })).toBe('offen');
-    expect(lernPruefen(f, b, { art: 'zahl', wert: 2 })).toBe('falsch');
-    expect(lernPruefen(f, b, { art: 'zahl', wert: 10 })).toBe('richtig');
-  });
-
-  it('Plätze in jeder Reihenfolge: 1 und 4 auf dem Weg zu 14 sind offen, 3 und 41 falsch', () => {
+describe('Rückmeldung bei Zahlen mit zwei Stellen (A10: abgegeben ist abgegeben)', () => {
+  it('eine abgegebene Stelle auf dem Weg zu 14 ist falsch; 41 falsch; 14 richtig', () => {
     const f = FORMATE.zahlenmauer;
     const a = aufgabeAus(f, 0, 1);
     const m: Mauer = { reihen: [[6, 8], [14]], fehlt: [1, 0], grenze: 20 };
     const b = { ...a, bedingung: m };
-    expect(lernPruefen(f, b, { art: 'zahl', wert: 1 })).toBe('offen');
-    expect(lernPruefen(f, b, { art: 'zahl', wert: 4 })).toBe('offen');
-    expect(lernPruefen(f, b, { art: 'zahl', wert: 3 })).toBe('falsch');
+    expect(lernPruefen(f, b, null)).toBe('offen');
+    expect(lernPruefen(f, b, { art: 'zahl', wert: 1 })).toBe('falsch');
+    expect(lernPruefen(f, b, { art: 'zahl', wert: 4 })).toBe('falsch');
     expect(lernPruefen(f, b, { art: 'zahl', wert: 41 })).toBe('falsch');
     expect(lernPruefen(f, b, { art: 'zahl', wert: 14 })).toBe('richtig');
   });
@@ -278,7 +268,7 @@ describe('Profil: Umzug von Version 1', () => {
   it('Schnappschuss aus Version 1: „gesehen“ wird zu „bekannt“, sonst neu; alles Übrige bleibt', () => {
     expect(v1.profil.version).toBe(1);
     const p = ladeProfil(structuredClone(v1.profil))!;
-    expect(p).toEqual({ version: 3, formate: { zahlenmauer: 'bekannt', muster: 'bekannt' }, blaetter: 7, saetze: 2, geheim: { wort: 'TEICH', offen: [0, 3] }, ton: false, zurueckgelegt: [] });
+    expect(p).toEqual({ version: 3, formate: { zahlenmauer: 'bekannt', muster: 'bekannt' }, blaetter: 7, saetze: 2, geheim: { wort: 'TEICH', offen: [0, 3] }, ton: false, zurueckgelegt: [], geste: false, abgaben: { wahl: 0, bild: 0 } });
     expect(Object.keys(p).sort()).toEqual(Object.keys(neuesProfil()).sort());
     expect(kenntnis(p, 'wer-ist-es')).toBe('neu');
     expect(lernbeispielVorher(p, 'wer-ist-es')).toBe(true);

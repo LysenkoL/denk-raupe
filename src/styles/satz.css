@@ -1,4 +1,4 @@
-/* Neuer Satzbildschirm nach Probe 7c (#/neu). Alle Größen kommen aus groesse() in src/screens/neu.ts als
+/* Satzbildschirm (A10, облик пробы 7c «стекло»). Alle Größen kommen aus groesse() in src/screens/satz.ts als
    Variablen (--p, --taste, --ab, --knopf, --lade-b, --g); die Aufteilung (Spalte oder zwei Spalten) setzt sie
    als data-lage. Hier gibt es keine Media-Queries für die Aufteilung. Fenster der Aufgabe und Lade haben in
    allen Aufgaben dieselbe Größe; nur der Inhalt passt sich ein.
@@ -228,9 +228,77 @@
 .nz-funken { position: fixed; z-index: 60; width: 0; height: 0; pointer-events: none; }
 .nz-funken i { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #FFF8C4, #FFC53D 60%, transparent 70%); animation: nz-funke .6s ease-out forwards; transform: rotate(var(--w)); }
 @keyframes nz-funke { to { transform: rotate(var(--w)) translateX(46px) scale(.3); opacity: 0 } }
+
+/* ── A10: Lernbeispiel und Geste – ein Nest und ein Blatt statt der Reihe ── */
+.nz-lernslot { margin-left: 0; }
+.nz-lernblatt { width: calc(var(--p) * 1.1); height: calc(var(--p) * 1.1); object-fit: contain; margin-left: calc(var(--p) * .25); position: relative; z-index: 2; transform: rotate(-12deg);
+  filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 2px rgba(30, 60, 10, .3)); transition: transform .7s cubic-bezier(.22, 1, .36, 1), opacity .6s ease-out .3s; }
+.nz-lernblatt.hebt { transform: translate(calc(var(--p) * .3), calc(var(--p) * -1.1)) rotate(-40deg) scale(.85); opacity: .15; }
+.nz-lernblatt.wackelt { animation: nz-wackeln .55s ease-in-out; }
+.nz-links { flex: none; display: flex; margin-right: 8px; }
+.nz-links:empty { display: none; }
+.nz-frage-zeile:has(.nz-links:not(:empty)) { padding-left: 0; justify-content: flex-start; gap: 4px; }
+.nz-frage-zeile:has(.nz-links:not(:empty)) .nz-frage { flex: 1; }
+.nz-marke, .nz-los, .nz-sogehts, .nz-spaeter { display: inline-flex; align-items: center; min-height: 48px; padding: 0 16px; border-radius: 999px; font-size: 16px; font-weight: 800; }
+.nz-marke { background: #FFE27A; color: #3A2400; border: 3px solid #fff; box-shadow: 0 3px 0 #C27D00; }
+.nz-los, .nz-sogehts, .nz-spaeter { background: #fff; color: var(--dienst-zeichen); border: 3px solid var(--dienst); box-shadow: 0 3px 0 var(--dienst-d); }
+.nz-los:active, .nz-sogehts:active, .nz-spaeter:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--dienst-d); }
+.nz-meldung { margin: 0; text-align: center; font-size: clamp(16px, 4.2cqw, 22px); font-weight: 800; color: #6A4300; }
+/* Hilfe 3 (wenn der Schritt verriete) und 4: ähnliche Aufgabe neben (breit) oder unter (schmal) der eigenen */
+.nz-bild.zwei { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+@container (min-width: 620px) { .nz-bild.zwei { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); } }
+.nz-teil { position: relative; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.nz-teil-bild { position: relative; flex: 1; min-height: 0; }
+.nz-teil-bild > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.nz-aehnlich { padding: 4px 6px 6px 10px; border-radius: 18px; background: rgba(255, 246, 200, .75); border: 2px dashed #E9A400; }
+.nz-aehnlich-kopf { display: flex; align-items: center; gap: 8px; flex: none; }
+.nz-aehnlich-titel { margin: 0; flex: 1; font-size: clamp(12px, 2.6cqw, 17px); line-height: 1.2; font-weight: 800; color: #6A4300; }
+.nz-spaeter { flex: none; min-height: 48px; padding: 0 14px; }
+.nz-ueberblick.klein { margin-top: 6px; }
+.nz-ueberblick.klein span { margin-top: 0; min-height: 48px; display: inline-flex; align-items: center; }
+/* Hilfeknopf gegen Durchprobieren (A6): die Laterne glimmt sanft auf und ab; ohne Bewegung eine feste doppelte Linie */
+.nz-laterne[data-puls] .nz-rund { animation: nz-puls 1700ms ease-in-out var(--puls-phase, 0ms) infinite; }
+@keyframes nz-puls { 50% { scale: 1.06; box-shadow: 0 4px 0 #D99400, 0 0 0 6px rgba(255, 214, 74, .55), 0 0 26px 10px rgba(255, 214, 74, .8); } }
+@media (prefers-reduced-motion: reduce) { .nz .nz-laterne[data-puls] .nz-rund { box-shadow: 0 4px 0 #D99400, 0 0 0 4px #fff, 0 0 0 8px #2B289F; } }
+.nz-laterne:disabled { cursor: default; }
+.nz-laterne:disabled .nz-rund { filter: saturate(.4); opacity: .7; }
+/* zurückgelegte Perle: kleine Laterne mit Pfeil oben rechts */
+.nz-slot .marke { position: absolute; right: -14%; top: -16%; width: 46%; height: 49%; z-index: 4; pointer-events: none; }
+.nz-unter { position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; }
+.nz-unter .nz-perle { width: 88%; height: 88%; }
+/* gezählte Dinge (Werkzeug der Engine Bild) */
+.nz-bild [data-zaehl] { cursor: pointer; }
+.nz-bild [data-zaehl].gezaehlt .zaehl-ring { opacity: 1; }
+.nz-bild [data-zaehl].gezaehlt .ding { opacity: .55; }
+/* Ende: Geheimwort */
+.nz-geheim { display: flex; gap: 6px; }
+.nz-geheim span { width: 40px; height: 46px; display: grid; place-items: center; border-radius: 10px; border: 3px dashed rgba(90, 70, 30, .35); font-size: 26px; font-weight: 800; background: rgba(255, 255, 255, .5); }
+.nz-geheim span.auf { border: 3px solid #fff; background: linear-gradient(180deg, #FFF3C4, #FFD54A); box-shadow: 0 3px 0 #C27D00; }
+.nz-geheim span.neu { animation: nz-auf .6s var(--feder) .5s both; box-shadow: 0 3px 0 #C27D00, 0 0 16px 4px rgba(255, 214, 74, .8); }
+.nz-hinweis { margin: 0; font-size: clamp(15px, 2.2vw, 18px); font-weight: 700; }
+/* Menü: Ton */
+.nz-ton { display: flex; align-items: center; gap: 10px; }
+.nz-ton svg { width: 26px; height: 26px; }
+a.nz-wahl-satz { color: inherit; text-decoration: none; display: flex; align-items: center; }
+/* Finger: steht still, Spitze oben in der Mitte; dreht sich um die Spitze */
+.nz-finger { position: fixed; z-index: 65; pointer-events: none; transform-origin: 50% 2%; filter: drop-shadow(0 6px 6px rgba(30, 40, 60, .35)); animation: nz-auf .3s ease-out; }
+.nz-finger[hidden] { display: none; }
+.nz-finger svg { width: 100%; height: 100%; display: block; }
 /* Glas zuletzt: gewinnt gegen die Rahmen-Kurzschreibweisen oben (border: 3px solid ohne Farbe) */
 .nz-glas, .nz-brett, .nz-werkzeug, .nz-karte, .nz-vtext,
 .nz[data-phase="vergleich"] .nz-ast, .nz[data-phase="fertig"] .nz-ast {
   background: var(--glas); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-color: var(--glas-rand); box-shadow: var(--glas-schatten); }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .nz { --glas: rgba(255, 255, 255, .86); } }
 @media (prefers-reduced-motion: reduce) { .nz *, .nz *::before, .nz *::after { animation: none !important; transition: none !important; } }
+/* A10, Korrekturen nach Screenshots: Zahl des Korbs bleibt am Korb, auch wenn er quer oben im Fluss steht */
+.nz[data-lage="quer"] .nz-rechts > .nz-korb { position: relative; }
+/* Telefon quer: zwei Bilder (Hilfe 3/4) nebeneinander – untereinander wäre jedes zu flach */
+.nz[data-niedrig] .nz-bild.zwei { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+/* Telefon quer, Ende: kein Platz für zwei Raupen und Karte – die Karte allein, der Korb oben rechts wie beim Lösen */
+.nz[data-niedrig][data-phase="fertig"] .nz-ast { display: none; }
+.nz[data-niedrig][data-lage="quer"][data-phase="fertig"] .nz-rechts .nz-korb { position: relative; left: auto; bottom: auto; translate: none; --korb: calc(var(--knopf) * 1.05); }
+.nz[data-niedrig][data-lage="quer"][data-phase="fertig"] .nz-tisch { margin-bottom: 0; }
+.nz[data-niedrig] .nz-karte.ende { padding: 12px 16px 16px; gap: 8px; }
+.nz[data-niedrig] .nz-kachel img, .nz[data-niedrig] .nz-kachel svg { height: min(64px, 14vh); }
+/* quer, mittlere Höhe: Kacheln am Ende flacher, damit die Karte über dem Korb bleibt */
+.nz[data-lage="quer"] .nz-kachel img, .nz[data-lage="quer"] .nz-kachel svg { height: min(100px, 11vh); }

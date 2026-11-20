@@ -46,6 +46,23 @@ export interface Sitzung {
    * zurückgekehrte Aufgabe, daher keine neue Version.
    */
   zurueckAus?: (Verweis | null)[];
+  /**
+   * Seit A10, je Aufgabe: was das Kind gerade baut, aber noch nicht mit der Perle abgeschickt hat (Zahl, Wahl, Tipp
+   * ins Bild). Nie Teil von Raupe, Zwilling oder Historie; geprüft wird nur, was abgeschickt ist. Optional – ein
+   * älterer Satz hat keine Entwürfe, daher keine neue Version.
+   */
+  entwurf?: (Antwort | null)[];
+  /** Seit A10: das allgemeine Beispiel der Geste (`src/satz/geste.ts`) läuft gerade – sein Schritt und Entwurf */
+  geste?: GestenZustand;
+}
+
+export interface GestenZustand {
+  /** 0: aus drei Bildern wählen; 1: Zahl nach Vorlage */
+  schritt: number;
+  /** Entwurf im Schritt */
+  antwort: Antwort | null;
+  /** im Schritt schon einmal falsch abgeschickt */
+  versucht: boolean;
 }
 
 export interface LernZustand {
@@ -103,6 +120,16 @@ export interface Profil {
    * wann im Satz „Später“ gedrückt wurde, wird nicht gespeichert); jede höchstens einmal
    */
   zurueckgelegt: Zurueckgelegt[];
+  /**
+   * Seit A10: das allgemeine Beispiel der Geste ist durch (es kommt einmal, vor der ersten Aufgabe). Ein Profil von
+   * vorher bekommt false über `neuesProfil` in `ladeProfil` – das Beispiel kommt dann einmal.
+   */
+  geste: boolean;
+  /**
+   * Seit A10: wie oft das Kind im Satz selbst eine Perle dieser Art abgeschickt hat – für den Finger (docs/STIL.md,
+   * „Палец-подсказка“: nach zwei eigenen Abgaben kommt er nicht mehr) und später für die Autoabgabe (C11).
+   */
+  abgaben: { wahl: number; bild: number };
 }
 
 /** Profil in Version 2 (A4 bis A6): ohne Reihe der zurückgelegten Aufgaben */
@@ -120,7 +147,7 @@ interface ProfilV1 extends Omit<ProfilV2, 'version' | 'formate'> {
 export const GEHEIMWOERTER = ['TEICH', 'BERGE', 'STRAND'];
 
 export function neuesProfil(): Profil {
-  return { version: 3, formate: {}, blaetter: 0, saetze: 0, geheim: { wort: GEHEIMWOERTER[0], offen: [] }, ton: true, zurueckgelegt: [] };
+  return { version: 3, formate: {}, blaetter: 0, saetze: 0, geheim: { wort: GEHEIMWOERTER[0], offen: [] }, ton: true, zurueckgelegt: [], geste: false, abgaben: { wahl: 0, bild: 0 } };
 }
 
 export function kenntnis(p: Profil, id: FormatId): Kenntnis {
@@ -299,11 +326,13 @@ export function zurueckEinsetzen(s: Sitzung, reihe: readonly Zurueckgelegt[], e:
 /**
  * Nächster Satz für dieses Kind: gemischt aus allen Formaten (`mischPlan`) – der allererste aus 3 Aufgaben, jeder
  * weitere aus 5 –, dazu eine zurückgelegte Aufgabe aus dem Profil (`zurueckEinsetzen`): ihr Format kommt sicher in
- * den Plan, damit sie einen Platz findet. `plan`: fester Plan statt des gemischten (Tests, Probe-Seite #/alle).
+ * den Plan, damit sie einen Platz findet. Im allerersten Satz ist jede Aufgabe auf Stufe 1. `plan`: fester Plan statt des gemischten (Tests, Probe-Seite #/alle).
  */
 export function naechsteSitzung(samen: number, p: Profil, e: Einstellung = STANDARD_EINSTELLUNG, plan?: PlanEintrag[]): Sitzung {
   const wartet = p.zurueckgelegt.find((z) => passt(z, e));
-  const pl = plan ?? mischPlan(samen, p.saetze === 0 ? ERSTER_SATZ : SATZ_LAENGE, wartet?.aufgabe.format);
+  const erster = p.saetze === 0;
+  // der allererste Satz: jede Aufgabe auf Stufe 1 – das Kind lernt dabei noch die Bedienung (Autorin, 20.11.2026)
+  const pl = plan ?? mischPlan(samen, erster ? ERSTER_SATZ : SATZ_LAENGE, wartet?.aufgabe.format).map((e) => (erster ? { ...e, stufe: 1 } : e));
   return zurueckEinsetzen(neueSitzung(samen, e, pl), p.zurueckgelegt, e);
 }
 

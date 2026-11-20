@@ -70,10 +70,10 @@ export const STANDARD_EINSTELLUNG: Einstellung = { zahlenraum: 20 };
 /** Wie das Kind antwortet */
 export type Eingabe =
   /**
-   * Zahl mit Ziffernperlen in Plätzen. Die Größe des Feldes kommt nie aus der Aufgabe (harte Regel 7: die
-   * Eingabe verrät nichts): Z und E für 0–99, H, Z und E nur bei Zahlenraum 100 (src/satz/zahleingabe.ts,
-   * `zahlfeld`). `einstellig`: nur ein Platz E – nur für ein Format, das bei JEDER Aufgabe einstellig
-   * antwortet (heute keins); hängt nie von der einzelnen Aufgabe ab.
+   * Zahl in einem Fenster (A10): matte Ziffern, die Zahl steht sofort in der Aufgabe. Die Größe des Feldes kommt nie
+   * aus der Aufgabe (harte Regel 7: die Eingabe verrät nichts): 0–99, bis 100 nur bei Zahlenraum 100
+   * (src/satz/zahleingabe.ts, `zahlfeld`). `einstellig`: nur eine Stelle – nur für ein Format, das bei JEDER Aufgabe
+   * einstellig antwortet (heute keins); hängt nie von der einzelnen Aufgabe ab.
    */
   | { art: 'zahl'; einstellig?: true }
   /** eine von mehreren Perlen wählen */
@@ -209,20 +209,13 @@ export function lernbeispiel<B>(f: Format<B>): Aufgabe<B>[] {
 
 /**
  * Sofortige Rückmeldung im Lernbeispiel (nur dort – im Satz gibt es keine bis zum Vergleichen):
- * richtig; falsch; offen = noch nichts oder eine Zahl, die erst halb eingegeben ist. Die Plätze lassen sich
- * in jeder Reihenfolge füllen (src/satz/zahleingabe.ts): 1 auf dem Weg zu 14 (getippt, gleich wird
- * geschoben) und 4 auf dem Weg zu 14 (erst E, dann Z) sind beide offen.
+ * richtig; falsch; offen = noch nichts abgegeben. Seit A10 schickt das Kind die Antwort selbst mit der
+ * Perle ab (docs/STIL.md, „Управление набором — одна стеклянная бусина“): eine abgegebene Zahl ist fertig,
+ * auch wenn sie nur eine Stelle hat – 1 auf dem Weg zu 14 ist dann falsch.
  */
 export function lernPruefen<B>(f: Format<B>, a: Aufgabe<B>, antwort: Antwort | null): 'richtig' | 'falsch' | 'offen' {
   if (!antwort) return 'offen';
-  const l = f.loesungen(a.bedingung)[0];
-  if (gleich(l, antwort)) return 'richtig';
-  if (antwort.art === 'zahl' && l.art === 'zahl') {
-    const ziel = String(l.wert);
-    const da = String(antwort.wert);
-    if (da.length < ziel.length && (ziel.startsWith(da) || ziel.endsWith(da))) return 'offen';
-  }
-  return 'falsch';
+  return gleich(f.loesungen(a.bedingung)[0], antwort) ? 'richtig' : 'falsch';
 }
 
 export function stimmt<B>(f: Format<B>, a: Aufgabe<B>, antwort: Antwort): boolean {

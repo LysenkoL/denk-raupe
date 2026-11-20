@@ -5,8 +5,6 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ziel = process.argv[2] ?? 'dist-artefakt/denk-raupe.html';
-// zweites Argument: Startseite, z. B. `neu` – der neue Satzbildschirm statt des alten
-if (process.argv[3]) process.env.VITE_START = process.argv[3];
 const out = 'dist-artefakt/bau';
 await build({
   logLevel: 'warn',

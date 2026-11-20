@@ -6,7 +6,6 @@ import { renderSatz } from './screens/satz';
 import { renderStil } from './screens/stil';
 import { renderPlatzhalter } from './screens/platzhalter';
 import { renderAlle } from './screens/alle';
-import { renderNeu } from './screens/neu';
 
 const app = document.getElementById('app')!;
 
@@ -19,9 +18,8 @@ function route(): void {
   if (path === '/stil') return renderStil(app, params);
   // Probe für die Autorin (bis zur Regalseite C4): alle Formate, je ein Satz nur aus einem Format
   if (path === '/alle') return renderAlle(app);
-  // Vorschau des neuen Satzbildschirms nach Probe 7c (bis A10); im Artefakt mit VITE_START=neu auch die Startseite
-  if (path === '/neu' || path === 'neu' || (path === '/' && import.meta.env.VITE_START === 'neu')) return renderNeu(app);
   if (path === '/welt' || path === '/pause') return renderPlatzhalter(app, path === '/welt' ? 'welt' : 'pause');
+  // #/neu: alte Adresse der Vorschau (bis A10) – zeigt jetzt den Satz
   void renderSatz(app);
 }
 
