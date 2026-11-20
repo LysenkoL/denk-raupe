@@ -107,6 +107,10 @@ export const KIND = {
     welcherBuchstabeFehlt: 'Welcher Buchstabe fehlt?',
     durchWelchesTor: 'Durch welches Tor geht die Raupe?',
     woKommtSieAn: 'Wo kommt die Raupe an?',
+    // Gruppe Г7
+    welcherKleineBuchstabe: 'Welcher kleine Buchstabe gehört dazu?',
+    welcheBleibtUebrig: 'Welche Zahl bleibt übrig?',
+    wieVieleVersteckt: 'Wie viele sind versteckt?',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {

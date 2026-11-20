@@ -210,5 +210,17 @@
   "format.labyrinth.name": "Labyrinth",
   "format.labyrinth.uebt": "Wege verfolgen: Die Raupe geht nach unten; an jeder Brücke muss sie hinüber. Erst drei Wege mit zwei Brücken, zuletzt fünf Wege mit vielen Brücken.",
   "format.labyrinth.beispiel": "Die Raupe startet auf Weg 1, nimmt die Brücke nach Weg 2 und später die nach Weg 3: Sie kommt bei Ausgang 3 an.",
-  "format.labyrinth.helfen": "Das Kind fährt mit dem Finger nach und biegt an jeder Brücke ab. Gehen Sie den Weg nicht vor."
+  "format.labyrinth.helfen": "Das Kind fährt mit dem Finger nach und biegt an jeder Brücke ab. Gehen Sie den Weg nicht vor.",
+  "format.gross-klein.name": "Groß und klein",
+  "format.gross-klein.uebt": "Groß- und Kleinbuchstaben zuordnen. Erst sehen beide ähnlich aus (O–o), dann nicht (G–g); auf der höchsten Stufe stehen leicht verwechselbare kleine Buchstaben zur Wahl (b, d, p, q).",
+  "format.gross-klein.beispiel": "Auf dem Schild steht D. Zur Wahl: b, d, p, q. Richtig ist d.",
+  "format.gross-klein.helfen": "Fragen Sie: „Wie schreibst du diesen Buchstaben klein?“ Bei b und d hilft das Schreiben mit dem Finger in die Luft. Nennen Sie den Buchstaben nicht.",
+  "format.zehner-paare.name": "Zehner-Paare",
+  "format.zehner-paare.uebt": "Zahlzerlegung schnell sehen: Je zwei Zahlen ergeben zusammen die Zahl auf dem Schild (10, 20 oder 100); eine bleibt übrig. Auf der höchsten Stufe kommt eine Zahl mehrmals vor.",
+  "format.zehner-paare.beispiel": "Ziel 10: 3, 8, 7, 2, 4. 3 und 7 sowie 8 und 2 sind Paare – übrig bleibt 4.",
+  "format.zehner-paare.helfen": "Das Kind kann Steine antippen, die schon ein Paar haben. Fragen Sie: „Was gehört zur 3, damit es 10 sind?“ Nennen Sie die Zahl nicht.",
+  "format.schuettelbox.name": "Schüttelbox",
+  "format.schuettelbox.uebt": "Zahlen zerlegen und ergänzen: Das Schild sagt, wie viele Kugeln in der Schachtel sind; ein Teil liegt unter dem Deckel. Die Zahlen werden größer (bis 20).",
+  "format.schuettelbox.beispiel": "Auf dem Schild 7, offen liegen 4 Kugeln: Unter dem Deckel sind 3.",
+  "format.schuettelbox.helfen": "Mit einer echten Schachtel und Murmeln spielen hilft sehr. Fragen Sie: „Wie viele fehlen noch bis 7?“ Nennen Sie die Zahl nicht."
 }

@@ -58,7 +58,11 @@ export type FormatId =
   | 'perlenkette'
   | 'abc-reihe'
   | 'raupen-weg'
-  | 'labyrinth';
+  | 'labyrinth'
+  // Gruppe Г7 (Verbinden, Bauen)
+  | 'gross-klein'
+  | 'zehner-paare'
+  | 'schuettelbox';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';

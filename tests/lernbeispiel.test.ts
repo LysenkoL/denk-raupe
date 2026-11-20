@@ -43,6 +43,9 @@ import type { AbcReihe } from '../src/aufgaben/abc-reihe';
 import type { RaupenWeg } from '../src/aufgaben/raupen-weg';
 import type { Labyrinth } from '../src/aufgaben/labyrinth';
 import { gehen } from '../src/aufgaben/raupen-weg';
+import type { GrossKlein } from '../src/aufgaben/gross-klein';
+import type { ZehnerPaare } from '../src/aufgaben/zehner-paare';
+import type { Schuettelbox } from '../src/aufgaben/schuettelbox';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -181,6 +184,10 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
   /** Raupen-Weg: Größe des Feldes, dann Länge des Wegs */
   'raupen-weg': (b) => [(b as RaupenWeg).n, gehen(b as RaupenWeg).felder.length],
   labyrinth: (b) => [(b as Labyrinth).wege],
+  // Gruppe Г7
+  'gross-klein': (b) => [(b as GrossKlein).wahl.length],
+  'zehner-paare': (b) => [(b as ZehnerPaare).zahlen.length],
+  schuettelbox: (b) => [(b as Schuettelbox).gesamt],
 };
 /** Zahl der Lösung (wie groß die Rechnung ist) */
 function antwortVon(id: FormatId, b: unknown): number {

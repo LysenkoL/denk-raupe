@@ -47,6 +47,10 @@ import { PERLENKETTE } from './perlenkette';
 import { ABC_REIHE } from './abc-reihe';
 import { RAUPEN_WEG } from './raupen-weg';
 import { LABYRINTH } from './labyrinth';
+// Gruppe Г7
+import { GROSS_KLEIN } from './gross-klein';
+import { ZEHNER_PAARE } from './zehner-paare';
+import { SCHUETTELBOX } from './schuettelbox';
 
 /**
  * Alle Formate. Jedes hier eingetragene Format kommt von selbst in die gemischten Sätze (src/satz/sitzung.ts,
@@ -101,4 +105,8 @@ export const FORMATE: Record<FormatId, Format<unknown>> = {
   'abc-reihe': ABC_REIHE as Format<unknown>,
   'raupen-weg': RAUPEN_WEG as Format<unknown>,
   labyrinth: LABYRINTH as Format<unknown>,
+  // Gruppe Г7
+  'gross-klein': GROSS_KLEIN as Format<unknown>,
+  'zehner-paare': ZEHNER_PAARE as Format<unknown>,
+  schuettelbox: SCHUETTELBOX as Format<unknown>,
 };
