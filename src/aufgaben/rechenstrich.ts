@@ -1,4 +1,4 @@
-import { FIGUR_TOKEN, HOLZ, HOLZ_KANTE, LATERNE, LATERNE_KANTE, TINTE, TINTE_LEISE } from '../design/farbe';
+import { FIGUR_TOKEN, LATERNE, LATERNE_KANTE, TINTE } from '../design/farbe';
 import type { Antwort } from '../perlen/antwort';
 import type { Einstellung, Format, ZeichenOptionen } from './format';
 import type { Zufall } from '../core/zufall';
@@ -155,12 +155,13 @@ function zeichne(r: Rechenstrich, o: ZeichenOptionen): string {
   const xs = lagen(r, werte);
   const hervor = o.hilfe >= 2 || !!o.vorrechnen;
   let t = '';
-  // leerer Strich aus Holz
+  // leerer Strich: eine ruhige braune Linie wie die Bögen, kurze Marken an Start, Zwischenstopp und Ziel
+  // (Autorin 20.11.2026: die Holzleiste mit langen Strichen sah unordentlich aus)
   const links = Math.min(...xs) - 26;
   const rechts = Math.max(...xs) + 26;
-  t += `<rect x="${links}" y="${LINIE_Y - 5 + 4}" width="${rechts - links}" height="10" rx="5" fill="${HOLZ_KANTE}"/>`;
-  t += `<rect x="${links}" y="${LINIE_Y - 5}" width="${rechts - links}" height="10" rx="5" fill="${HOLZ}"/>`;
-  xs.forEach((x) => (t += `<rect x="${x - 1.75}" y="${LINIE_Y - 15}" width="3.5" height="30" rx="1.75" fill="${TINTE_LEISE}"/>`));
+  const LINIE = FIGUR_TOKEN['ast-kante'];
+  t += `<rect x="${links}" y="${LINIE_Y - 3}" width="${rechts - links}" height="6" rx="3" fill="${LINIE}"/>`;
+  xs.forEach((x) => (t += `<rect x="${x - 2}" y="${LINIE_Y - 11}" width="4" height="22" rx="2" fill="${LINIE}"/>`));
   // Sprünge
   r.spruenge.forEach((s, i) => {
     const a = xs[i];
@@ -168,11 +169,21 @@ function zeichne(r: Rechenstrich, o: ZeichenOptionen): string {
     const hoch = Math.min(78, Math.abs(b - a) * 0.5);
     const scheitel = LINIE_Y - 16 - hoch;
     let g = '';
-    const bogen = `M${a} ${LINIE_Y - 16} Q${(a + b) / 2} ${LINIE_Y - 16 - hoch * 2} ${b} ${LINIE_Y - 18}`;
+    // Bogen von Marke zu Marke; die Spitze sitzt genau auf dem Ende und folgt der Richtung des Bogens dort
+    const y0 = LINIE_Y - 14;
+    const qx = (a + b) / 2;
+    const qy = y0 - hoch * 2;
+    const tx = b - qx;
+    const ty = y0 - qy;
+    const lang = Math.hypot(tx, ty) || 1;
+    const SP = 15;
+    // der Strich endet unter der Spitze (sonst ragt sein rundes Ende heraus)
+    const ex = b - (tx / lang) * SP * 0.7;
+    const ey = y0 - (ty / lang) * SP * 0.7;
+    const bogen = `M${a} ${y0} Q${qx} ${qy} ${ex.toFixed(1)} ${ey.toFixed(1)}`;
     if (hervor && i === 0) g += `<path d="${bogen}" fill="none" stroke="${LATERNE}" stroke-width="16" stroke-linecap="round"/>`;
-    g += `<path d="${bogen}" fill="none" stroke="${FIGUR_TOKEN['ast-kante']}" stroke-width="5" stroke-linecap="round"/>`;
-    const winkel = (Math.atan2(hoch * 0.9, (b - a) / 2) * 180) / Math.PI;
-    g += pfeilSpitze(b, LINIE_Y - 17, b > a ? winkel : 180 - winkel, FIGUR_TOKEN['ast-kante'], 13);
+    g += `<path d="${bogen}" fill="none" stroke="${LINIE}" stroke-width="5" stroke-linecap="round"/>`;
+    g += pfeilSpitze(b, y0, (Math.atan2(ty, tx) * 180) / Math.PI, LINIE, SP);
     g += schild((a + b) / 2, scheitel - 52, s, o, l);
     t += gruppe(!hervor ? null : i === 0 ? 'teil' : 'schatten', g);
   });

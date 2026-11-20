@@ -60,6 +60,8 @@ export const KIND = {
   },
   ton: 'Ton',
   neuerBuchstabe: 'Ein neuer Buchstabe!',
+  /** alle Buchstaben offen: das Geheimwort ist fertig (was es öffnet – C5/C6) */
+  wortFertig: 'Du hast das Geheimwort!',
   /** feste Aufträge der Formate; ein Format nennt nur den Schlüssel (docs/FORMATE.md, Abschnitt 3) */
   auftrag: {
     welcheZahlFehlt: 'Welche Zahl fehlt?',

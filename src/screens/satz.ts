@@ -416,9 +416,11 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       gezeigt = '';
       const g = profil.geheim;
       const zurueck = satz().perlen.some((p) => p.zurueck);
-      const geheim = `<div class="nz-geheim" role="img" aria-label="${KIND.geheimwort}">${[...g.wort].map((c, i) => `<span class="${g.offen.includes(i) ? 'auf' : ''}${i === neuerBuchstabe ? ' neu' : ''}">${g.offen.includes(i) ? c : ''}</span>`).join('')}</div>`;
+      const voll = g.offen.length >= g.wort.length;
+      // Geheimwort: der letzte Buchstabe macht es fertig – dann ein eigener kleiner Moment (docs/TZ.md, „Награды“)
+      const geheim = `<div class="nz-geheim${voll ? ' voll' : ''}" role="img" aria-label="${voll ? `${KIND.geheimwort}: ${g.wort}` : KIND.geheimwort}">${[...g.wort].map((c, i) => `<span class="${g.offen.includes(i) ? 'auf' : ''}${i === neuerBuchstabe ? ' neu' : ''}" style="--k:${i}">${g.offen.includes(i) ? c : ''}</span>`).join('')}</div>`;
       const innen = `<p class="nz-jubel">${KIND.fertigTitel}</p>${geheim}
-        ${neuerBuchstabe !== null ? `<p class="nz-hinweis">${KIND.neuerBuchstabe}</p>` : ''}${zurueck ? `<p class="nz-hinweis">${KIND.spaeter}</p>` : ''}
+        ${voll && neuerBuchstabe !== null ? `<p class="nz-wort-fertig">${KIND.wortFertig}</p>` : neuerBuchstabe !== null ? `<p class="nz-hinweis">${KIND.neuerBuchstabe}</p>` : ''}${zurueck ? `<p class="nz-hinweis">${KIND.spaeter}</p>` : ''}
         <div class="nz-ende">
             <button type="button" class="nz-kachel" data-gehe="welt">${BAUMHAUS}<span>${KIND.welt}</span></button>
             <button type="button" class="nz-kachel haupt" data-noch="1"><img src="${raupeBild}" alt=""><span>${KIND.neuerSatz}</span></button>

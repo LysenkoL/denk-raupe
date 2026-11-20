@@ -381,6 +381,17 @@ describe('Vergleichen', () => {
     await page.close();
   });
 
+  it('letzter Buchstabe: das Geheimwort ist fertig – eigene Zeile, alle Buchstaben leuchten', async () => {
+    const s = probe();
+    const page = await oeffnen(412, 800, { sitzung: s, profil: bekannt({ saetze: 4, geheim: { wort: 'TEICH', offen: [0, 1, 2, 4] } }) });
+    for (let i = 0; i < 3; i++) await geben(page, s.aufgaben[i], loesung(s.aufgaben[i]));
+    await vergleichen(page);
+    expect(await page.textContent('.nz-wort-fertig')).toBe(KIND.wortFertig);
+    expect(await page.$$eval('.nz-geheim.voll span', (e) => e.map((x) => x.textContent).join(''))).toBe('TEICH');
+    expect(await page.locator('.nz-karte.ende .nz-hinweis', { hasText: KIND.neuerBuchstabe }).count()).toBe(0);
+    await page.close();
+  });
+
   it('nochmal Vergleichen ohne Änderung: Hinweis, kein Fehlversuch', async () => {
     const s = probe();
     const page = await oeffnen(412, 800, { sitzung: s });
