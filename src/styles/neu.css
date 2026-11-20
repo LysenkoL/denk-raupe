@@ -105,7 +105,15 @@
 
 /* ── Tisch: Fenster der Aufgabe und Lade, beide in fester Größe ── */
 .nz-tisch { grid-area: tisch; min-height: 0; display: grid; gap: var(--g); grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-.nz[data-lage="quer"] .nz-tisch { grid-template-columns: minmax(0, 1fr) var(--lade-b); grid-template-rows: minmax(0, 1fr); }
+/* Quer, niedrig (Telefon quer): Lade rechts neben dem Brett */
+.nz[data-lage="quer"][data-niedrig] .nz-tisch { grid-template-columns: minmax(0, 1fr) var(--lade-b); grid-template-rows: minmax(0, 1fr); }
+/* Quer, Tablet: alles auf einer Achse – Brett oben, darunter eine Reihe 0–9 und daneben das Blatt (Autorin 20.11.2026) */
+.nz[data-lage="quer"]:not([data-niedrig]) .nz-tisch { width: min(100%, 1240px); justify-self: center; }
+.nz[data-lage="quer"]:not([data-niedrig]) .nz-lade { max-width: none; flex-direction: row; justify-content: center; align-items: center; gap: calc(var(--taste) * .3); }
+.nz[data-lage="quer"]:not([data-niedrig]) .nz-werkzeug { width: calc(var(--taste) * 13.22 + 6px); height: calc(var(--taste) * 1.5); padding: calc(var(--taste) * .18) calc(var(--taste) * .26); }
+.nz[data-lage="quer"]:not([data-niedrig]) .nz-tasten { grid-template-columns: repeat(10, var(--taste)) calc(var(--taste) * 1.3); }
+.nz[data-lage="quer"]:not([data-niedrig]) .nz-loeschen { grid-column: 11; grid-row: 1; }
+.nz[data-lage="quer"]:not([data-niedrig]) .nz-ablage { width: auto; margin-top: 0; min-height: 0; }
 .nz-brett { position: relative; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; container-type: inline-size;
   border: 3px solid; border-radius: 28px; }
 .nz-brett.voll { grid-column: 1 / -1; grid-row: 1 / -1; }
@@ -129,7 +137,7 @@
 .nz-tipp { display: flex; align-items: center; justify-content: center; gap: calc(var(--taste) * .25); padding: 0 8px; text-align: left;
   font-size: clamp(16px, calc(var(--taste) * .36), 24px); font-weight: 800; color: var(--text); }
 .nz-tipp svg { flex: none; width: calc(var(--taste) * 1.05); height: calc(var(--taste) * 1.05); }
-.nz[data-lage="quer"] .nz-tipp svg { transform: rotate(-90deg); } /* in zwei Spalten liegt das Bild links */
+.nz[data-lage="quer"][data-niedrig] .nz-tipp svg { transform: rotate(-90deg); } /* in zwei Spalten liegt das Bild links */
 .nz-tasten { display: grid; grid-template-columns: repeat(5, var(--taste)) max(44px, calc(var(--taste) * 1.02)); gap: calc(var(--taste) * .16) calc(var(--taste) * .14); justify-content: center; }
 /* Kachel: weißes Gesicht, dicker Rand und Kante in der Farbe der Ziffer, weicher farbiger Schatten */
 .nz-taste { position: relative; display: grid; place-items: center; border-radius: calc(var(--taste) * .27); aspect-ratio: 1; width: var(--taste);

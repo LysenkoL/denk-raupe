@@ -429,7 +429,10 @@ export function renderNeu(app: HTMLElement): void {
     const p = Math.max(28, Math.min(84, breit, H * (niedrig ? 0.13 : quer ? 0.085 : 0.06)));
     root.style.setProperty('--kopf', String(kopf));
     const ladeB = quer ? Math.min(480, Math.max(300, W * 0.34)) : Math.min(W, 640, Math.max(470, W * 0.62));
-    const taste = Math.max(44, Math.min(84, (ladeB - 54) / 5.95, H * (niedrig ? 0.125 : quer ? 0.1 : 0.062)));
+    // Lade passt immer in ihr Glas: zwei Reihen = 6,72·t Kacheln + 0,44·t Innenabstand + 6 px Rand;
+    // Tablet quer: eine Reihe 0–9 (13,22·t + 6 px) + Abstand 0,3·t + Blatt (≈ 2,44·t) in der Breite des Tischs (max. 1240 px)
+    const breitQuer = (Math.min(W, 1240) - 14) / 16;
+    const taste = Math.max(44, Math.min(84, quer && !niedrig ? breitQuer : (ladeB - 6) / 7.16, H * (niedrig ? 0.125 : quer ? 0.1 : 0.062)));
     px('--g', Math.max(8, Math.min(16, H * 0.014))); px('--knopf', knopf); px('--p', p); px('--luecke', p * 0.08);
     px('--treffer', Math.max(0, (48 - p) / 2)); px('--lade-b', ladeB); px('--taste', taste); px('--ab', Math.max(56, Math.min(96, taste * 1.25)));
   }
