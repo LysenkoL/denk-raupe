@@ -283,7 +283,7 @@ a.nz-wahl-satz { color: inherit; text-decoration: none; display: flex; align-ite
 /* Finger: steht still, Spitze oben in der Mitte; dreht sich um die Spitze */
 .nz-finger { position: fixed; z-index: 65; pointer-events: none; transform-origin: 50% 2%; filter: drop-shadow(0 6px 6px rgba(30, 40, 60, .35)); animation: nz-auf .3s ease-out; }
 .nz-finger[hidden] { display: none; }
-.nz-finger svg { width: 100%; height: 100%; display: block; }
+.nz-finger img { width: 100%; height: 100%; display: block; object-fit: contain; }
 /* Glas zuletzt: gewinnt gegen die Rahmen-Kurzschreibweisen oben (border: 3px solid ohne Farbe) */
 .nz-glas, .nz-brett, .nz-werkzeug, .nz-karte, .nz-vtext,
 .nz[data-phase="vergleich"] .nz-ast, .nz[data-phase="fertig"] .nz-ast {

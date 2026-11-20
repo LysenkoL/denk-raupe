@@ -1,7 +1,7 @@
 /**
  * Farben des Облик «стекло» (docs/STIL.md, «Облик экрана набора: стекло»; von der Autorin am 20.11.2026
  * angenommen) für die kleinen Bilder des Satzbildschirms. Sie liegen außerhalb der Token der Holz-Welt
- * (tokens.css): Dienstknöpfe in Grau-Blau, Kachelränder der Ziffern, Baumhaus und Finger.
+ * (tokens.css): Dienstknöpfe in Grau-Blau, Kachelränder der Ziffern, Baumhaus.
  * Die Flächen selbst (Glas, Brett, Kacheln) stehen in src/styles/satz.css.
  */
 export const GLAS = {
@@ -19,10 +19,6 @@ export const GLAS = {
   haus: '#FFC21F',
   dach: '#FF7A59',
   tuer: '#8B5CF6',
-  /** Finger (bis die Zeichnung aus „Круг 2“ da ist) */
-  haut: '#FFE2C6',
-  hautKante: '#8A5A3C',
-  hautFalte: '#C99572',
 } as const;
 
 /**

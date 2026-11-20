@@ -36,6 +36,8 @@ import blattBild from '../bilder/k1/blatt.webp';
 import blattGoldBild from '../bilder/k1/blatt-gold.webp';
 import laterneBild from '../bilder/k1/laterne.webp';
 import korbVollBild from '../bilder/k1/korb-voll.webp';
+/** Finger (docs/STIL.md, „Палец-подсказка“): Kinderhand, Spitze oben genau in der Mitte; 300 × 430 (Autorin 20.11.2026) */
+import fingerBild from '../bilder/k1/finger.webp';
 import wieseHoch from '../bilder/welten/wiese-hoch.webp';
 import teichHoch from '../bilder/welten/teich-hoch.webp';
 import herbstHoch from '../bilder/welten/herbst-hoch.webp';
@@ -80,6 +82,8 @@ const SPERRE_MS = 300;
 /** Finger bei Wahl und Bild: nach so langer Ruhe, solange das Kind diese Art noch nicht zweimal selbst abgeschickt hat */
 const FINGER_RUHE_MS = 15000;
 const FINGER_BIS = 2;
+/** Höhe des Fingerbilds je Breite (300 × 430) */
+const FINGER_HOCH = 430 / 300;
 const bewegung = () => !matchMedia('(prefers-reduced-motion: reduce)').matches;
 const warte = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
@@ -93,11 +97,6 @@ const LEER = '<svg class="nz-perle" viewBox="0 0 100 100" aria-hidden="true"><ci
 const BAUMHAUS = `<svg viewBox="0 0 120 110" aria-hidden="true"><rect x="52" y="58" width="16" height="46" rx="5" fill="${GLAS.stamm}"/><ellipse cx="60" cy="104" rx="40" ry="6" fill="${GLAS.laubHell}"/><circle cx="60" cy="40" r="34" fill="${GLAS.laub}"/><circle cx="34" cy="50" r="22" fill="${GLAS.laubHell}"/><circle cx="86" cy="50" r="22" fill="${GLAS.laubHell}"/><circle cx="60" cy="30" r="22" fill="${GLAS.laubLicht}"/><rect x="44" y="44" width="32" height="26" rx="5" fill="${GLAS.haus}"/><path d="M40 46 L60 30 L80 46 Z" fill="${GLAS.dach}"/><rect x="55" y="54" width="10" height="16" rx="4" fill="${GLAS.tuer}"/></svg>`;
 const TON_AN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
 const TON_AUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 9l5 6M21.5 9l-5 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
-/**
- * Finger (docs/STIL.md, „Палец-подсказка“): Hand mit ausgestrecktem Zeigefinger, Spitze oben in der Mitte (60, 4).
- * Bis die Zeichnung aus „Круг 2“ (docs/BILDER.md) da ist, zeichnet sie der Code.
- */
-const FINGER = `<svg viewBox="0 0 120 170" aria-hidden="true"><path d="M48 92 V22 a12 12 0 0 1 24 0 V78 l4-2 a11 11 0 0 1 14 6 l2 6 a11 11 0 0 1 14 7 l1 5 a11 11 0 0 1 13 9 v22 c0 22-16 40-40 40 h-10 c-16 0-26-8-34-20 l-22-32 a10 10 0 0 1 15-13 z" fill="${GLAS.haut}" stroke="${GLAS.hautKante}" stroke-width="5" stroke-linejoin="round"/><path d="M76 78 v16 M92 88 v12 M107 99 v8" stroke="${GLAS.hautFalte}" stroke-width="4" stroke-linecap="round"/><ellipse cx="60" cy="14" rx="6" ry="4" fill="#fff" opacity=".7"/></svg>`;
 
 function perle(a: Antwort | null): string {
   return a ? perleSvg(perlenBild(a), 'nz-perle') : LEER;
@@ -184,7 +183,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       <div class="nz-reihe nz-zwilling" id="nz-zwilling" aria-label="${KIND.deinZwilling}" hidden></div></section>
     <section class="nz-tisch" id="nz-tisch" aria-live="polite"></section>
     <div class="nz-menue" id="nz-menue" hidden></div>
-    <div class="nz-finger" id="nz-finger" hidden>${FINGER}</div>
+    <div class="nz-finger" id="nz-finger" hidden><img src="${fingerBild}" alt=""></div>
   </div>`;
   const root = app.querySelector<HTMLElement>('#nz')!;
   const tisch = root.querySelector<HTMLElement>('#nz-tisch')!;
@@ -458,7 +457,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const r = ziel.getBoundingClientRect();
     if (!r.width) return fingerAus();
     const b = Math.max(48, Math.min(96, r.height * 1.1));
-    const h = b * (170 / 120);
+    const h = b * FINGER_HOCH;
     finger.style.width = `${b}px`;
     finger.style.height = `${h}px`;
     const untenPlatz = innerHeight - r.bottom;
