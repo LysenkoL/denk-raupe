@@ -66,9 +66,9 @@
   background: radial-gradient(circle at 40% 30%, #FFF4C8, #FFC21F); border: 3px solid #fff; box-shadow: 0 4px 0 #D99400, 0 6px 10px var(--schatten); }
 .nz-ueberblick img { width: 86%; height: 86%; object-fit: contain; object-position: center bottom; }
 .nz-blatt { position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: contain; z-index: 3; pointer-events: none; transform: rotate(-12deg);
-  transition: transform .45s var(--feder), opacity .4s; filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 2px rgba(30, 60, 10, .3)); }
+  transition: transform .8s cubic-bezier(.22, 1, .36, 1), opacity .7s ease-out; filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 2px rgba(30, 60, 10, .3)); }
 .nz-slot:nth-child(odd) .nz-blatt { transform: rotate(8deg) scaleX(-1); }
-.nz-blatt.weg, .nz-slot:nth-child(odd) .nz-blatt.weg { transform: translate(18px, -50px) rotate(-40deg) scale(.6); opacity: 0; }
+.nz-blatt.weg, .nz-slot:nth-child(odd) .nz-blatt.weg { transform: translate(24px, -80px) rotate(-30deg) scale(.7); opacity: 0; }
 .nz-blatt.wackelt { animation: nz-wackeln .55s ease-in-out; }
 @keyframes nz-wackeln { 25% { transform: rotate(-22deg) } 55% { transform: rotate(-4deg) } 80% { transform: rotate(-15deg) } }
 
@@ -142,9 +142,21 @@
 .nz-gross { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--pg) * .3); --p: var(--pg); --luecke: 6px; }
 .nz-gross.zu { animation: nz-zu .3s ease-in forwards; }
 @keyframes nz-zu { to { transform: scale(.9) translateY(-30px); opacity: 0 } }
-/* der Zwilling kriecht auf seinen Ast: Kopf voran, von rechts nach links, mit kleinem Auf und Ab */
-.nz-zwilling.kriecht { animation: nz-kriechen 1.1s cubic-bezier(.3, .6, .4, 1) both; }
-@keyframes nz-kriechen { 0% { transform: translateX(110vw) } 30% { transform: translateX(60vw) translateY(-6px) } 55% { transform: translateX(25vw) } 75% { transform: translateX(6vw) translateY(-5px) } 100% { transform: none } }
+/* Der Zwilling kriecht auf seinen Ast: Kopf voran von rechts, eine weiche Fahrt mit Abbremsen;
+   dabei läuft eine Welle durch den Körper (Kopf zuerst, dann Perle für Perle) – wie bei einer echten Raupe. */
+.nz-zwilling.kriecht { animation: nz-kriechen 1.7s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes nz-kriechen { from { transform: translateX(105vw) } to { transform: none } }
+.nz-zwilling.kriecht .nz-slot, .nz-zwilling.kriecht .nz-kopf { animation: nz-welle .42s ease-in-out calc(var(--i, 0) * 70ms) 4 alternate both; }
+@keyframes nz-welle { from { translate: 0 0 } to { translate: 0 calc(var(--p) * -.14) } }
+/* Vergleich ohne Brett: die beiden Raupen liegen direkt auf der Wiese */
+.nz-brett.frei { background: none; border-color: transparent; box-shadow: none; }
+.nz-gross { animation: nz-gross-auf .45s cubic-bezier(.22, 1, .36, 1); }
+@keyframes nz-gross-auf { from { opacity: 0; transform: translateY(16px) } }
+/* eine neue Aufgabe blendet weich ein (Frage, Bild und Werkzeug), Tippen innerhalb der Aufgabe nicht */
+.nz-brett.frisch .nz-frage, .nz-brett.frisch .nz-bild > svg, .nz-brett.frisch ~ .nz-lade .nz-werkzeug > * { animation: nz-rein .4s cubic-bezier(.22, 1, .36, 1) both; }
+.nz-brett.frisch .nz-bild > svg { animation-delay: .05s; }
+.nz-brett.frisch ~ .nz-lade .nz-werkzeug > * { animation-delay: .1s; }
+@keyframes nz-rein { from { opacity: 0; transform: translateY(10px) scale(.98) } }
 .nz-jubel { margin: 0; font-size: clamp(22px, min(4.6vw, 5vh), 40px); font-weight: 800; animation: nz-auf .5s var(--feder); }
 @keyframes nz-auf { from { transform: scale(.9); opacity: 0 } }
 .nz-ende { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 2vw, 20px); width: min(620px, 100%); }

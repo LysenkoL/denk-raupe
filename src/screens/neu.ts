@@ -115,6 +115,8 @@ function wahlInhalt(a: Antwort): string {
 export function renderNeu(app: HTMLElement): void {
   let s: Zustand;
   let zuletzt: string | null = null;
+  /** zuletzt gezeigte Aufgabe: nur eine neue Aufgabe blendet weich ein, nicht jeder Tipp */
+  let gezeigt = -1;
   let nur: FormatId | null = null;
   app.innerHTML = `<div class="nz" id="nz">${SZENE}
     <div class="nz-oben">
@@ -138,7 +140,7 @@ export function renderNeu(app: HTMLElement): void {
     const n = aufgaben.length;
     s = { aufgaben, antwort: Array(n).fill(null), text: Array(n).fill(''), wahl: Array(n).fill(null), blatt: Array(n).fill('zu'), geaendert: Array(n).fill(false),
       runden: 0, aktuell: 0, phase: 'loesen', korb: 0, hilfe: false, markiert: false, manuell: false, fliegt: false, sperre: 0, neu: -1 };
-    zuletzt = null;
+    zuletzt = null; gezeigt = -1;
     zeichnen();
   }
 
@@ -213,13 +215,15 @@ export function renderNeu(app: HTMLElement): void {
             <button type="button" class="nz-kachel haupt" data-noch="1"><img src="${raupeBild}" alt=""><span>${KIND.neuerSatz}</span></button>
             <button type="button" class="nz-kachel" data-gehe="pause"><img src="${raupeLiegtBild}" alt=""><span>Pause</span></button></div>${regen()}`
         : `<button class="nz-vergleichen" type="button" data-vergleichen="1">${KIND.vergleichen}</button>`;
+      gezeigt = -1;
       tisch.innerHTML = `<div class="nz-brett voll"><div class="nz-bereit">${innen}</div></div>`;
       return;
     }
     const i = s.aktuell, a = s.aufgaben[i], f = format(i);
     const notiz = s.runden > 0 && offen(i) && !s.geaendert[i] ? 'Hier ist noch ein Blatt. Schau noch einmal.' : '';
     const bild = f.zeichne(a.bedingung, { hilfe: s.hilfe ? 2 : 0, gewaehlt: entwurf(i) });
-    tisch.innerHTML = `<div class="nz-brett"><div class="nz-frage-zeile"><h1 class="nz-frage">${KIND.auftrag[f.auftrag]}</h1>
+    const frisch = gezeigt !== i; gezeigt = i;
+    tisch.innerHTML = `<div class="nz-brett${frisch ? ' frisch' : ''}"><div class="nz-frage-zeile"><h1 class="nz-frage">${KIND.auftrag[f.auftrag]}</h1>
       <button class="nz-laterne" type="button" data-hilfe="1" aria-pressed="${s.hilfe}"><span class="nz-rund"><img src="${laterneBild}" alt=""></span><span class="nz-name">${KIND.hilfe}</span></button></div>
       <div class="nz-bild" id="nz-bild">${bild}</div>${notiz ? `<p class="nz-hinweis">${notiz}</p>` : ''}</div>${ladeHtml(i)}`;
   }
@@ -288,21 +292,21 @@ export function renderNeu(app: HTMLElement): void {
   function vergleichen(): void {
     const erste = s.runden === 0; s.runden++;
     s.phase = 'vergleich'; zeichnenAst();
-    const pg = Math.max(26, Math.min(96, Math.floor((tisch.clientWidth - 60) / (s.aufgaben.length * 1.08 + 1.4)), Math.floor((tisch.clientHeight - 60) / 3.6)));
+    const pg = Math.max(26, Math.min(96, Math.floor((tisch.clientWidth - 24) / (s.aufgaben.length * 1.08 + 1.4)), Math.floor((tisch.clientHeight - 60) / 3.6)));
     const reihe = (zwilling: boolean) => {
-      let h = `<img class="nz-kopf" src="${zwilling ? zwillingBild : raupeBild}" alt="">`;
+      let h = `<img class="nz-kopf" src="${zwilling ? zwillingBild : raupeBild}" alt="" style="--i:0">`;
       s.aufgaben.forEach((a, i) => {
         if (!zwilling) { h += `<span class="nz-slot"><span class="nz-nest"></span>${s.antwort[i] ? perle(s.antwort[i]) : ''}</span>`; return; }
         const l = FORMATE[a.format].loesungen(a.bedingung)[0];
         const zu = s.blatt[i] === 'zu';
-        h += `<span class="nz-slot" data-gslot="${i}"><span class="nz-nest"></span>${perle(l)}<img class="nz-blatt${zu ? '' : ' weg'}" src="${s.blatt[i] === 'gold' ? blattGoldBild : blattBild}" alt=""></span>`;
+        h += `<span class="nz-slot" data-gslot="${i}" style="--i:${i + 1}"><span class="nz-nest"></span>${perle(l)}<img class="nz-blatt${zu ? '' : ' weg'}" src="${s.blatt[i] === 'gold' ? blattGoldBild : blattBild}" alt=""></span>`;
       });
       return h;
     };
-    tisch.innerHTML = `<div class="nz-brett voll"><div class="nz-gross" style="--pg:${pg}px"><div class="nz-reihe">${reihe(false)}</div><div class="nz-reihe nz-zwilling kriecht">${reihe(true)}</div></div></div>`;
+    tisch.innerHTML = `<div class="nz-brett voll frei"><div class="nz-gross" style="--pg:${pg}px"><div class="nz-reihe">${reihe(false)}</div><div class="nz-reihe nz-zwilling kriecht">${reihe(true)}</div></div></div>`;
     const offene = s.aufgaben.map((_, i) => i).filter(offen);
     const bleiben: number[] = [];
-    const takt = bewegung() ? 380 : 0, kriechen = bewegung() ? 1100 : 0;
+    const takt = bewegung() ? 380 : 0, kriechen = bewegung() ? 1700 : 0;
     offene.forEach((i, k) => setTimeout(() => {
       const g = tisch.querySelector(`[data-gslot="${i}"] .nz-blatt`);
       if (stimmt(format(i), s.aufgaben[i], s.antwort[i]!)) {
