@@ -7,7 +7,8 @@ import { FORMATE } from '../src/aufgaben';
 import { aufgabeAus, lernbeispiel, stimmt, type Aufgabe, type FormatId, type HilfeStufe, type Zahlenraum } from '../src/aufgaben/format';
 import { hilfePunkte, type Mauer } from '../src/aufgaben/zahlenmauer';
 import { setzeAntwort, vergleiche } from '../src/satz/vergleich';
-import { neueSitzung, neuesProfil, PROBE_FORMATE, type Profil, type Sitzung } from '../src/satz/sitzung';
+import { neueSitzung, neuesProfil, probePlan, PROBE_FORMATE, type Profil, type Sitzung } from '../src/satz/sitzung';
+import { probeSatzPlan, probeStufen } from '../src/screens/alle';
 import { gleich, type Antwort } from '../src/perlen/antwort';
 import { KIND } from '../src/i18n/kind';
 
@@ -38,6 +39,8 @@ afterAll(async () => {
 });
 
 const SAMEN = 20261115;
+/** alle eingetragenen Formate (ein neuer gemischter Satz kann jedes bringen) */
+const ALLE = Object.keys(FORMATE) as FormatId[];
 
 /**
  * Seite mit festem Satz; `formate` = Kenntnis im Profil (Standard: alle bekannt); `gespeichert` = so liegt es schon im Speicher;
@@ -50,7 +53,7 @@ async function oeffnen(
 ): Promise<{ page: Page; sitzung: Sitzung }> {
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: o.bewegung ? 'no-preference' : 'reduce' });
   const sitzung = o.gespeichert?.sitzung ?? neueSitzung(o.samen ?? SAMEN);
-  const alleBekannt = Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt']));
+  const alleBekannt = Object.fromEntries(ALLE.map((id) => [id, 'bekannt']));
   const profil = o.gespeichert?.profil ?? { ...neuesProfil(), ton: false, formate: o.formate ?? alleBekannt };
   // Musterseite fasst den Speicher nicht an – sonst könnte die App beim ersten Laden einen eigenen Satz speichern
   await page.goto(url + '#/stil');
@@ -76,7 +79,7 @@ async function oeffnen(
   return { page, sitzung };
 }
 
-const bekanntesProfil = () => ({ ...neuesProfil(), ton: false, formate: Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) });
+const bekanntesProfil = () => ({ ...neuesProfil(), ton: false, formate: Object.fromEntries(ALLE.map((id) => [id, 'bekannt'])) });
 
 /** fester Satz, dessen Zahlenmauer eine andere größte Zahl hat (Stufe 2: Grenze = Zahlenraum) */
 function satzMitMauer(stufe: number, zahlenraum: Zahlenraum): { sitzung: Sitzung; i: number } {
@@ -141,8 +144,14 @@ async function eingeben(page: Page, s: Sitzung, i: number, antwort: Antwort): Pr
   } else {
     await page.click(`[data-wahl="${a.wahl!.findIndex((w) => gleich(w, antwort))}"]`);
   }
-  // abgebrochene Animationen (Bildschirm neu gezeichnet) zählen als fertig
-  await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => null))));
+  await bewegungFertig(page);
+}
+
+/** endliche Animationen abwarten (abgebrochene zählen als fertig; Blinzeln und Fühler laufen immer) */
+async function bewegungFertig(page: Page): Promise<void> {
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().filter((x) => x.effect?.getTiming().iterations !== Infinity).map((x) => x.finished.catch(() => null))),
+  );
 }
 
 /** Hilfe Stufe 2 auf dem Bild: der hervorgehobene Teil ist markiert (in allen drei Formaten, src/aufgaben/format.ts) */
@@ -166,7 +175,10 @@ async function lernTippen(page: Page, a: Aufgabe, antwort: Antwort): Promise<voi
 
 async function vergleichen(page: Page): Promise<void> {
   await page.click('.vergleichen');
+  // mit Bewegung fliegen die Blätter erst noch in den Korb: so lange ist der Satz „beschäftigt“
+  await page.waitForFunction(() => document.querySelector('.satz')?.getAttribute('aria-busy') === 'false');
   await page.waitForFunction(() => document.querySelector('.ende') || !document.querySelector('.vergleichen')!.hasAttribute('disabled') || document.querySelector('.meldung')?.textContent);
+  await bewegungFertig(page);
   await page.waitForTimeout(200);
 }
 
@@ -179,13 +191,15 @@ for (const [name, w, h] of GERAETE) {
         const box = (el: Element) => el.getBoundingClientRect();
         const kind = [...document.querySelectorAll('.raupe-zeile.kind .perle')].map(box);
         const zw = [...document.querySelectorAll('.raupe-zeile.zwilling .zwilling-perle')].map(box);
-        const koepfe = [...document.querySelectorAll('.kopf')].map(box);
+        const koepfe = [...document.querySelectorAll('.vorne')].map(box);
         return {
           scrollW: document.documentElement.scrollWidth,
           kind: kind.map((r) => ({ x: r.x + r.width / 2, y: r.y, h: r.height })),
           zw: zw.map((r) => ({ x: r.x + r.width / 2 })),
           kopfRechts: Math.max(...koepfe.map((r) => r.right)),
-          buehneRechts: box(document.querySelector('.buehne-wrap')!).right,
+          buehneRechts: box(document.querySelector('.ast-zone')!).right,
+          buehneLinks: box(document.querySelector('.ast-zone')!).left,
+          kopfLinks: Math.min(...koepfe.map((r) => r.left)),
           ziffern: [...document.querySelectorAll('[data-ziffer]')].map((e) => box(e).height),
           plaetze: [...document.querySelectorAll('.platz, .nest')].map((e) => ({ w: box(e).width, h: box(e).height })),
         };
@@ -194,7 +208,9 @@ for (const [name, w, h] of GERAETE) {
       for (const p of m.kind) expect(Math.abs(p.y - m.kind[0].y)).toBeLessThan(1);
       m.kind.forEach((p, i) => expect(Math.abs(p.x - m.zw[i].x), `Perle ${i + 1}`).toBeLessThan(1));
       for (const p of m.kind) expect(p.h).toBeGreaterThanOrEqual(48);
+      // Vorderteile von Raupe und Zwilling bleiben auf dem Ast
       expect(m.kopfRechts).toBeLessThanOrEqual(m.buehneRechts + 1);
+      expect(m.kopfLinks).toBeGreaterThanOrEqual(m.buehneLinks - 1);
       for (const z of m.ziffern) expect(z).toBeGreaterThanOrEqual(48);
       // Zahlenmauer offen: zwei Plätze (Mulde und ganzer Platz) mindestens 48 px
       expect(m.plaetze).toHaveLength(4);
@@ -212,7 +228,9 @@ for (const [name, w, h] of GERAETE) {
  * `samen`: andere Aufgabe desselben Formats (z. B. eine Mauer mit vielen Punkten).
  */
 function satzMitHilfe(id: FormatId, stufe: number, hilfe: HilfeStufe, zahlenraum: Zahlenraum = 20, samen?: number): Sitzung {
-  const s = neueSitzung(SAMEN);
+  // Probesatz; ein Format, das nicht darin ist, kommt an den ersten Platz
+  const plan = probePlan(SAMEN);
+  const s = neueSitzung(SAMEN, undefined, plan.some((p) => p.format === id) ? plan : [{ format: id, stufe }, ...plan.slice(1)]);
   const i = s.aufgaben.findIndex((a) => a.format === id);
   const aufgaben = s.aufgaben.map((a, j) => (j === i ? aufgabeAus(FORMATE[id], samen ?? a.samen, stufe, { zahlenraum }) : a));
   const daneben = (a: Aufgabe): Antwort => {
@@ -231,7 +249,11 @@ function vollePunkte(): number {
 
 /** Hilfe auf dem Bild je Format: [Name, Format, Stufe, Hilfe, Zahlenraum, Samen] */
 const HILFE_FAELLE: [string, FormatId, number, HilfeStufe, Zahlenraum, number?][] = [
-  ...PROBE_FORMATE.flatMap((id) => ([2, 3] as const).map((hilfe) => [`${id}, Hilfe ${hilfe}`, id, 2, hilfe, 20] as [string, FormatId, number, HilfeStufe, Zahlenraum])),
+  ...ALLE.flatMap((id) => ([2, 3] as const).map((hilfe) => [`${id}, Hilfe ${hilfe}`, id, 2, hilfe, 20] as [string, FormatId, number, HilfeStufe, Zahlenraum])),
+  // größte Bilder der Zahl-Formate: Stufe 3 bis 100 mit Punkten der Hilfe
+  ...(['wie-viele', 'rechenbild', 'rechenmaschine', 'groesser-kleiner', 'verdoppeln', 'klecks'] as FormatId[]).map(
+    (id) => [`${id} Stufe 3 bis 100, Hilfe 3`, id, 3, 3, 100] as [string, FormatId, number, HilfeStufe, Zahlenraum],
+  ),
   ['wer-ist-es Stufe 1, Hilfe 3 an der ähnlichen Aufgabe', 'wer-ist-es', 1, 3, 20],
   ['zahlenmauer bis 100, Hilfe 3 mit vielen Punkten', 'zahlenmauer', 2, 3, 100, vollePunkte()],
 ];
@@ -245,7 +267,7 @@ for (const [name, w, h] of GERAETE) {
           const r = el.getBoundingClientRect();
           return { l: r.left, r: r.right, w: r.width, h: r.height };
         };
-        const eigen = document.querySelector('.aufgabe > .aufgabe-bild svg')!;
+        const eigen = document.querySelector('.aufgabe .feld > .aufgabe-bild svg')!;
         const kasten = document.querySelector('.hilfe-box svg');
         return {
           scrollW: document.documentElement.scrollWidth,
@@ -497,11 +519,14 @@ describe('Ablauf eines Satzes', () => {
   it('Hilfe: vor dem Vergleichen zwei Stufen, danach bis zur ähnlichen Aufgabe; „Später“ legt zurück', async () => {
     const { page, sitzung } = await oeffnen(390, 900);
     await page.click('.perle[data-i="1"]');
-    // Stufe 1: das Lernbeispiel auf Wunsch; zurück steht sein letzter Schritt vorgerechnet in der Hilfe
+    // Stufe 1: das Lernbeispiel auf Wunsch; zurück bleibt nichts davon stehen – kein vorgerechnetes Beispiel,
+    // noch kein Zeichen „So geht's“ (das kommt erst ab Stufe 2; A9, „Убрать попутно“)
     await page.click('.hilfe-knopf');
     expect(await page.textContent('.lern-titel')).toBe("So geht's");
     await page.click('.los');
-    expect(await page.textContent('.hilfe-box')).toContain("So geht's");
+    expect(await page.$('.hilfe-box')).toBeNull();
+    expect(await page.$('.so-gehts')).toBeNull();
+    expect(await page.innerHTML('.aufgabe')).not.toContain("So geht's");
     await page.click('.hilfe-knopf');
     expect(await page.isDisabled('.hilfe-knopf')).toBe(true);
     for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
@@ -522,7 +547,7 @@ describe('Ablauf eines Satzes', () => {
     const id = sitzung.aufgaben[1].format;
     const p = await gespeichert<Profil>(page, 'profil');
     expect(p.formate[id]).toBe('nochmal');
-    expect(Object.values(p.formate).filter((k) => k === 'bekannt')).toHaveLength(2);
+    expect(Object.values(p.formate).filter((k) => k === 'bekannt')).toHaveLength(ALLE.length - 1);
     await page.click('.neuer-satz');
     await page.waitForTimeout(150);
     const neu = await gespeichert<Sitzung>(page, 'sitzung');
@@ -593,20 +618,22 @@ describe('Ablauf eines Satzes', () => {
     expect(await page.textContent('.hilfe-knopf')).toBe(KIND.hilfe);
     expect(await page.textContent('.meldung')).toBe('');
 
-    for (let i = 0; i < 3; i++) await eingeben(page, neu, i, loesung(neu, i));
+    for (let i = 0; i < neu.aufgaben.length; i++) await eingeben(page, neu, i, loesung(neu, i));
     await vergleichen(page);
     await page.waitForSelector('.ende');
     await page.waitForTimeout(150);
     // zwei goldene Blätter und ein gewöhnliches für die zurückgekehrte Aufgabe
-    const korb = await page.$$eval('.korb img', (els) => els.map((e) => e.getAttribute('src')));
-    expect(korb).toHaveLength(3);
-    expect(new Set(korb).size).toBe(2);
-    expect(korb.filter((s) => s === korb[0])).toHaveLength(2);
+    const korb = await page.$$eval('.korb [data-blatt]', (els) => els.map((e) => [e.getAttribute('data-blatt'), e.innerHTML.replace(/id="[^"]*"|url\(#[^)]*\)/g, '')]));
+    // der neue Satz ist gemischt (5 Aufgaben): goldene für alle außer der zurückgekehrten
+    expect(korb.map(([art]) => art)).toEqual([...neu.aufgaben.slice(1).map(() => 'gold'), 'normal']);
+    // golden sieht anders aus als gewöhnlich (Farbe und Adern), zwei goldene gleich
+    expect(korb[0][1]).toBe(korb[1][1]);
+    expect(korb.at(-1)![1]).not.toBe(korb[0][1]);
     const s2 = await gespeichert<Sitzung>(page, 'sitzung');
     expect(s2.satz.perlen.map((p) => p.blatt)).toEqual(neu.aufgaben.map((_, i) => (i === j ? 'gehoben' : 'gold')));
     const p2 = await gespeichert<Profil>(page, 'profil');
     expect(p2.zurueckgelegt).toEqual([]);
-    expect(p2.blaetter).toBe(4 + 5);
+    expect(p2.blaetter).toBe(4 + 2 * (neu.aufgaben.length - 1) + 1);
     const h = await gespeichert<{ eintraege: { ergebnis: string; zurueckAus?: unknown }[] }>(page, 'historie');
     expect(h.eintraege.map((e) => e.ergebnis)).toEqual(['gold', 'zurueck', 'gold', ...neu.aufgaben.map((_, i) => (i === j ? 'hilfe' : 'gold'))]);
     expect(h.eintraege[3 + j].zurueckAus).toEqual({ satz: 0, nr: 1 });
@@ -812,12 +839,13 @@ describe('Hilfeknopf gegen Durchprobieren (A6)', () => {
     expect(aus.hintergrund).toBe('rgb(255, 233, 168)');
     // derselbe Zustand wie mit Bewegung
     expect(await pulst(page)).toBe(true);
-    // ohne Puls: keine Umrandung, keine Animation
+    // ohne Puls: keine Umrandung, keine Animation – nur die Holzkante und der weiche Schatten der Laterne
     await page.click('.hilfe-knopf');
     await page.click('.los');
     const ruhig = await stil();
     expect(ruhig.name).toBe('none');
-    expect(ruhig.schatten).toBe('none');
+    expect(ruhig.schatten).not.toContain('rgb(43, 40, 159)');
+    expect(ruhig.schatten).not.toContain('rgb(253, 251, 244)');
     await page.close();
   });
 });
@@ -1018,12 +1046,258 @@ describe('Musterseite', () => {
       expect(await page.textContent('h1')).toBe(sp === 'de' ? 'Designsystem' : 'Дизайн-система');
       // Formate: jedes mit Bild ohne Hilfe, Hilfe 2 und 3 und den Texten für Eltern in der gewählten Sprache
       const formate = await page.$$eval('.format-probe', (els) => els.map((e) => ({ id: e.getAttribute('data-format'), bilder: e.querySelectorAll('svg').length, text: e.textContent })));
-      expect(formate.map((f) => f.id).sort()).toEqual([...PROBE_FORMATE].sort());
+      expect(formate.map((f) => f.id).sort()).toEqual(Object.keys(FORMATE).sort());
       for (const f of formate) {
         expect(f.bilder).toBe(3);
         expect(f.text).toMatch(sp === 'de' ? /So helfen Sie/ : /Як допомогти/);
       }
       await page.close();
     }
+  });
+});
+
+/**
+ * docs/STIL.md, Abschnitt 14 (A9), im Browser: Tippflächen, kein waagerechtes Scrollen, keine dünnen Ränder und
+ * keine dunklen Umrisse am Ast, keine alten Bilder; ohne Bewegung derselbe Zustand; beim Vergleichen zeigt kein
+ * Bild, was unter einem Blatt liegt, das liegen bleibt.
+ */
+describe('Stil (A9)', () => {
+  /** Prüfungen am gerade gezeigten Bildschirm */
+  const pruefen = (page: Page) =>
+    page.evaluate(() => {
+      const fehler: string[] = [];
+      const sichtbar = (e: Element) => {
+        const r = e.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden';
+      };
+      // Tippflächen ≥ 48 px: Knöpfe und die Fische im Bild (Kasten der ähnlichen Aufgabe ist nur Bild)
+      for (const e of document.querySelectorAll('.satz button, .satz [data-wahl]')) {
+        if (!sichtbar(e) || e.closest('.hilfe-box')) continue;
+        const r = e.getBoundingClientRect();
+        if (Math.min(r.width, r.height) < 47.5) fehler.push(`klein: ${typeof e.className === 'string' ? e.className : e.tagName} ${Math.round(r.width)}×${Math.round(r.height)}`);
+      }
+      // keine Ränder dünner als 2 px
+      for (const e of document.querySelectorAll('.satz *')) {
+        const c = getComputedStyle(e);
+        for (const s of ['Top', 'Right', 'Bottom', 'Left'] as const) {
+          const w = parseFloat(c[`border${s}Width`]);
+          if (c[`border${s}Style`] !== 'none' && w > 0 && w < 2) fehler.push(`dünner Rand: ${String(e.className)}`);
+        }
+      }
+      // keine alten Bilder, überhaupt kein Rasterbild auf dem Satz-Bildschirm (bis K1)
+      for (const img of document.querySelectorAll('img')) fehler.push(`Bild: ${img.getAttribute('src')}`);
+      // am Ast kein dunkler Strich an Figuren, Blättern, Korb und Marken (die Perle hat ihre fünf Schichten:
+      // Trennring und Saum der Ziffer gehören dazu, Formen auf der Perle sind Figuren einer Aufgabe)
+      const dunkel = (farbe: string) => {
+        const m = farbe.match(/\d+(\.\d+)?/g);
+        if (!m || farbe === 'none') return false;
+        const [r, g, b] = m.slice(0, 3).map((v) => Number(v) / 255).map((s) => (s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4));
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.05;
+      };
+      for (const e of document.querySelectorAll('.ast-zone svg:not(.perle-svg) *, .werkzeug svg *')) {
+        const c = getComputedStyle(e);
+        if (c.stroke !== 'none' && dunkel(c.stroke)) fehler.push(`dunkler Strich am Ast: ${e.tagName}`);
+      }
+      return { fehler, scrollW: document.documentElement.scrollWidth };
+    });
+
+  for (const [name, w, h] of GERAETE) {
+    it(`${name}: jede Aufgabe, nach dem Vergleichen und am Ende – Tippflächen, Ränder, Striche, Bilder`, async () => {
+      const { page, sitzung } = await oeffnen(w, h);
+      for (let i = 0; i < sitzung.aufgaben.length; i++) {
+        await page.click(`.perle[data-i="${i}"]`);
+        const p = await pruefen(page);
+        expect(p.fehler, `Aufgabe ${i + 1}`).toEqual([]);
+        expect(p.scrollW).toBeLessThanOrEqual(w);
+      }
+      for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
+      await vergleichen(page);
+      const nach = await pruefen(page);
+      expect(nach.fehler).toEqual([]);
+      expect(nach.scrollW).toBeLessThanOrEqual(w);
+      // das liegen gebliebene Blatt ist selbst eine Tippfläche zur Aufgabe
+      expect(await page.$$eval('.zwilling-perle[data-i]', (e) => e.map((x) => x.getAttribute('data-i')))).toEqual(['1']);
+      await eingeben(page, sitzung, 1, loesung(sitzung, 1));
+      await vergleichen(page);
+      await page.waitForSelector('.ende');
+      const ende = await pruefen(page);
+      expect(ende.fehler).toEqual([]);
+      expect(ende.scrollW).toBeLessThanOrEqual(w);
+      expect(await page.$$eval('.kachel', (e) => e.length)).toBe(3);
+      await page.close();
+    });
+  }
+
+  /** was das Kind sieht, ohne Klassen der Bewegung */
+  const zustand = (page: Page) =>
+    page.evaluate(() => ({
+      blaetter: [...document.querySelectorAll('.zwilling .zwilling-perle')].map((e) => [!!e.querySelector('.blatt'), !!e.querySelector('.tipp-marke'), !!e.querySelector('.perle-svg')]),
+      korb: [...document.querySelectorAll('.korb-schild')].map((e) => e.textContent),
+      aktuell: document.querySelector('.perle[aria-current]')?.getAttribute('data-i') ?? null,
+      meldung: document.querySelector('.meldung')?.textContent ?? null,
+      hilfe: !!document.querySelector('.hilfe-knopf'),
+      vergleichen: document.querySelector('.vergleichen')?.hasAttribute('disabled'),
+      ende: !!document.querySelector('.ende'),
+      inKorb: [...document.querySelectorAll('.korb [data-blatt]')].map((e) => e.getAttribute('data-blatt')),
+      geheim: [...document.querySelectorAll('.geheim span')].map((e) => e.className.replace(/\s+/g, ' ').trim()),
+      kacheln: [...document.querySelectorAll('.kachel')].map((e) => e.textContent),
+      sichtbar: [...document.querySelectorAll('.zwilling .blatt')].map((e) => getComputedStyle(e).visibility),
+    }));
+
+  it('„weniger Bewegung“: nach Vergleichen und am Ende derselbe Zustand wie mit Bewegung', async () => {
+    const ablauf = async (bewegung: boolean) => {
+      const { page, sitzung } = await oeffnen(390, 900, { bewegung });
+      for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
+      await vergleichen(page);
+      const geprueft = await zustand(page);
+      await eingeben(page, sitzung, 1, loesung(sitzung, 1));
+      await vergleichen(page);
+      await page.waitForSelector('.ende');
+      await bewegungFertig(page);
+      const fertig = await zustand(page);
+      await page.close();
+      return { geprueft, fertig };
+    };
+    const mit = await ablauf(true);
+    const ohne = await ablauf(false);
+    expect(ohne).toEqual(mit);
+    // und der Zustand stimmt: nur über Perle 2 liegt das Blatt, mit Marke; 2 goldene Blätter zählen 4
+    expect(ohne.geprueft.blaetter).toEqual([
+      [false, false, true],
+      [true, true, false],
+      [false, false, true],
+    ]);
+    expect(ohne.geprueft.korb).toEqual(['4']);
+    expect(ohne.fertig.inKorb).toEqual(['gold', 'gold', 'normal']);
+  });
+
+  it('Vergleichen mit Bewegung: kein Bild zeigt, was unter dem Blatt liegt, das liegen bleibt; gehobene zeigen die Perle', async () => {
+    const { page, sitzung } = await oeffnen(390, 900, { bewegung: true });
+    for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, i === 1 ? falsch(sitzung, i) : loesung(sitzung, i));
+    // jedes Bild mitschreiben: bei jeder Änderung am Ast und in jedem Frame
+    await page.evaluate(() => {
+      const w = window as unknown as { bilder: string[][]; laeuft: boolean };
+      w.bilder = [];
+      w.laeuft = true;
+      const nimm = () =>
+        w.bilder.push([...document.querySelectorAll('.zwilling .zwilling-perle')].map((e) => (e.querySelector('.perle-svg') ? 'perle' : '') + (e.querySelector('.blatt') ? '+blatt' : '')));
+      new MutationObserver(nimm).observe(document.querySelector('.buehne-platz')!, { subtree: true, childList: true, attributes: true });
+      const frame = () => {
+        nimm();
+        if (w.laeuft) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+    await vergleichen(page);
+    const bilder = await page.evaluate(() => {
+      const w = window as unknown as { bilder: string[][]; laeuft: boolean };
+      w.laeuft = false;
+      return w.bilder;
+    });
+    expect(bilder.length).toBeGreaterThan(10);
+    // Perle 2 (falsch) liegt in keinem Bild offen
+    for (const b of bilder) expect(b[1]).not.toContain('perle');
+    // Perle 1 und 3 lagen erst unter dem Blatt, am Ende sind sie offen
+    expect(bilder.some((b) => b[0] === '+blatt' && b[2] === '+blatt')).toBe(true);
+    expect(bilder.at(-1)).toEqual(['perle', '+blatt', 'perle']);
+    await page.close();
+  });
+
+  it('Ende: drei Kacheln; Welt und Pause sind Zwischenseiten mit „Zurück“, ein neuer Satz startet nie von selbst', async () => {
+    const { page, sitzung } = await oeffnen(390, 900);
+    for (let i = 0; i < 3; i++) await eingeben(page, sitzung, i, loesung(sitzung, i));
+    await vergleichen(page);
+    await page.waitForSelector('.ende');
+    expect(await page.$$eval('.kachel', (e) => e.map((x) => x.textContent))).toEqual([KIND.welt, KIND.neuerSatz, KIND.pause]);
+    await page.waitForTimeout(150);
+    const samen = (await gespeichert<Sitzung>(page, 'sitzung')).samen;
+    await page.click('.kachel.welt');
+    await page.waitForSelector('.platzhalter');
+    expect(await page.textContent('.platzhalter-text')).toBe(KIND.weltBald);
+    await page.click('.platzhalter .btn');
+    await page.waitForSelector('.ende');
+    await page.click('.kachel.pause');
+    await page.waitForSelector('.platzhalter');
+    expect(await page.textContent('.platzhalter-text')).toBe(KIND.bisBald);
+    await page.click('.platzhalter .btn');
+    await page.waitForSelector('.ende');
+    // nichts davon hat einen neuen Satz begonnen
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).samen).toBe(samen);
+    await page.close();
+  });
+
+  /** Zahl-Formate der Gruppe Г1: Satz nur aus einem Format, Stufen 1 → 3 (wie auf der Probe-Seite #/alle) */
+  const G1: FormatId[] = ['wie-viele', 'rechenbild', 'rechenmaschine', 'groesser-kleiner', 'verdoppeln', 'klecks'];
+  for (const [name, w, h] of GERAETE)
+    it(`${name}: jedes Zahl-Format, jede Stufe bis 100 – Bild ganz zu sehen, Tippflächen, kein waagerechtes Scrollen`, async () => {
+      for (const id of G1) {
+        const s = neueSitzung(SAMEN, { zahlenraum: 100 }, probeSatzPlan(id));
+        const { page } = await oeffnen(w, h, { gespeichert: { sitzung: s, profil: bekanntesProfil() } });
+        for (let i = 0; i < s.aufgaben.length; i++) {
+          await page.click(`.perle[data-i="${i}"]`);
+          const p = await pruefen(page);
+          expect(p.fehler, `${id} Aufgabe ${i + 1}`).toEqual([]);
+          expect(p.scrollW).toBeLessThanOrEqual(w);
+          const bild = (await page.locator('.aufgabe .feld > .aufgabe-bild svg').boundingBox())!;
+          expect(bild.x).toBeGreaterThanOrEqual(0);
+          expect(bild.x + bild.width).toBeLessThanOrEqual(w + 0.5);
+          // das Bild ist groß genug zum Lesen: fast die ganze Breite des Papiers oder mindestens 180 px hoch
+          const papier = (await page.locator('.aufgabe .feld > .aufgabe-bild').boundingBox())!;
+          expect(bild.width >= (papier.width - 24) * 0.85 || bild.height >= 180, `${id} Aufgabe ${i + 1}: ${Math.round(bild.width)}×${Math.round(bild.height)}`).toBe(true);
+        }
+        await page.close();
+      }
+    });
+});
+
+describe('Probe-Seite „Alle Aufgaben“ (#/alle)', () => {
+  it('jedes Format ist da; ein Format → 5 Aufgaben nur dieses Formats, Stufen 1 → 3; zurück über „Alle“ am Ast', async () => {
+    const { page } = await oeffnen(360, 740);
+    await page.click('.alle-knopf');
+    await page.waitForSelector('.alle-liste');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+    const ids = await page.$$eval('.alle-format', (e) => e.map((x) => x.getAttribute('data-format')));
+    expect([...ids].sort()).toEqual(Object.keys(FORMATE).sort());
+    for (const h of await page.$$eval('.alle-format, .gemischt', (e) => e.map((x) => x.getBoundingClientRect().height))) expect(h).toBeGreaterThanOrEqual(48);
+    await page.click('.alle-format[data-format="klecks"]');
+    await page.waitForSelector('.perle');
+    await page.waitForTimeout(150);
+    const s = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(s.aufgaben.map((a) => a.format)).toEqual(Array(5).fill('klecks'));
+    expect(s.aufgaben.map((a) => a.stufe)).toEqual(probeStufen(3));
+    expect(probeStufen(3)).toEqual([1, 1, 2, 2, 3]);
+    expect(await page.$$eval('.raupe-zeile.kind .perle', (e) => e.length)).toBe(5);
+    // „Gemischter Satz“: das Profil dieser Seite hat noch keinen Satz – der allererste Satz hat 3 Aufgaben
+    await page.click('.alle-knopf');
+    await page.waitForSelector('.gemischt');
+    await page.click('.gemischt');
+    await page.waitForSelector('.perle');
+    await page.waitForTimeout(150);
+    const m = await gespeichert<Sitzung>(page, 'sitzung');
+    expect(m.aufgaben).toHaveLength(3);
+    expect(new Set(m.aufgaben.map((a) => FORMATE[a.format].faehigkeit)).size).toBe(3);
+    await page.close();
+  });
+});
+
+describe('Werkzeug „gezählt markieren“ (Engine Bild)', () => {
+  it('ein Ding antippen: heller Ring; bleibt beim Eingeben der Zahl; die Antwort ändert sich nicht; andere Aufgabe: neu', async () => {
+    const s = neueSitzung(SAMEN, undefined, [{ format: 'wie-viele', stufe: 2 }, { format: 'wie-viele', stufe: 1 }, { format: 'muster', stufe: 1 }]);
+    const { page } = await oeffnen(360, 740, { gespeichert: { sitzung: s, profil: bekanntesProfil() } });
+    const ring = (k: number) => page.$eval(`.feld > .aufgabe-bild [data-zaehl="${k}"]`, (e) => [e.classList.contains('gezaehlt'), getComputedStyle(e.querySelector('.zaehl-ring')!).opacity]);
+    expect(await ring(0)).toEqual([false, '0']);
+    await page.click('.feld > .aufgabe-bild [data-zaehl="0"]');
+    await page.click('.feld > .aufgabe-bild [data-zaehl="2"]');
+    expect(await ring(0)).toEqual([true, '1']);
+    await page.click('[data-ziffer="4"]');
+    expect(await ring(0)).toEqual([true, '1']);
+    expect(await ring(2)).toEqual([true, '1']);
+    expect((await gespeichert<Sitzung>(page, 'sitzung')).satz.perlen[0].antwort).toEqual({ art: 'zahl', wert: 4 });
+    // noch einmal antippen: der Ring geht weg
+    await page.click('.feld > .aufgabe-bild [data-zaehl="2"]');
+    expect(await ring(2)).toEqual([false, '0']);
+    await page.click('.perle[data-i="1"]');
+    expect(await ring(0)).toEqual([false, '0']);
+    await page.close();
   });
 });

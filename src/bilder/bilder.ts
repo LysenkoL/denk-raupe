@@ -1,57 +1,40 @@
-/**
- * Gezeichnete Bilder der Denk-Raupe (eigene, generierte Bilder; Stil der Lese-Raupe-Familie).
- * Quelle: ein Bildbogen, ausgeschnitten mit transparentem Hintergrund, als WebP.
- */
-import kopf from './kopf.webp';
-import kopfSchaut from './kopf-schaut.webp';
-import kopfDenkt from './kopf-denkt.webp';
-import kopfFreude from './kopf-freude.webp';
-import kopfZwilling from './kopf-zwilling.webp';
-import blatt from './blatt.webp';
-import blattGold from './blatt-gold.webp';
-import blattPunkte from './blatt-punkte.webp';
-import blattHerbst from './blatt-herbst.webp';
-import blattRegenbogen from './blatt-regenbogen.webp';
-import korbLeer from './korb-leer.webp';
-import korbVoll from './korb-voll.webp';
+import { blattSvg, korbSvg, vorderteilSvg, type Ausdruck } from './figuren';
 
-/** Kopf: Bildgröße und Lage des Kopfkreises (Mitte mx/my, Radius r) in Bildpunkten */
-export interface KopfBild {
-  src: string;
-  w: number;
-  h: number;
-  mx: number;
-  my: number;
-  r: number;
+/**
+ * Bilder der Figuren an EINER Stelle (docs/STIL.md, Abschnitte 11 und 12; Paket K1).
+ *
+ * Bis die Bilder aus K1 da sind, zeichnet src/bilder/figuren.ts vorläufige Figuren als SVG. Ein Bild aus K1
+ * wird hier eingetragen – Import der Datei aus diesem Ordner und eine Zeile in `K1` – sonst ändert sich nichts:
+ * jede Figur steht in einem festen Kasten (Seitenverhältnis wie die viewBox in figuren.ts), die Seite legt
+ * nur den Kasten.
+ *
+ * Was K1 liefern muss (WebP mit transparentem Hintergrund, ohne Schatten am Boden):
+ * - `raupe-<ausdruck>`, `zwilling`: Vorderteil, aufgerichtet, Kasten 4 : 5 (z. B. 960 × 1200 px);
+ *   das erste Segment ist ein Kreis mit Mitte bei (50 %, 78,7 %) und Radius 27,5 % der Breite – dort schließt
+ *   die Perle an (eine Perle ist 83,3 % der Kastenbreite).
+ * - `blatt`, `blatt-gold`: Blatt quer, Stiel links in halber Höhe, Kasten 7 : 5 (z. B. 700 × 500 px).
+ * - `korb`, `korb-voll`: Korb von vorn, Kasten 15 : 13 (z. B. 600 × 520 px), Boden am unteren Rand.
+ *
+ * Die alten Bilder im Stil der Lese-Raupe (kopf*.webp, blatt*.webp, korb*.webp) liegen noch in diesem
+ * Ordner, werden aber nirgends mehr benutzt; K1 ersetzt sie.
+ */
+export type FigurName = `raupe-${Ausdruck}` | 'zwilling' | 'blatt' | 'blatt-gold' | 'korb' | 'korb-voll';
+
+/** Bilder aus K1 – leer, solange es sie nicht gibt. Beispiel: `'zwilling': zwillingBild,` (import zwillingBild from './zwilling.webp') */
+export const K1: Partial<Record<FigurName, string>> = {};
+
+function zeichnung(name: FigurName): string {
+  if (name === 'zwilling') return vorderteilSvg('zwilling');
+  if (name === 'blatt' || name === 'blatt-gold') return blattSvg(name === 'blatt-gold');
+  if (name === 'korb' || name === 'korb-voll') return korbSvg(name === 'korb-voll');
+  return vorderteilSvg('kind', name.slice('raupe-'.length) as Ausdruck);
 }
 
-/**
- * Kopfvarianten. Die Raupe des Kindes wechselt den Ausdruck, der Zwilling hat ein Blatt am Fühler,
- * damit das Kind sofort sieht, welche Raupe seine ist. Nie traurig (docs/TZ.md: nichts Trauriges).
- */
-export const KOEPFE = {
-  /** Anfang */
-  normal: { src: kopf, w: 247, h: 314, mx: 121.5, my: 203.5, r: 111.5 },
-  /** beim Lösen: schaut auf die Aufgabe */
-  schaut: { src: kopfSchaut, w: 250, h: 318, mx: 123.5, my: 205.5, r: 114.5 },
-  /** nach dem Vergleichen liegt noch ein Blatt: neugierig, nachdenklich */
-  denkt: { src: kopfDenkt, w: 247, h: 309, mx: 125.5, my: 199, r: 110.5 },
-  /** Satz fertig */
-  freude: { src: kopfFreude, w: 301, h: 310, mx: 153, my: 200.5, r: 112 },
-  zwilling: { src: kopfZwilling, w: 272, h: 322, mx: 122, my: 208, r: 113 },
-} satisfies Record<string, KopfBild>;
-export type KopfArt = keyof typeof KOEPFE;
+/** Figur als HTML: Bild aus K1, wenn eingetragen, sonst die vorläufige Zeichnung. Größe und Lage setzt CSS. */
+export function figur(name: FigurName): string {
+  const bild = K1[name];
+  return bild ? `<img class="figur-bild" src="${bild}" alt="" draggable="false">` : zeichnung(name);
+}
 
-export const BLAETTER = {
-  normal: blatt,
-  gold: blattGold,
-  /** seltene Blätter (Überraschungen, später) */
-  punkte: blattPunkte,
-  herbst: blattHerbst,
-  regenbogen: blattRegenbogen,
-} as const;
-export type BlattArt = keyof typeof BLAETTER;
-/** Seitenverhältnis der Blattbilder (Breite / Höhe) */
-export const BLATT_FORMAT = 323 / 221;
-
-export const KORB = { leer: korbLeer, voll: korbVoll } as const;
+export type BlattArt = 'normal' | 'gold';
+export const blattFigur = (art: BlattArt): string => figur(art === 'gold' ? 'blatt-gold' : 'blatt');

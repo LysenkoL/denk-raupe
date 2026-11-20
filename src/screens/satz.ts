@@ -1,14 +1,15 @@
 import { KIND } from '../i18n/kind';
 import { gleich, type Antwort } from '../perlen/antwort';
 import { perlenBild } from '../perlen/perle';
-import { blattImg, perleSvg } from '../perlen/maler';
-import { KORB } from '../bilder/bilder';
-import { szeneHtml } from '../satz/szene';
+import { perleSvg } from '../perlen/maler';
+import { blattFigur } from '../bilder/bilder';
+import { kachelBildSvg, laterneSvg } from '../bilder/figuren';
+import { korbHtml, szeneHtml } from '../satz/szene';
 import { FORMATE } from '../aufgaben';
 import { aufgabeAus, lernbeispiel, lernPruefen, type Aufgabe, type HilfeStufe } from '../aufgaben/format';
 import { neuerSamen } from '../core/zufall';
 import { ladeGeschuetzt, schreibenMehrere } from '../core/speicher';
-import { fertigTon, heben, klick, rascheln, tonAn } from '../app/ton';
+import { buchstabeTon, goldTon, knopfTon, korbTon, perleTon, rascheln, setzenTon, tonAn } from '../app/ton';
 import {
   abschliessen,
   ladeProfil,
@@ -24,21 +25,30 @@ import {
 import { HISTORIE_SCHLUESSEL, historieLesen, type Historie } from '../satz/historie';
 import { hilfeOeffnen, hilfePulst, hoechsteHilfe, pulsNachfuehren } from '../satz/hilfe';
 import { ausWert, schritt, stellenwerte, wertVon, zahlfeld, type Handlung, type Plaetze, type Zahlfeld } from '../satz/zahleingabe';
-import { aenderbar, blaetter, fertig, kannVergleichen, setzeAntwort, vergleiche, zuruecklegen } from '../satz/vergleich';
+import { aenderbar, blaetter, fertig, kannVergleichen, setzeAntwort, vergleiche, zuruecklegen, type Ergebnis } from '../satz/vergleich';
 
 /**
- * Satz-Bildschirm: Raupe und Zwilling, die aktuelle Aufgabe mit Eingabe, Hilfeleiter und Lernbeispiel,
- * „Vergleichen“, am Ende Korb und Geheimwort. Alles wird nach jeder Änderung auf dem Gerät gespeichert.
+ * Satz-Bildschirm (docs/STIL.md, Abschnitt 8): vier Zonen in fester Reihenfolge –
+ * 1. Ast mit Raupe, Zwilling und Nestern, rechts Hilfe (Laterne) und „Später“;
+ * 2. Frage auf einem Brettchen; 3. Arbeitsfeld auf Papier; 4. Eingabe-Tablett.
+ * Telefon: untereinander; Tablet: Feld links, Tablett rechts (app.css).
+ *
+ * Bewegung (Abschnitt 9): das Modell nimmt jede Handlung einmal an und speichert sie; die Bewegung zeigt
+ * danach nur noch das gespeicherte Ergebnis. Bei „weniger Bewegung“ steht sofort derselbe Endzustand da.
  */
 
-const TON_AN = `<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-const TON_AUS = `<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-const LAMPE = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z" style="fill:var(--laterne)" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 19h5M10.5 21.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+const TON_AN = `<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+const TON_AUS = `<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 9l5 6M21.5 9l-5 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+const LOESCHEN = `<svg viewBox="0 0 32 24" width="34" height="26" aria-hidden="true"><path d="M10 3h17a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H10l-8-9z" fill="currentColor" opacity=".18"/><path d="M10 3h17a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H10l-8-9z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="M15 8.5l7 7M22 8.5l-7 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`;
 
-const pause = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 40 : 380);
+const PFEIL = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6.5l5.5 5.5-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
 /** Dauer eines Pulses des Hilfeknopfs (wie `--puls` in tokens.css) */
 const PULS_MS = 1700;
 const warte = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+const bewegung = () => !matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** Zeit-Token aus tokens.css in ms */
+const token = (name: string) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
 
 export async function renderSatz(app: HTMLElement): Promise<void> {
   // Unbekanntes (neuere Version, kaputt) bleibt unter „…-unbekannt“, bevor hier etwas überschrieben wird
@@ -49,29 +59,44 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   let historie: Historie = await historieLesen();
   tonAn(profil.ton);
 
-  // flüchtiger Zustand (wird nicht gespeichert)
-  let wackeln: number[] = [];
-  let hebt: number | null = null;
-  let hupf: number | null = null;
+  // flüchtiger Zustand (wird nicht gespeichert): nur für die Bewegung
   let meldung = '';
   let busy = false;
   let neuerBuchstabe: number | null = null;
+  /** Ende frisch erreicht: Blätter rieseln in den Korb, der Buchstabe fliegt ein, dann die Kacheln */
+  let endeFrisch = false;
+  /** Perle, die gerade zur Antwort geworden ist (Einflug und Welle) */
+  let frisch: number | null = null;
+  /** was gerade in ein Nest gesetzt wurde: `platz:k` (Zahl) oder `bild` (Lücke, Stein, Fische) */
+  let gesetzt: string | null = null;
+  /** falsche Antwort im Lernbeispiel, die gerade zum Tablett zurückkehrt (nur mit Bewegung) */
+  let geist: Antwort | null = null;
+  /** Vergleichen läuft: diese Blätter liegen noch, bis sie an der Reihe sind; Zahl im Korb bis dahin */
+  let verdeckt: number[] = [];
+  let korbAnzeige: number | null = null;
+  let wackeln: number[] = [];
   /**
    * Plätze der Zahleingabe zur offenen Aufgabe (oder zum Schritt des Lernbeispiels). Nicht gespeichert:
    * nach Neuladen, anderer Perle oder geänderter Antwort entstehen sie aus der gespeicherten Zahl neu.
    * Nur so bleibt eine halbe Zahl (Z belegt, E leer) stehen, solange das Kind an dieser Aufgabe ist.
    */
   let plaetze: { wo: string; p: Plaetze } | null = null;
+  /**
+   * Werkzeug der Engine Bild „gezählt markieren“ (docs/STIL.md, „Движки“): Dinge, die das Kind angetippt hat, je
+   * Aufgabe oder Schritt des Lernbeispiels. Nur auf dem Bildschirm – keine Antwort, nicht gespeichert.
+   */
+  let gezaehlt: { wo: string; nr: Set<number> } | null = null;
 
   app.innerHTML = `<main class="satz">
-    <section class="buehne-wrap" aria-label="${KIND.deineRaupe}"><div class="buehne-platz"></div>
-      <button class="iconbtn ton-knopf" type="button" aria-label="${KIND.ton}"></button></section>
+    <section class="ast-zone" aria-label="${KIND.deineRaupe}"><div class="buehne-platz"></div><div class="werkzeug"></div></section>
     <section class="aufgabe" aria-live="polite"></section>
     <div class="unten"><button class="btn haupt vergleichen" type="button">${KIND.vergleichen}</button></div>
   </main>`;
+  const astZone = app.querySelector<HTMLElement>('.ast-zone')!;
   const buehne = app.querySelector<HTMLElement>('.buehne-platz')!;
-  const tonKnopf = app.querySelector<HTMLButtonElement>('.ton-knopf')!;
+  const werkzeug = app.querySelector<HTMLElement>('.werkzeug')!;
   const panel = app.querySelector<HTMLElement>('.aufgabe')!;
+  const unten = app.querySelector<HTMLElement>('.unten')!;
   const knopf = app.querySelector<HTMLButtonElement>('.vergleichen')!;
 
   /** `mitHistorie`: nur beim Abschluss – die Historie wächst und wird nicht bei jedem Tippen neu geschrieben */
@@ -83,6 +108,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   const aktuell = () => sitzung.aktuell;
   const aufgabe = () => sitzung.aufgaben[aktuell()];
   const format = () => FORMATE[aufgabe().format];
+  /** Blätter im Korb: alle bisherigen und die dieses Satzes, solange er noch nicht gezählt ist */
+  const korbZahl = () => profil.blaetter + (sitzung.gezaehlt ? 0 : blaetter(satz()).wert);
 
   /** Lernbeispiel kommt von selbst vor der Aufgabe (Format neu oder nochmal) */
   const lernbeispielNoetig = () => !ende() && lernbeispielVorher(profil, aufgabe().format);
@@ -116,13 +143,41 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   const aehnlich = (a: Aufgabe) => aufgabeAus(FORMATE[a.format], (a.samen + 1_000_003) >>> 0, a.stufe, { zahlenraum: a.zahlenraum });
 
   function zeichneBuehne(): void {
-    buehne.innerHTML = szeneHtml(satz(), { aktuell: ende() ? null : aktuell(), wackeln, hebt, hupf, ringe: !busy && !wackeln.length });
-    hupf = null;
-    tonKnopf.innerHTML = profil.ton ? TON_AN : TON_AUS;
-    tonKnopf.setAttribute('aria-pressed', String(profil.ton));
+    // Blinzeln und Fühler laufen mit der Uhr weiter, auch wenn der Ast neu gezeichnet wird
+    astZone.style.setProperty('--phase', `-${Math.round(performance.now() % token('--blinzeln') || 0)}ms`);
+    buehne.innerHTML = szeneHtml(satz(), {
+      aktuell: ende() || busy ? null : aktuell(),
+      wackeln,
+      verdeckt,
+      frisch: bewegung() ? frisch : null,
+      korb: korbAnzeige ?? korbZahl(),
+    });
+    frisch = null;
   }
 
-  function eingabeHtml(a: Aufgabe, antwort: Antwort | null, gesperrt: boolean): string {
+  /** Ton, Hilfe und „Später“ rechts am Ast */
+  function zeichneWerkzeug(): void {
+    const tonKnopf = `<button class="leise-knopf ton-knopf" type="button" aria-label="${KIND.ton}" aria-pressed="${profil.ton}">${profil.ton ? TON_AN : TON_AUS}</button>`;
+    let hilfe = '';
+    if (!ende() && !lernOffen() && !busy) {
+      const p = satz().perlen[aktuell()];
+      const gesperrt = !aenderbar(satz(), aktuell());
+      if (!gesperrt) {
+        const offen = sitzung.hilfeOffen[aktuell()];
+        // Hilfeknopf gegen Durchprobieren: pulsiert nur nach der Zahl der Fehlprüfungen (src/satz/hilfe.ts).
+        // Die Phase läuft mit der Uhr weiter, damit Neuzeichnen beim Tippen den Puls nicht von vorn beginnt.
+        const pulst = hilfePulst(sitzung, aktuell());
+        const puls = pulst ? ` data-puls="ja" style="--puls-phase: -${Math.round(performance.now() % PULS_MS)}ms"` : '';
+        if (offen >= 4 && !p.zurueck) hilfe += `<button class="btn leise spaeter" type="button">${KIND.spaeterKnopf}</button>`;
+        hilfe += `<button class="hilfe-knopf" type="button"${puls}${offen >= hoechsteHilfe(satz()) ? ' disabled' : ''}>${laterneSvg()}<span class="sr">${offen ? KIND.mehrHilfe : KIND.hilfe}</span></button>`;
+      }
+    }
+    // Probe: Weg zur Seite „Alle Aufgaben“ (#/alle) – nur bis zur Regalseite C4
+    const alle = `<a class="leise-knopf alle-knopf" href="#/alle" aria-label="Alle Aufgaben">Alle</a>`;
+    werkzeug.innerHTML = hilfe + alle + tonKnopf;
+  }
+
+  function eingabeHtml(a: Aufgabe, antwort: Antwort | null, gesperrt: boolean, geistWert: Antwort | null = null): string {
     const f = FORMATE[a.format];
     const dis = gesperrt ? ' disabled' : '';
     const e = f.eingabe(a.bedingung);
@@ -132,45 +187,44 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       // Feld aus Format und Zahlenraum, nie aus der Aufgabe (harte Regel 7)
       const feld = zahlfeld(e, a.zahlenraum);
       const p = plaetzeZu(antwort, feld);
+      // falsche Zahl im Lernbeispiel: ihre Ziffern kehren aus den Nestern zum Tablett zurück
+      const g = geistWert?.art === 'zahl' ? ausWert(geistWert.wert, feld) : null;
       const plaetzeHtml = stellenwerte(feld)
         .map((sw, k) => {
           const d = p.stellen[k];
           const st = KIND.stelle[sw];
+          const gd = g?.stellen[k] ?? null;
+          const setzt = gesetzt === `platz:${k}` ? ' setzt' : '';
           return `<button type="button" class="platz" data-platz="${k}" aria-label="${st.name}" aria-describedby="platz-${k}" aria-pressed="${p.gewaehlt === k}"${dis}>
             <span class="platz-zeichen" aria-hidden="true">${st.zeichen}</span>
-            <span class="nest${d === null ? ' leer' : ''}">${d === null ? '' : perleSvg(perlenBild({ art: 'zahl', wert: d }))}</span>
+            <span class="nest${d === null ? ' leer' : ''}${setzt}">${d === null ? '' : perleSvg(perlenBild({ art: 'zahl', wert: d }))}${d === null && gd !== null ? `<span class="geist" aria-hidden="true">${perleSvg(perlenBild({ art: 'zahl', wert: gd }))}</span>` : ''}</span>
             <span id="platz-${k}" hidden>${d === null ? KIND.platzLeer : d}</span></button>`;
         })
         .join('');
-      const ziffern = Array.from({ length: 10 }, (_, d) => `<button type="button" data-ziffer="${d}" aria-label="${d}"${dis}>${perleSvg(perlenBild({ art: 'zahl', wert: d }))}</button>`).join('');
+      const ziffern = Array.from({ length: 10 }, (_, d) => `<button type="button" class="ziffer" data-ziffer="${d}" aria-label="${d}"${dis}>${perleSvg(perlenBild({ art: 'zahl', wert: d }))}</button>`).join('');
       const nichtsDa = p.stellen.every((d) => d === null);
       return `<div class="zahl-eingabe" role="group" aria-label="${KIND.zahlEingeben}">
         <div class="plaetze" data-plaetze="${p.stellen.length}">${plaetzeHtml}</div>
-        <div class="ziffern">${ziffern}<button type="button" class="loeschen" data-ziffer="x" aria-label="${KIND.loeschen}"${dis || (nichtsDa ? ' disabled' : '')}>⌫</button></div></div>`;
+        <div class="ziffern">${ziffern}<button type="button" class="loeschen" data-ziffer="x" aria-label="${KIND.loeschen}"${dis || (nichtsDa ? ' disabled' : '')}>${LOESCHEN}</button></div></div>`;
     }
     if (art === 'wahl')
-      return `<div class="wahl" role="group">${a.wahl!.map((w, k) => `<button type="button" data-k="${k}" aria-pressed="${gleich(antwort, w)}" aria-label="${perlenBild(w).name}"${dis}>${perleSvg(perlenBild(w))}</button>`).join('')}</div>`;
+      return `<div class="wahl" role="group">${a.wahl!.map((w, k) => `<button type="button" data-k="${k}" aria-pressed="${gleich(antwort, w)}" aria-label="${perlenBild(w).name}"${dis}><span class="mulde" aria-hidden="true"></span>${perleSvg(perlenBild(w))}</button>`).join('')}</div>`;
     return ''; // 'bild': im Bild tippen
   }
 
+  /** Hilfe 3 (wenn der Schritt verraten würde) und 4: ähnliche Aufgabe auf einem eigenen Brettchen neben dem Feld */
   function hilfeHtml(a: Aufgabe, stufe: HilfeStufe): string {
     const f = FORMATE[a.format];
-    if (stufe === 1) {
-      // nach dem Lernbeispiel bleibt sein letzter Schritt vorgerechnet stehen
-      const b = lernbeispiel(f).at(-1)!.bedingung;
-      return `<div class="hilfe-box"><b>${KIND.soGehts}</b>${f.zeichne(b, { hilfe: 0, gewaehlt: null, vorrechnen: true })}</div>`;
-    }
     if (stufe === 3 && f.schrittVerraet?.(a.bedingung)) {
       const ae = aehnlich(a);
       // der Schritt an der ähnlichen Aufgabe darf zeigen, was er an der eigenen verraten würde
-      return `<div class="hilfe-box"><b>${KIND.aehnlich}</b>${f.zeichne(ae.bedingung, { hilfe: 3, gewaehlt: null, aehnlich: true })}</div>`;
+      return `<div class="hilfe-box"><p class="hilfe-titel">${KIND.aehnlich}</p><div class="aufgabe-bild">${f.zeichne(ae.bedingung, { hilfe: 3, gewaehlt: null, aehnlich: true })}</div></div>`;
     }
     if (stufe === 4) {
       const ae = aehnlich(a);
-      const p = satz().perlen[aktuell()];
-      return `<div class="hilfe-box"><b>${KIND.aehnlich}</b>${f.zeichne(ae.bedingung, { hilfe: 0, gewaehlt: null, vorrechnen: true })}
-        ${!p.zurueck && aenderbar(satz(), aktuell()) ? `<button class="btn leise spaeter" type="button">${KIND.spaeterKnopf}</button>` : ''}</div>`;
+      return `<div class="hilfe-box"><p class="hilfe-titel">${KIND.aehnlich}</p><div class="aufgabe-bild">${f.zeichne(ae.bedingung, { hilfe: 0, gewaehlt: null, vorrechnen: true })}</div></div>`;
     }
+    // Stufe 1 ist das Lernbeispiel im eigenen Fenster; danach bleibt nichts davon stehen
     return '';
   }
 
@@ -178,21 +232,43 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const b = blaetter(satz());
     const zurueck = satz().perlen.some((p) => p.zurueck);
     const g = profil.geheim;
-    panel.innerHTML = `<div class="ende">
+    const blaetterHtml = [...Array.from({ length: b.gold }, () => 'gold' as const), ...Array.from({ length: b.normal }, () => 'normal' as const)]
+      .map((art, k) => `<span class="blatt-img" data-blatt="${art}" style="--k:${k}">${blattFigur(art)}</span>`)
+      .join('');
+    const kachel = (cls: string, bild: 'welt' | 'satz' | 'pause', text: string, k: number) =>
+      `<button class="kachel ${cls}" type="button" style="--k:${k}"><span class="kachel-bild">${kachelBildSvg(bild)}</span><span class="kachel-text">${text}</span></button>`;
+    panel.innerHTML = `<div class="ende${endeFrisch && bewegung() ? ' frisch' : ''}">
       <h2>${KIND.fertigTitel}</h2>
-      <img class="korb-bild" src="${KORB.voll}" alt="" draggable="false">
-      <div class="korb" aria-hidden="true">${Array.from({ length: b.gold }, () => blattImg('gold')).join('')}${Array.from({ length: b.normal }, () => blattImg('normal')).join('')}</div>
+      <div class="korb-buehne" style="--n:${b.gold + b.normal}">
+        <div class="korb" aria-hidden="true">${blaetterHtml}</div>
+        ${korbHtml(profil.blaetter, true, 'gross')}
+      </div>
       <p>${KIND.fertigKorb}</p>
       ${zurueck ? `<p class="hinweis">${KIND.spaeter}</p>` : ''}
-      <div class="geheim" aria-label="${KIND.geheimwort}">${[...g.wort].map((c, i) => `<span class="${g.offen.includes(i) ? 'auf' : ''}${i === neuerBuchstabe ? ' neu' : ''}">${g.offen.includes(i) ? c : ''}</span>`).join('')}</div>
+      <div class="geheim" role="img" aria-label="${KIND.geheimwort}">${[...g.wort].map((c, i) => `<span class="${g.offen.includes(i) ? 'auf' : ''}${i === neuerBuchstabe ? ' neu' : ''}">${g.offen.includes(i) ? c : ''}</span>`).join('')}</div>
       ${neuerBuchstabe !== null ? `<p class="hinweis">${KIND.neuerBuchstabe}</p>` : ''}
-      <button class="btn haupt neuer-satz" type="button">${KIND.neuerSatz}</button>
+      <div class="kacheln">${kachel('welt', 'welt', KIND.welt, 0)}${kachel('neuer-satz', 'satz', KIND.neuerSatz, 1)}${kachel('pause', 'pause', KIND.pause, 2)}</div>
     </div>`;
+    if (endeFrisch && bewegung() && neuerBuchstabe !== null) setTimeout(buchstabeTon, token('--korb-flug') * 2);
+    endeFrisch = false;
+  }
+
+  /** Brettchen mit der Frage (Zone 2); `zeichen`: „So geht's“ als Lesezeichen daneben */
+  const frageHtml = (text: string, zeichen: string, weiter = '', nachricht: string | null = null) =>
+    `<div class="frage-brett"><h1 class="auftrag">${text}</h1>${zeichen}${weiter}${nachricht === null ? '' : `<p class="meldung">${nachricht}</p>`}</div>`;
+
+  /** Arbeitsfeld auf Papier (Zone 3) */
+  function feldHtml(bild: string, o: { tippbar: boolean; mitGeist: boolean }): string {
+    const k = ['aufgabe-bild'];
+    if (o.tippbar) k.push('tippbar');
+    if (gesetzt === 'bild') k.push('setzt');
+    if (o.mitGeist) k.push('geist');
+    return `<div class="${k.join(' ')}">${bild}</div>`;
   }
 
   /**
    * Lernbeispiel (docs/TZ.md, „Самопроверка“, Nr. 8): 2–3 Schritte mit sofortiger Rückmeldung, ohne Perlen,
-   * Blätter und Historie. Richtig → „Genau so!“ und weiter; falsch → die Antwort kehrt zurück,
+   * Blätter und Historie. Richtig → „Genau so!“ und weiter; falsch → die Antwort kehrt (sanft) zurück,
    * „Schau noch einmal.“ und Hilfe Stufe 2 auf dem Bild. Von selbst gezeigt geht es erst nach dem letzten
    * Schritt zur Aufgabe; auf Wunsch geöffnet führt „Los geht's“ jederzeit zurück.
    */
@@ -203,46 +279,65 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     const letzter = k === schritte.length - 1;
     const vonSelbst = lernbeispielNoetig();
     const los = richtig && letzter ? 'haupt' : vonSelbst ? '' : 'leise';
-    panel.innerHTML = `<div class="lern" data-schritt="${k}">
-      <p class="lern-titel">${KIND.soGehts}</p>
-      <h1 class="auftrag">${KIND.auftrag[f.auftrag]}</h1>
-      <div class="aufgabe-bild${f.eingabe(a.bedingung).art === 'bild' && !richtig ? ' tippbar' : ''}">${f.zeichne(a.bedingung, { hilfe: st.versucht && !richtig ? 2 : 0, gewaehlt: st.antwort })}</div>
-      ${eingabeHtml(a, st.antwort, richtig)}
-      <p class="meldung">${richtig ? KIND.genau : st.versucht ? KIND.nochmalSchauen : ''}</p>
-      ${richtig && !letzter ? `<button class="btn haupt lern-weiter" type="button">${KIND.weiter} →</button>` : ''}
-      ${los ? `<button class="btn ${los} los" type="button">${KIND.losGehts}</button>` : ''}
+    const g = geist;
+    const bild = f.zeichne(a.bedingung, { hilfe: st.versucht && !richtig ? 2 : 0, gewaehlt: g ?? st.antwort });
+    panel.innerHTML = `<div class="tisch lern" data-schritt="${k}">
+      ${frageHtml(KIND.auftrag[f.auftrag], `<p class="lern-titel">${KIND.soGehts}</p>`)}
+      <div class="feld">${feldHtml(bild, { tippbar: f.eingabe(a.bedingung).art === 'bild' && !richtig, mitGeist: !!g })}</div>
+      <div class="lotte">
+        ${eingabeHtml(a, st.antwort, richtig, g)}
+        <p class="meldung">${richtig ? KIND.genau : st.versucht ? KIND.nochmalSchauen : ''}</p>
+        ${richtig && !letzter ? `<button class="btn haupt lern-weiter" type="button">${KIND.weiter}</button>` : ''}
+        ${los ? `<button class="btn ${los} los" type="button">${KIND.losGehts}</button>` : ''}
+      </div>
     </div>`;
   }
 
+  /** gezählte Dinge wieder markieren (nach jedem Zeichnen; gehört die Marke zu einer anderen Aufgabe, ist sie weg) */
+  function zaehlMarken(): void {
+    if (gezaehlt && gezaehlt.wo !== eingabeOrt()) gezaehlt = null;
+    for (const e of panel.querySelectorAll('.feld > .aufgabe-bild [data-zaehl]')) e.classList.toggle('gezaehlt', !!gezaehlt?.nr.has(Number(e.getAttribute('data-zaehl'))));
+  }
+
   function zeichneAufgabe(): void {
+    zeichneWerkzeug();
     if (ende()) return zeichneEnde();
-    if (lernOffen()) return zeichneLernbeispiel();
+    if (lernOffen()) {
+      zeichneLernbeispiel();
+      zaehlMarken();
+      gesetzt = null;
+      return;
+    }
     const a = aufgabe();
     const f = format();
     const p = satz().perlen[aktuell()];
     const gesperrt = !aenderbar(satz(), aktuell()) || busy;
     const offen = sitzung.hilfeOffen[aktuell()];
-    const maxHilfe = hoechsteHilfe(satz());
-    // Hilfeknopf gegen Durchprobieren: pulsiert nur nach der Zahl der Fehlprüfungen (src/satz/hilfe.ts).
-    // Die Phase läuft mit der Uhr weiter, damit Neuzeichnen beim Tippen den Puls nicht von vorn beginnt.
-    const pulst = !gesperrt && hilfePulst(sitzung, aktuell());
-    const puls = pulst ? ` data-puls="ja" style="--puls-phase: -${Math.round(performance.now() % PULS_MS)}ms"` : '';
     const bildHilfe: HilfeStufe = offen === 2 || (offen >= 3 && !f.schrittVerraet?.(a.bedingung)) ? (Math.min(offen, 3) as HilfeStufe) : offen >= 3 ? 2 : 0;
-    panel.innerHTML = `
-      <div class="aufgabe-kopf"><div class="frage"><h1 class="auftrag">${KIND.auftrag[f.auftrag]}</h1>
-        ${!gesperrt && offen >= 2 ? `<button class="btn leise so-gehts" type="button">${KIND.soGehts}</button>` : ''}</div>
-        ${gesperrt ? '' : `<button class="btn leise hilfe-knopf" type="button"${puls}${offen >= maxHilfe ? ' disabled' : ''}>${LAMPE}${offen ? KIND.mehrHilfe : KIND.hilfe}</button>`}</div>
-      <div class="aufgabe-bild${f.eingabe(a.bedingung).art === 'bild' && !gesperrt ? ' tippbar' : ''}">${f.zeichne(a.bedingung, { hilfe: gesperrt ? 0 : bildHilfe, gewaehlt: p.antwort })}</div>
-      ${gesperrt ? '' : eingabeHtml(a, p.antwort, gesperrt)}
-      ${gesperrt ? '' : hilfeHtml(a, offen)}
-      ${p.zurueck ? `<p class="hinweis">${KIND.wartet}</p>` : ''}
-      <p class="meldung">${meldung}</p>
-      ${sitzung.aufgaben.length > 1 ? `<button class="btn leise weiter" type="button">${KIND.weiter} →</button>` : ''}`;
+    const soGehts = !gesperrt && offen >= 2 ? `<button class="leise-knopf so-gehts" type="button">${KIND.soGehts}</button>` : '';
+    const eingabe = gesperrt ? '' : eingabeHtml(a, p.antwort, gesperrt);
+    panel.innerHTML = `<div class="tisch${eingabe ? '' : ' ohne-eingabe'}">
+      ${frageHtml(KIND.auftrag[f.auftrag], soGehts, sitzung.aufgaben.length > 1 ? `<button class="leise-knopf weiter" type="button" aria-label="${KIND.weiter}"><span class="weiter-text">${KIND.weiter}</span>${PFEIL}</button>` : '', meldung)}
+      <div class="feld">
+        ${feldHtml(f.zeichne(a.bedingung, { hilfe: gesperrt ? 0 : bildHilfe, gewaehlt: p.antwort }), { tippbar: f.eingabe(a.bedingung).art === 'bild' && !gesperrt, mitGeist: false })}
+        ${gesperrt ? '' : hilfeHtml(a, offen)}
+      </div>
+      <div class="lotte">
+        ${eingabe}
+        ${p.zurueck ? `<p class="hinweis">${KIND.wartet}</p>` : ''}
+      </div>
+    </div>`;
+    zaehlMarken();
+    gesetzt = null;
   }
 
   function zeichneKnopf(): void {
     knopf.disabled = busy || lernOffen() || !kannVergleichen(satz());
-    knopf.hidden = ende();
+    unten.hidden = ende();
+    const wurzel = app.querySelector('.satz')!;
+    wurzel.classList.toggle('am-ende', ende());
+    // während die Blätter fliegen: nichts antippen (das Ergebnis ist schon gespeichert)
+    wurzel.setAttribute('aria-busy', String(busy));
   }
 
   function alles(): void {
@@ -251,11 +346,13 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     zeichneKnopf();
   }
 
+  /** Antwort ins Modell, speichern, dann zeigen: Perle fliegt ein, Welle über die Raupe */
   function antworten(antwort: Antwort | null): void {
+    const vorher = satz().perlen[aktuell()].antwort;
     sitzung = { ...sitzung, satz: setzeAntwort(satz(), aktuell(), antwort) };
-    hupf = antwort ? aktuell() : null;
+    frisch = antwort && !gleich(antwort, vorher) ? aktuell() : null;
     meldung = '';
-    if (antwort) klick();
+    if (antwort) perleTon(antwort.art === 'zahl' ? antwort.wert : null);
     speichern();
     alles();
   }
@@ -265,10 +362,17 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     if (lernOffen()) {
       const { a, st } = lernSchritt();
       const ergebnis = lernPruefen(format(), a, antwort);
-      // falsch: die Antwort kehrt sofort zurück, Hilfe Stufe 2 erscheint auf dem Bild
+      // falsch: die Antwort kehrt sofort zurück (gespeichert), mit Bewegung gleitet sie sichtbar zum Tablett
       lernSetzen(ergebnis === 'falsch' ? { ...st, antwort: null, versucht: true } : { ...st, antwort });
-      if (ergebnis === 'richtig') klick();
       speichern();
+      if (ergebnis === 'falsch' && antwort && bewegung()) {
+        geist = antwort;
+        setTimeout(() => {
+          geist = null;
+          if (lernOffen()) zeichneAufgabe();
+        }, token('--zurueck'));
+      }
+      if (antwort) (ergebnis === 'richtig' ? perleTon(antwort.art === 'zahl' ? antwort.wert : null) : setzenTon());
       return zeichneAufgabe();
     }
     antworten(antwort);
@@ -278,28 +382,56 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     return lernOffen() ? lernSchritt().st.antwort : satz().perlen[aktuell()].antwort;
   }
 
+  /** Perle des Kindes oder liegen gebliebenes Blatt: zu dieser Aufgabe */
   buehne.addEventListener('click', (e) => {
-    const b = (e.target as Element).closest<HTMLElement>('.perle[data-i]');
+    const b = (e.target as Element).closest<HTMLElement>('[data-i]');
     if (!b || busy || ende()) return;
     sitzung = { ...sitzung, aktuell: Number(b.dataset.i) };
     // ein Lernbeispiel auf Wunsch schließt sich; eins, das von selbst kommt, wartet beim selben Schritt
     const lb = sitzung.lernbeispiel;
     if (lb && !lernbeispielVorher(profil, lb.format)) lernSetzen(undefined);
     meldung = '';
+    setzenTon();
     speichern();
     alles();
   });
 
-  tonKnopf.addEventListener('click', () => {
-    profil = { ...profil, ton: !profil.ton };
-    tonAn(profil.ton);
-    speichern();
-    zeichneBuehne();
-  });
-
-  panel.addEventListener('click', (e) => {
+  /** Zonen 1 bis 4: Knöpfe der Hilfe, des Tabletts und des Endes */
+  function tippen(e: Event): void {
     const t = e.target as Element;
+    if (t.closest('.ton-knopf')) {
+      profil = { ...profil, ton: !profil.ton };
+      tonAn(profil.ton);
+      knopfTon();
+      speichern();
+      return zeichneWerkzeug();
+    }
     if (busy) return;
+    if (t.closest('.kachel.welt')) return void (knopfTon(), (location.hash = '#/welt'));
+    if (t.closest('.kachel.pause')) return void (knopfTon(), (location.hash = '#/pause'));
+    if (t.closest('.neuer-satz')) {
+      knopfTon();
+      // eine zurückgelegte Aufgabe kommt zurück, wie sie war – auf dem Bildschirm ohne eigenes Zeichen
+      sitzung = naechsteSitzung(neuerSamen(), profil);
+      neuerBuchstabe = null;
+      wackeln = [];
+      meldung = '';
+      speichern();
+      return alles();
+    }
+    if (ende()) return;
+    // Werkzeug „gezählt markieren“: ein Ding im eigenen Bild an- oder abhaken (nie im Kasten der ähnlichen Aufgabe)
+    const zaehlDing = t.closest('[data-zaehl]');
+    if (zaehlDing && t.closest('.feld > .aufgabe-bild')) {
+      const wo = eingabeOrt();
+      if (!gezaehlt || gezaehlt.wo !== wo) gezaehlt = { wo, nr: new Set() };
+      const nr = Number(zaehlDing.getAttribute('data-zaehl'));
+      if (gezaehlt.nr.has(nr)) gezaehlt.nr.delete(nr);
+      else gezaehlt.nr.add(nr);
+      zaehlDing.classList.toggle('gezaehlt', gezaehlt.nr.has(nr));
+      setzenTon();
+      return;
+    }
     const lern = lernOffen();
     const f = format();
     const wahlListe = lern ? lernSchritt().a.wahl : aufgabe().wahl;
@@ -319,25 +451,42 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
           ? { art: 'loeschen' }
           : { art: 'ziffer', ziffer: Number(ziffer!.dataset.ziffer) };
       const feld = zahlfeld(e, a.zahlenraum);
-      const p = schritt(plaetzeZu(alt, feld), h, feld);
+      const vorher = plaetzeZu(alt, feld);
+      const p = schritt(vorher, h, feld);
       plaetze = { wo: eingabeOrt(), p };
+      // die Ziffer, die gerade in ein Nest kam, setzt sich hinein (Bewegung „Teil ins Nest“)
+      const k = p.stellen.findIndex((d, j) => d !== null && d !== vorher.stellen[j]);
+      gesetzt = k >= 0 ? `platz:${k}` : null;
       const wert = wertVon(p);
       const neu: Antwort | null = wert === null ? null : { art: 'zahl', wert };
       // nur Wahl oder halbe Zahl geändert: neu zeichnen, an der Antwort ändert sich nichts
-      if (gleich(neu, alt)) return zeichneAufgabe();
+      if (gleich(neu, alt)) {
+        if (h.art !== 'platz') setzenTon();
+        if (wert !== null) gesetzt = 'bild';
+        return zeichneAufgabe();
+      }
+      if (neu) gesetzt = gesetzt ?? 'bild';
       return eingabe(neu);
     }
     const w = t.closest<HTMLButtonElement>('.wahl button');
-    if (w && !w.disabled && wahlListe) return eingabe(wahlListe[Number(w.dataset.k)]);
+    if (w && !w.disabled && wahlListe) {
+      gesetzt = 'bild';
+      return eingabe(wahlListe[Number(w.dataset.k)]);
+    }
     const bild = t.closest<SVGElement>('[data-wahl]');
-    if (bild && wahlListe && t.closest('.tippbar')) return eingabe(wahlListe[Number(bild.getAttribute('data-wahl'))]);
+    if (bild && wahlListe && t.closest('.tippbar')) {
+      gesetzt = 'bild';
+      return eingabe(wahlListe[Number(bild.getAttribute('data-wahl'))]);
+    }
 
     if (lern && t.closest('.lern-weiter')) {
+      knopfTon();
       lernSetzen({ format: f.id, schritt: lernSchritt().k + 1, antwort: null, versucht: false });
       speichern();
       return zeichneAufgabe();
     }
     if (lern && t.closest('.los')) {
+      knopfTon();
       // von selbst gezeigt und bis zum Ende gelöst: ab jetzt bekannt (aus neu wie aus nochmal)
       if (lernbeispielNoetig()) profil = { ...profil, formate: { ...profil.formate, [f.id]: 'bekannt' } };
       lernSetzen(undefined);
@@ -345,6 +494,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       return alles();
     }
     if (!lern && t.closest('.hilfe-knopf')) {
+      knopfTon();
       // nächste Stufe; ein pulsierender Knopf hört auf und zählt ab hier neu
       sitzung = hilfeOeffnen(sitzung);
       // Stufe 1 = Lernbeispiel, im eigenen Fenster
@@ -353,38 +503,38 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       return alles();
     }
     if (!lern && t.closest('.so-gehts')) {
+      knopfTon();
       // Zeichen „So geht's“ (ab Hilfe Stufe 2): öffnet das Lernbeispiel, die Hilfestufe bleibt
       lernSetzen(lernStart());
       speichern();
       return alles();
     }
     if (t.closest('.spaeter')) {
+      knopfTon();
       sitzung = { ...sitzung, satz: zuruecklegen(satz(), aktuell()) };
       speichern();
-      if (fertig(satz())) return beenden();
-      return alles();
-    }
-    if (t.closest('.neuer-satz')) {
-      // eine zurückgelegte Aufgabe kommt zurück, wie sie war – auf dem Bildschirm ohne eigenes Zeichen
-      sitzung = naechsteSitzung(neuerSamen(), profil);
-      neuerBuchstabe = null;
-      wackeln = [];
-      meldung = '';
-      speichern();
+      if (fertig(satz())) {
+        abschluss();
+        endeFrisch = true;
+      }
       return alles();
     }
     if (t.closest('.weiter')) {
       const n = satz().perlen.length;
       const offen = (j: number) => aenderbar(satz(), j) && satz().perlen[j].antwort === null;
-      const ziel = [...Array(n).keys()].map((d) => (aktuell() + 1 + d) % n).find((j) => offen(j)) ?? [...Array(n).keys()].map((d) => (aktuell() + 1 + d) % n).find((j) => aenderbar(satz(), j));
+      const reihe = [...Array(n).keys()].map((d) => (aktuell() + 1 + d) % n);
+      const ziel = reihe.find((j) => offen(j)) ?? reihe.find((j) => aenderbar(satz(), j));
       if (ziel !== undefined) {
+        knopfTon();
         sitzung = { ...sitzung, aktuell: ziel };
         meldung = '';
         speichern();
         alles();
       }
     }
-  });
+  }
+  panel.addEventListener('click', tippen);
+  werkzeug.addEventListener('click', tippen);
 
   // Tastatur im Bild (Wer ist es?)
   panel.addEventListener('keydown', (e) => {
@@ -394,51 +544,125 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     }
   });
 
-  function beenden(): void {
+  /** Die Raupe schaut, wo das Kind tippt: Pupillen 2–3 px zum Ort der Handlung (Abschnitt 9, „Гусеница следит“) */
+  // am Satz selbst, nicht an #app: #app bleibt beim Wechsel der Seiten, der Satz nicht
+  app.querySelector('.satz')!.addEventListener(
+    'pointerdown',
+    (ev) => {
+      const e = ev as PointerEvent;
+      if (!bewegung()) return;
+      const kopf = buehne.querySelector('.raupe-zeile.kind .vorne');
+      if (!kopf) return;
+      const r = kopf.getBoundingClientRect();
+      if (!r.width) return;
+      const dx = e.clientX - (r.left + r.width / 2);
+      const dy = e.clientY - (r.top + r.height * 0.33);
+      const d = Math.hypot(dx, dy) || 1;
+      // Weg in Bildschirm-Pixeln, umgerechnet in Einheiten des Vorderteils (120 breit)
+      const weg = token('--blick-weg') * (120 / r.width);
+      astZone.style.setProperty('--blick-x', ((dx / d) * weg).toFixed(2));
+      astZone.style.setProperty('--blick-y', ((dy / d) * weg).toFixed(2));
+    },
+    { passive: true },
+  );
+
+  /** Satz abschließen: Profil, Historie und Satz zusammen speichern (einmal je Satz) */
+  function abschluss(): void {
     const r = abschliessen(sitzung, profil, historie);
     sitzung = r.sitzung;
     profil = r.profil;
     historie = r.historie;
     neuerBuchstabe = r.neuerBuchstabe;
-    if (r.neuerBuchstabe !== null) fertigTon();
     speichern(true);
+  }
+
+  /**
+   * Blätter heben sich in einer Welle von links nach rechts, jedes fliegt im Bogen in den Korb.
+   * Unter einem Blatt, das liegen bleibt, liegt in jedem Bild das leere Nest (es wird nie angefasst).
+   */
+  async function blaetterHeben(r: Ergebnis, korbVorher: number): Promise<void> {
+    const flug: Promise<unknown>[] = [];
+    const abstand = token('--blatt-abstand');
+    const heben = token('--blatt-heben');
+    const flugZeit = token('--korb-flug');
+    korbAnzeige = korbVorher;
+    verdeckt = [...r.gehoben];
     alles();
+    for (const [n, i] of r.gehoben.entries()) {
+      await warte(n === 0 ? 120 : abstand);
+      const platz = buehne.querySelector<HTMLElement>(`.zwilling [data-zi="${i}"]`);
+      const blatt = platz?.querySelector<HTMLElement>('.blatt');
+      const korb = buehne.querySelector<HTMLElement>('.korb-figur');
+      const p = satz().perlen[i];
+      if (!platz || !blatt || !korb || !p.antwort) continue;
+      const gold = p.blatt === 'gold';
+      // erst jetzt, da sich genau dieses Blatt hebt, liegt die Perle darunter
+      platz.querySelector('.unter')!.innerHTML = perleSvg(perlenBild(p.antwort));
+      if (gold) blatt.innerHTML = blattFigur('gold');
+      blatt.classList.add('fliegt');
+      rascheln();
+      if (gold) goldTon();
+      const von = blatt.getBoundingClientRect();
+      const nach = korb.getBoundingClientRect();
+      const dx = nach.left + nach.width / 2 - (von.left + von.width / 2);
+      const dy = nach.top + nach.height * 0.35 - (von.top + von.height / 2);
+      const hoch = -Math.max(40, von.height);
+      const gesamt = heben + flugZeit;
+      const a = heben / gesamt;
+      const anim = blatt.animate(
+        [
+          { translate: '0 0', rotate: '0deg', scale: '1', offset: 0 },
+          { translate: `0 ${hoch * 0.6}px`, rotate: '-10deg', scale: '1.04', offset: a },
+          { translate: `${dx * 0.5}px ${Math.min(hoch, dy) - 30}px`, rotate: '12deg', scale: '0.75', offset: a + (1 - a) * 0.5 },
+          { translate: `${dx}px ${dy}px`, rotate: '24deg', scale: '0.4', offset: 1 },
+        ],
+        { duration: gesamt, easing: 'ease-in-out', fill: 'forwards' },
+      );
+      flug.push(
+        anim.finished.then(() => {
+          blatt.style.visibility = 'hidden';
+          korbAnzeige = (korbAnzeige ?? 0) + (gold ? 2 : 1);
+          const schild = korb.querySelector('.korb-schild');
+          if (schild) schild.textContent = String(korbAnzeige);
+          korb.classList.remove('hupft');
+          void korb.offsetWidth;
+          korb.classList.add('hupft');
+          korbTon();
+        }, () => null),
+      );
+    }
+    await Promise.all(flug);
   }
 
   knopf.addEventListener('click', async () => {
     if (busy || lernOffen() || !kannVergleichen(satz())) return;
-    const vorher = satz();
-    const r = vergleiche(vorher, stimmtFuer(sitzung));
-    busy = true;
+    knopfTon();
+    const korbVorher = korbZahl();
+    const r = vergleiche(satz(), stimmtFuer(sitzung));
+    // das Modell nimmt das Vergleichen einmal an; gespeichert wird sofort
+    sitzung = pulsNachfuehren({ ...sitzung, satz: r.satz });
     wackeln = [];
     meldung = '';
-    rascheln();
-    let zwischen = { ...vorher, runden: r.satz.runden };
-    for (const i of r.gehoben) {
-      zwischen = { ...zwischen, perlen: zwischen.perlen.map((p, j) => (j === i ? r.satz.perlen[i] : p)) };
-      sitzung = { ...sitzung, satz: zwischen };
-      hebt = i;
-      heben(r.satz.perlen[i].blatt === 'gold');
-      alles();
-      await warte(pause());
-    }
-    hebt = null;
-    sitzung = pulsNachfuehren({ ...sitzung, satz: r.satz });
-    busy = false;
-    wackeln = r.bleiben;
-    if (!fertig(r.satz)) {
+    const fertigJetzt = fertig(r.satz);
+    if (!fertigJetzt) {
       const ziel = r.bleiben.find((i) => !r.satz.perlen[i].zurueck);
       if (ziel !== undefined) sitzung = { ...sitzung, aktuell: ziel };
       meldung = r.wiederholung ? KIND.nichtsGeaendert : KIND.blattBleibt;
       speichern();
-      alles();
-    } else beenden();
-    if (wackeln.length) {
-      setTimeout(() => {
-        wackeln = [];
-        zeichneBuehne();
-      }, 3 * pause() + 200);
+    } else abschluss();
+    // die Bewegung zeigt nur noch, was schon gespeichert ist
+    if (bewegung() && r.gehoben.length) {
+      busy = true;
+      await blaetterHeben(r, korbVorher);
+      busy = false;
     }
+    verdeckt = [];
+    korbAnzeige = null;
+    wackeln = bewegung() ? r.bleiben : [];
+    endeFrisch = fertigJetzt;
+    alles();
+    // nur einmal wackeln: beim nächsten Zeichnen liegen die Blätter still, die Marke bleibt
+    wackeln = [];
   });
 
   speichern();

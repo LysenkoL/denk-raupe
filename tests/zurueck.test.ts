@@ -16,6 +16,7 @@ import {
   neueSitzung,
   neuesProfil,
   PROBE_FORMATE,
+  probePlan,
   ZURUECK_JE_SATZ,
   type Profil,
   type Sitzung,
@@ -29,6 +30,8 @@ const SAMEN = 20261115;
 const TAG = (d: number) => new Date(2026, 10, d, 10, 30);
 
 const alleBekannt = (): Profil => ({ ...neuesProfil(), formate: Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) });
+/** nächster Satz mit dem Plan des Probesatzes (drei feste Formate), damit die Plätze bekannt sind */
+const naechste = (samen: number, p: Profil): Sitzung => naechsteSitzung(samen, p, undefined, probePlan(samen));
 const platz = (s: Sitzung, id: FormatId) => s.aufgaben.findIndex((a) => a.format === id);
 
 function loesung(s: Sitzung, i: number): Antwort {
@@ -72,8 +75,8 @@ const blaetterIn = (h: Historie) => h.eintraege.reduce((n, e) => n + blattWert(e
 
 describe('Reihe der zurückgelegten Aufgaben', () => {
   it('ohne zurückgelegte Aufgabe: der nächste Satz ist genau der neu erzeugte', () => {
-    expect(naechsteSitzung(SAMEN, neuesProfil())).toEqual(neueSitzung(SAMEN));
-    expect(naechsteSitzung(SAMEN, neuesProfil())).not.toHaveProperty('zurueckAus');
+    expect(naechste(SAMEN, neuesProfil())).toEqual(neueSitzung(SAMEN));
+    expect(naechste(SAMEN, neuesProfil())).not.toHaveProperty('zurueckAus');
   });
 
   it('höchstens eine zurückgelegte Aufgabe je Satz', () => {
@@ -88,7 +91,7 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     expect(r1.profil.zurueckgelegt[0].eintrag).toEqual({ satz: 0, nr: i });
 
     const frisch = neueSitzung(SAMEN + 1);
-    const s2 = naechsteSitzung(SAMEN + 1, r1.profil);
+    const s2 = naechste(SAMEN + 1, r1.profil);
     const j = platz(s2, id);
     expect(s2.aufgaben).toHaveLength(3);
     expect(s2.aufgaben.map((a) => a.format)).toEqual(frisch.aufgaben.map((a) => a.format));
@@ -114,7 +117,7 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     // die zurückgelegte Perle bringt nichts: zwei goldene Blätter
     expect(r1.profil.blaetter).toBe(4);
 
-    const s2 = richtig(naechsteSitzung(SAMEN + 1, r1.profil));
+    const s2 = richtig(naechste(SAMEN + 1, r1.profil));
     const j = platz(s2, 'zahlenmauer');
     // beim allerersten Vergleichen gleich – und trotzdem nicht golden
     expect(s2.satz.runden).toBe(1);
@@ -126,14 +129,14 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     const r3 = abschliessen(r2.sitzung, r2.profil, r2.historie, TAG(18));
     expect(r3.profil).toBe(r2.profil);
     // der nächste Satz ist wieder ganz neu
-    expect(naechsteSitzung(SAMEN + 2, r2.profil)).toEqual(neueSitzung(SAMEN + 2));
+    expect(naechste(SAMEN + 2, r2.profil)).toEqual(neueSitzung(SAMEN + 2));
   });
 
   it('auch später korrigiert: ein gewöhnliches Blatt', () => {
     const s1 = neueSitzung(SAMEN);
     const M = platz(s1, 'zahlenmauer');
     const r1 = abschliessen(legeZurueck(s1, [M]), alleBekannt(), neueHistorie(), TAG(17));
-    let s2 = naechsteSitzung(SAMEN + 1, r1.profil);
+    let s2 = naechste(SAMEN + 1, r1.profil);
     const j = platz(s2, 'zahlenmauer');
     s2 = pruefe(setze(s2.aufgaben.reduce((acc, _, k) => setze(acc, k, loesung(s2, k)), s2), j, falsch(s2, j, 3)));
     s2 = richtig(s2);
@@ -145,7 +148,7 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     const s1 = neueSitzung(SAMEN);
     const M = platz(s1, 'zahlenmauer');
     const r1 = abschliessen(legeZurueck(s1, [M]), alleBekannt(), neueHistorie(), TAG(17));
-    const s2 = naechsteSitzung(SAMEN + 1, r1.profil);
+    const s2 = naechste(SAMEN + 1, r1.profil);
     const j = platz(s2, 'zahlenmauer');
     const r2 = abschliessen(legeZurueck(s2, [j], [1]), r1.profil, r1.historie, TAG(18));
     expect(r2.profil.zurueckgelegt).toHaveLength(1);
@@ -159,7 +162,7 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     expect(r2.profil.formate.zahlenmauer).toBe('nochmal');
 
     // im dritten Satz wieder da, mit allem von vorher; jetzt gelöst
-    const s3 = naechsteSitzung(SAMEN + 2, r2.profil);
+    const s3 = naechste(SAMEN + 2, r2.profil);
     const k = platz(s3, 'zahlenmauer');
     expect(s3.aufgaben[k]).toEqual(z.aufgabe);
     expect(s3.zurueckAus![k]).toEqual({ satz: 1, nr: j });
@@ -177,7 +180,7 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     const erste = r1.profil.zurueckgelegt.map((z) => z.aufgabe.format);
     expect(erste).toHaveLength(2);
     // Satz 2: nur eine kommt (die frühere); die andere wartet
-    const s2 = naechsteSitzung(SAMEN + 1, r1.profil);
+    const s2 = naechste(SAMEN + 1, r1.profil);
     expect(s2.zurueckAus!.filter(Boolean)).toHaveLength(1);
     const j = platz(s2, erste[0]);
     expect(s2.aufgaben[j]).toEqual(r1.profil.zurueckgelegt[0].aufgabe);
@@ -187,7 +190,7 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     expect(r2.profil.zurueckgelegt.map((z) => z.aufgabe.format)).toEqual([erste[1], erste[0]]);
     expect(r2.profil.zurueckgelegt.map((z) => z.eintrag)).toEqual([{ satz: 0, nr: platz(s1, erste[1]) }, { satz: 1, nr: j }]);
     // Satz 3: jetzt die andere
-    const s3 = naechsteSitzung(SAMEN + 2, r2.profil);
+    const s3 = naechste(SAMEN + 2, r2.profil);
     expect(s3.zurueckAus!.filter(Boolean)).toEqual([{ satz: 0, nr: platz(s1, erste[1]) }]);
   });
 
@@ -200,13 +203,13 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     const [a, b] = rB.profil.zurueckgelegt;
     expect([a.aufgabe.samen, b.aufgabe.samen]).toEqual([sA.aufgaben[platz(sA, 'zahlenmauer')].samen, sB.aufgaben[platz(sB, 'zahlenmauer')].samen]);
 
-    const s3 = naechsteSitzung(SAMEN + 8, rB.profil);
+    const s3 = naechste(SAMEN + 8, rB.profil);
     expect(s3.aufgaben.filter((x) => x.format === 'zahlenmauer')).toEqual([a.aufgabe]);
     expect(s3.aufgaben.some((x) => x.samen === b.aufgabe.samen && x.format === 'zahlenmauer')).toBe(false);
     const r3 = abschliessen(richtig(s3), rB.profil, rB.historie, TAG(18));
     expect(r3.profil.zurueckgelegt).toEqual([b]);
 
-    const s4 = naechsteSitzung(SAMEN + 9, r3.profil);
+    const s4 = naechste(SAMEN + 9, r3.profil);
     expect(s4.aufgaben.filter((x) => x.format === 'zahlenmauer')).toEqual([b.aufgabe]);
     const r4 = abschliessen(richtig(s4), r3.profil, r3.historie, TAG(19));
     expect(r4.profil.zurueckgelegt).toEqual([]);
@@ -220,7 +223,7 @@ describe('Reihe der zurückgelegten Aufgaben', () => {
     const r1 = abschliessen(legeZurueck(s1, [M, U].sort()), alleBekannt(), neueHistorie(), TAG(17));
     const alt = r1.profil.zurueckgelegt.map((z) => (z.aufgabe.format === 'zahlenmauer' ? { ...z, aufgabe: { ...z.aufgabe, version: 1 } } : z));
     const p = { ...r1.profil, zurueckgelegt: alt };
-    const s2 = naechsteSitzung(SAMEN + 1, p);
+    const s2 = naechste(SAMEN + 1, p);
     // die Mauer der alten Version kommt nicht; das Muster dahinter schon
     expect(s2.zurueckAus!.filter(Boolean)).toEqual([{ satz: 0, nr: U }]);
     const r2 = abschliessen(richtig(s2), p, r1.historie, TAG(18));
@@ -234,7 +237,7 @@ describe('Lösungsweg der zurückgekehrten Aufgabe', () => {
   const f = (k: number) => falsch(s1, M, k);
   // Satz 1: zwei verschiedene Fehlantworten → der Knopf pulsiert; Hilfe gedrückt bis Stufe 4; zurückgelegt
   const r1 = abschliessen(legeZurueck(s1, [M], [0, 1]), alleBekannt(), neueHistorie(), TAG(17));
-  const s2 = naechsteSitzung(SAMEN + 1, r1.profil);
+  const s2 = naechste(SAMEN + 1, r1.profil);
   const j = platz(s2, 'zahlenmauer');
 
   it('in der Reihe: Aufgabe mit höchster Hilfestufe, Fehlantworten, Puls', () => {
@@ -311,7 +314,7 @@ describe('Lösungsweg der zurückgekehrten Aufgabe', () => {
 
   it('Historie: wieder zurückgelegt – eine Kette über drei Sätze, der Endstand ist die Lösung', () => {
     const r2 = abschliessen(legeZurueck(s2, [j], [2]), r1.profil, r1.historie, TAG(18));
-    const s3 = naechsteSitzung(SAMEN + 2, r2.profil);
+    const s3 = naechste(SAMEN + 2, r2.profil);
     const k = platz(s3, 'zahlenmauer');
     const r3 = abschliessen(richtig(s3), r2.profil, r2.historie, TAG(19));
     const h = r3.historie;
@@ -335,7 +338,7 @@ describe('Kenntnis des Formats (A4) mit zurückgekehrter Aufgabe', () => {
   const r1 = abschliessen(legeZurueck(s1, [M]), alleBekannt(), neueHistorie(), TAG(17));
   // das Lernbeispiel vor der zurückgekehrten Aufgabe ist durch: wieder bekannt
   const nachBeispiel: Profil = { ...r1.profil, formate: { ...r1.profil.formate, zahlenmauer: 'bekannt' } };
-  const s2 = naechsteSitzung(SAMEN + 1, r1.profil);
+  const s2 = naechste(SAMEN + 1, r1.profil);
   const j = platz(s2, 'zahlenmauer');
 
   it('zurückgelegt → nochmal: das Lernbeispiel kommt vor der zurückgekehrten Aufgabe', () => {
@@ -371,12 +374,12 @@ describe('Speicher: die Reihe übersteht Neuladen; Umzüge', () => {
     await schreiben('profil', JSON.parse(JSON.stringify(r1.profil)));
     const geladen = (await ladeGeschuetzt('profil', ladeProfil))!;
     expect(geladen).toEqual(r1.profil);
-    expect(naechsteSitzung(SAMEN + 1, geladen)).toEqual(naechsteSitzung(SAMEN + 1, r1.profil));
+    expect(naechste(SAMEN + 1, geladen)).toEqual(naechste(SAMEN + 1, r1.profil));
     await schreiben('profil', undefined);
   });
 
   it('Satz mit zurückgekehrter Aufgabe: nach Laden dasselbe, auch dann kein goldenes Blatt', () => {
-    const s2 = naechsteSitzung(SAMEN + 1, r1.profil);
+    const s2 = naechste(SAMEN + 1, r1.profil);
     const j = platz(s2, 'zahlenmauer');
     const geladen = ladeSitzung(JSON.parse(JSON.stringify(s2)))!;
     expect(geladen).toEqual(s2);
@@ -388,7 +391,7 @@ describe('Speicher: die Reihe übersteht Neuladen; Umzüge', () => {
     expect(p.version).toBe(3);
     expect(p.zurueckgelegt).toEqual([]);
     expect(p).toMatchObject({ blaetter: v1.profil.blaetter, saetze: v1.profil.saetze, geheim: v1.profil.geheim, ton: v1.profil.ton });
-    expect(naechsteSitzung(SAMEN, p)).toEqual(neueSitzung(SAMEN));
+    expect(naechste(SAMEN, p)).toEqual(neueSitzung(SAMEN));
   });
 
   it('Profil aus Version 2: Reihe leer, alles andere bleibt', () => {

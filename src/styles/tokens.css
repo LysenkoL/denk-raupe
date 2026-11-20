@@ -102,14 +102,66 @@
   --tipp-perle: 48px;
   --tipp-haupt: 72px;
 
-  /* Bewegung: kurz, hält nie auf */
-  --kurz: 160ms;
-  --mittel: 320ms;
-  --heben: 450ms;
+  /* Figuren und Dinge des Tisches (src/design/farbe.ts, FIGUR_TOKEN): vorläufig bis zu den Bildern aus K1 */
+  --raupe: #86C25A;
+  --raupe-licht: #B9DF8E;
+  --raupe-kante: #5B9638;
+  --raupe-wange: #F0A884;
+  --auge: #FFFDF6;
+  --halstuch: #D8693F;
+  --halstuch-kante: #A8472A;
+  --fliege: #8CCDF2;
+  --fliege-kante: #4B9ACB;
+  --fuehler: #E9A23B;
+  --ast: #C49A68;
+  --ast-kante: #946A3E;
+  --ast-licht: #DDBB8C;
+  --nest: #E7D6B6;
+  --blatt: #6FAE4E;
+  --blatt-licht: #9BCF73;
+  --blatt-kante: #4A8833;
+  --blatt-ader: #A3D07C;
+  --blatt-gold: #F5C540;
+  --blatt-gold-licht: #FFE27A;
+  --blatt-gold-kante: #C9900F;
+  --blatt-gold-ader: #FFEDA6;
+  --korb: #CB955A;
+  --korb-kante: #956637;
+  --korb-licht: #E6BE85;
+  --hut-grau: #C3CBC5;
+  --hut-grau-kante: #8F9A93;
+
+  /* Kanten der Flächen, aus den Farben oben gemischt */
+  --nest-schatten: inset 0 3px 6px var(--schatten), inset 0 -2px 0 rgba(255, 255, 255, 0.55);
+  /* Holzmaserung: sehr leise Streifen, ohne Filter (docs/STIL.md, Abschnitt 3) */
+  --maserung: repeating-linear-gradient(176deg, rgba(150, 110, 60, 0.045) 0 2px, transparent 2px 9px, rgba(150, 110, 60, 0.03) 9px 11px, transparent 11px 23px);
+
+  /*
+   * Bewegung (docs/STIL.md, Abschnitt 9). Eine Federkurve für alles, was zurückfedert.
+   * Ohne Bewegung (prefers-reduced-motion) gilt die Spalte „без анимаций“: keine Animation, derselbe Zustand.
+   */
+  --feder: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --druck-runter: 80ms;
+  --druck-zurueck: 240ms;
+  --setzen: 260ms;
+  --setzen-gross: 1.06;
+  --setzen-klein: 0.98;
+  --perle-flug: 220ms;
+  --welle: 40ms;
+  --blinzeln: 5500ms;
+  --fuehler-winkel: 2.5deg;
+  --folgen: 180ms;
+  --blick-weg: 2.5px;
+  --blatt-heben: 350ms;
+  --blatt-abstand: 220ms;
+  --wackeln: 480ms;
+  --wackel-1: -7deg;
+  --wackel-2: 6deg;
+  --wackel-3: -3deg;
+  --korb-flug: 500ms;
+  --zurueck: 320ms;
+  /* gewählte Fische und gewählter Stein heben sich so weit */
+  --heben-wahl: 4px;
   /* ein Puls des Hilfeknopfs gegen Durchprobieren: langsam, kein Blinken (wie PULS_MS in src/screens/satz.ts) */
   --puls: 1700ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root { --kurz: 1ms; --mittel: 1ms; --heben: 1ms; }
 }

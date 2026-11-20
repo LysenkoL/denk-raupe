@@ -1,6 +1,6 @@
 import type { Antwort, Form } from '../perlen/antwort';
 import { gleich } from '../perlen/antwort';
-import { FORM_FARBEN, LATERNE, LATERNE_KANTE, type FormFarbe } from '../design/farbe';
+import { FIGUR_TOKEN, FORM_FARBEN, HOLZ, HOLZ_KANTE, LATERNE, LATERNE_KANTE, PAPIER, TINTE_LEISE, WEISS, type FormFarbe } from '../design/farbe';
 import { formPfad } from '../perlen/maler';
 import type { Format } from './format';
 import type { Zufall } from '../core/zufall';
@@ -132,7 +132,24 @@ export function rahmenVon(m: Muster, hilfe: number): [number, number][] {
   return out;
 }
 
+/** Holzleiste mit Pass-Nuten (Engine Reihe): Höhe und Lage der Nut */
+const H = 84;
+const NUT_Y = 15;
+const NUT_H = 52;
+
+/** eine Nut in der Leiste; die Lücke ist dieselbe Nut, gestrichelt – sie sieht immer gleich aus */
+function nut(x: number, luecke: boolean): string {
+  const w = AB - 10;
+  let s = `<rect x="${x + 5}" y="${NUT_Y}" width="${w}" height="${NUT_H}" rx="12" fill="${FIGUR_TOKEN.nest}"/>`;
+  s += `<rect x="${x + 7}" y="${NUT_Y + 6}" width="${w - 4}" height="${NUT_H - 8}" rx="10" fill="${PAPIER}" opacity="0.5"/>`;
+  if (luecke) s += `<rect x="${x + 7}" y="${NUT_Y + 2}" width="${w - 4}" height="${NUT_H - 4}" rx="10" fill="none" stroke="${HOLZ_KANTE}" stroke-width="2.5" stroke-dasharray="7 5"/>`;
+  return s;
+}
+
 /**
+ * Reihe in einer Holzleiste mit Nuten (Engine Reihe, docs/STIL.md, „Движки“); die Wiederholung ist ganz zu
+ * sehen, die Lücke ist die letzte Nut. Was das Kind wählt, sitzt in der Lücke (`data-inhalt`) – gleich,
+ * ob es passt.
  * `hilfe` 2: warmer Rahmen um die erste Wiederholung (data-hilfe="teil").
  * `hilfe` 3: dazu Rahmen um jede weitere ganze Wiederholung und gestrichelt um das angefangene Stück mit
  * der Lücke (data-hilfe="schritt"); die Lücke bleibt „?“.
@@ -141,8 +158,11 @@ export function rahmenVon(m: Muster, hilfe: number): [number, number][] {
 function zeichne(m: Muster, o: { hilfe: number; gewaehlt: Antwort | null; vorrechnen?: boolean }): string {
   const n = m.reihe.length;
   const W = (n + 1) * AB + 8;
-  const H = 80;
   let s = '';
+  // Leiste aus hellem Holz mit Kante unten
+  s += `<rect x="1" y="9" width="${W - 2}" height="${H - 12}" rx="16" fill="${HOLZ_KANTE}"/>`;
+  s += `<rect x="1" y="5" width="${W - 2}" height="${H - 12}" rx="16" fill="${HOLZ}"/>`;
+  s += `<rect x="12" y="8" width="${W - 24}" height="3" rx="1.5" fill="${WEISS}" opacity="0.5"/>`;
   const rahmen: [number, number][] = o.vorrechnen
     ? Array.from({ length: Math.floor(n / m.periode) }, (_, k) => [k * m.periode, m.periode])
     : rahmenVon(m, o.hilfe);
@@ -150,15 +170,16 @@ function zeichne(m: Muster, o: { hilfe: number; gewaehlt: Antwort | null; vorrec
     const offen = !o.vorrechnen && o.hilfe >= 3 && k === rahmen.length - 1;
     // der erste Rahmen ist der von Stufe 2; was Stufe 3 dazulegt, ist der Schritt
     const art = !o.vorrechnen && o.hilfe >= 3 && k > 0 ? 'schritt' : 'teil';
-    s += `<rect data-hilfe="${art}" x="${4 + von * AB + 2}" y="6" width="${laenge * AB - 4}" height="${H - 12}" rx="12" fill="${offen ? 'none' : LATERNE}" stroke="${LATERNE_KANTE}" stroke-width="3"${offen ? ' stroke-dasharray="8 6"' : ''}/>`;
+    s += `<rect data-hilfe="${art}" x="${4 + von * AB + 1}" y="${NUT_Y - 6}" width="${laenge * AB - 2}" height="${NUT_H + 12}" rx="15" fill="${offen ? 'none' : LATERNE}" stroke="${LATERNE_KANTE}" stroke-width="3.5"${offen ? ' stroke-dasharray="8 6"' : ''}/>`;
   });
-  m.reihe.forEach((e, i) => (s += formPfad(e.form, 4 + i * AB + AB / 2, H / 2, 17, FORM_FARBEN[e.farbe])));
+  for (let i = 0; i <= n; i++) s += nut(4 + i * AB, i === n);
+  const mitte = NUT_Y + NUT_H / 2;
+  m.reihe.forEach((e, i) => (s += formPfad(e.form, 4 + i * AB + AB / 2, mitte, 16, FORM_FARBEN[e.farbe])));
   const x = 4 + n * AB;
   const loesung = m.reihe[n - m.periode];
   const zeige = o.vorrechnen ? alsAntwort(loesung) : o.gewaehlt;
-  s += `<rect x="${x + 4}" y="${H / 2 - 23}" width="${AB - 8}" height="46" rx="10" fill="#FDEEDC" stroke="#E8893A" stroke-width="3" stroke-dasharray="7 5"/>`;
-  if (zeige?.art === 'form') s += formPfad(zeige.form, x + AB / 2, H / 2, 15, FORM_FARBEN[zeige.farbe]);
-  else s += `<text x="${x + AB / 2}" y="${H / 2 + 9}" text-anchor="middle" font-size="26" font-weight="800" fill="#8A4B12">?</text>`;
+  if (zeige?.art === 'form') s += `<g data-inhalt="">${formPfad(zeige.form, x + AB / 2, mitte, 16, FORM_FARBEN[zeige.farbe])}</g>`;
+  else s += `<text x="${x + AB / 2}" y="${mitte + 9}" text-anchor="middle" font-size="26" font-weight="800" fill="${TINTE_LEISE}">?</text>`;
   return `<svg class="aufgabe-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Muster">${s}</svg>`;
 }
 

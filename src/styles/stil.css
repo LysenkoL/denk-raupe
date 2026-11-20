@@ -9,10 +9,11 @@
 .sprachen { display: flex; gap: var(--s2); }
 .sprachen a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 var(--s3); border-radius: 22px; border: var(--linie) solid var(--holzknopf-kante); color: var(--tinte); font-weight: 700; text-decoration: none; background: var(--holzknopf); }
 .sprachen a[aria-current='true'] { background: var(--honig); border-color: var(--honig-kante); }
-.ziffern { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s2); }
-.ziffern li { display: flex; align-items: center; gap: var(--s2); }
+/* Farbliste der Ziffern (nicht die Ziffernperlen des Satzes) */
+.farb-liste { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s2); }
+.farb-liste li { display: flex; align-items: center; gap: var(--s2); }
 .farbfeld { width: 32px; height: 32px; border-radius: 50%; border: var(--kante-perle) solid var(--holz-kante); flex: none; }
-.ziffern code { font-size: var(--t-klein); color: var(--tinte-leise); }
+.farb-liste code { font-size: var(--t-klein); color: var(--tinte-leise); }
 .perlen-raster { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .muster-perle { margin: 0; height: 56px; width: calc(56px * var(--w)); display: flex; flex-direction: column; align-items: center; }
 .muster-perle svg { width: 100%; height: 56px; flex: none; }
@@ -28,9 +29,11 @@
 .stil section { padding: var(--s3); }
 .bilder-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: var(--s4); }
 .bilder-raster figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: var(--s2); text-align: center; font-size: var(--t-klein); color: var(--tinte-leise); }
-.kopf-probe { display: flex; justify-content: center; padding-top: calc(var(--b) * 0.8); }
-.blatt-probe { width: 96px; height: auto; display: block; }
-.korb-probe { width: 96px; height: auto; display: block; }
+.figur-probe { display: block; }
+.vorne-probe { width: 96px; height: 120px; }
+.blatt-probe { width: 96px; height: 69px; }
+.stil .korb-figur { --korb-w: 96px; }
+.stil .plaetze { align-self: flex-start; }
 .format-probe { display: flex; flex-direction: column; gap: var(--s2); padding-top: var(--s2); border-top: var(--linie) solid var(--holz-kante); }
 .format-probe h3 { margin: 0; font-size: var(--t-text); font-weight: 800; }
 .format-bilder { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s3); }

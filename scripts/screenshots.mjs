@@ -15,12 +15,15 @@ mkdirSync('screenshots', { recursive: true });
 const server = await createServer({ logLevel: 'silent', server: { port: 0, host: '127.0.0.1' } });
 await server.listen();
 const url = server.resolvedUrls.local[0];
-const { neueSitzung, neuesProfil, PROBE_FORMATE } = await server.ssrLoadModule('/src/satz/sitzung.ts');
+const { neueSitzung, neuesProfil, probePlan } = await server.ssrLoadModule('/src/satz/sitzung.ts');
+const { probeSatzPlan } = await server.ssrLoadModule('/src/screens/alle.ts');
 const { FORMATE } = await server.ssrLoadModule('/src/aufgaben/index.ts');
 const { gleich } = await server.ssrLoadModule('/src/perlen/antwort.ts');
 const { lernbeispiel, aufgabeAus, stimmt } = await server.ssrLoadModule('/src/aufgaben/format.ts');
 const { setzeAntwort, vergleiche } = await server.ssrLoadModule('/src/satz/vergleich.ts');
 const browser = await chromium.launch();
+/** alle eingetragenen Formate */
+const ALLE = Object.keys(FORMATE);
 
 const sitzung = neueSitzung(20261115);
 const loesung = (i) => FORMATE[sitzung.aufgaben[i].format].loesungen(sitzung.aufgaben[i].bedingung)[0];
@@ -35,7 +38,9 @@ const falsch = (i) => {
  * alle Antworten waren falsch, die Antwort dieser Aufgabe ist wieder leer – das Bild zeigt „?“ und die Hilfe.
  */
 function hilfeSitzung(id, stufe, hilfe, zahlenraum = 20) {
-  const s = neueSitzung(20261115);
+  // Probesatz; ein Format, das nicht darin ist, kommt an den ersten Platz
+  const plan = probePlan(20261115);
+  const s = neueSitzung(20261115, undefined, plan.some((p) => p.format === id) ? plan : [{ format: id, stufe }, ...plan.slice(1)]);
   const i = s.aufgaben.findIndex((a) => a.format === id);
   const aufgaben = s.aufgaben.map((a, j) => (j === i ? aufgabeAus(FORMATE[id], a.samen, stufe, { zahlenraum }) : a));
   const daneben = (a) => {
@@ -49,10 +54,29 @@ function hilfeSitzung(id, stufe, hilfe, zahlenraum = 20) {
 
 /** Hilfe 2 und 3 je Format (Stufe 2); dazu Wer ist es? Stufe 1 (Schritt an der ähnlichen Aufgabe) und Zahlenmauer bis 100 */
 const HILFE_BILDER = [
-  ...PROBE_FORMATE.flatMap((id) => [2, 3].map((hilfe) => [`hilfe${hilfe}-${id}`, hilfeSitzung(id, 2, hilfe)])),
+  ...ALLE.flatMap((id) => [2, 3].map((hilfe) => [`hilfe${hilfe}-${id}`, hilfeSitzung(id, 2, hilfe)])),
   ['hilfe3-wer-ist-es-aehnlich', hilfeSitzung('wer-ist-es', 1, 3)],
   ['hilfe3-zahlenmauer-bis100', hilfeSitzung('zahlenmauer', 2, 3, 100)],
 ];
+
+/**
+ * Gruppe Г1б: Formate, die noch in keinem Satz stehen. Die erste Aufgabe des festen Satzes wird durch eine
+ * Aufgabe des Formats ersetzt (Stufe 2, bis 100) – ohne Hilfe, mit Hilfe 2 und 3.
+ */
+const G1B = ['bild-gleichungen', 'malaufgaben', 'hunderterfeld', 'zahlenstrahl', 'entdeckerpaeckchen', 'rechenstrich'];
+function g1bSitzung(id, hilfe) {
+  const s = neueSitzung(20261115);
+  const aufgaben = s.aufgaben.map((a, j) => (j === 0 ? aufgabeAus(FORMATE[id], 11, 2, { zahlenraum: 100 }) : a));
+  if (!hilfe) return { ...s, aufgaben, aktuell: 0 };
+  const daneben = (a) => {
+    const l = FORMATE[a.format].loesungen(a.bedingung)[0];
+    return a.wahl ? a.wahl.find((w) => !gleich(w, l)) : { art: 'zahl', wert: (l.wert + 1) % 100 };
+  };
+  const voll = aufgaben.reduce((satz, a, j) => setzeAntwort(satz, j, daneben(a)), s.satz);
+  const geprueft = vergleiche(voll, (j, antwort) => stimmt(FORMATE[aufgaben[j].format], aufgaben[j], antwort)).satz;
+  return { ...s, aufgaben, satz: setzeAntwort(geprueft, 0, null), aktuell: 0, hilfeOffen: aufgaben.map((_, j) => (j === 0 ? hilfe : 0)) };
+}
+const G1B_BILDER = G1B.flatMap((id) => [0, 2, 3].map((hilfe) => [`format-${id}${hilfe ? `-hilfe${hilfe}` : ''}`, g1bSitzung(id, hilfe)]));
 
 /** `bekannt`: alle Formate bekannt (kein Lernbeispiel von selbst); sonst alle neu; `s`: dieser Satz statt des festen */
 async function vorbereiten(page, bekannt = true, s = sitzung) {
@@ -70,7 +94,7 @@ async function vorbereiten(page, bekannt = true, s = sitzung) {
           tx.oncomplete = () => (req.result.close(), ok());
         };
       }),
-    [s, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(PROBE_FORMATE.map((id) => [id, 'bekannt'])) : {} }],
+    [s, { ...neuesProfil(), ton: false, formate: bekannt ? Object.fromEntries(ALLE.map((id) => [id, 'bekannt'])) : {} }],
   );
   await page.goto(url + '#/');
   await page.reload();
@@ -115,6 +139,13 @@ for (const [name, w, h] of GERAETE) {
   await lernTippen(page, schritte[1], false);
   await page.screenshot({ path: `screenshots/${name}-lernbeispiel-falsch.png` });
   await vorbereiten(page);
+  // jede Aufgabe des Satzes, wie das Kind sie zuerst sieht
+  for (let i = 0; i < sitzung.aufgaben.length; i++) {
+    await page.click(`.perle[data-i="${i}"]`);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `screenshots/${name}-aufgabe-${sitzung.aufgaben[i].format}.png` });
+  }
   await eingeben(page, 0, loesung(0));
   await page.screenshot({ path: `screenshots/${name}-teil.png` });
   // Zahl in den Plätzen Z und E: zweistellig, Zehner gewählt
@@ -127,6 +158,7 @@ for (const [name, w, h] of GERAETE) {
   await eingeben(page, 2, loesung(2));
   await page.click('.vergleichen');
   await page.waitForTimeout(2500);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `screenshots/${name}-geprueft.png` });
   await page.click('.hilfe-knopf');
   // Stufe 1 öffnet das Lernbeispiel, „Los geht's“ führt zurück; Stufe 2 zeigt das Zeichen „So geht's“
@@ -135,12 +167,36 @@ for (const [name, w, h] of GERAETE) {
   await page.screenshot({ path: `screenshots/${name}-hilfe.png`, fullPage: true });
   await eingeben(page, 1, loesung(1));
   await page.click('.vergleichen');
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `screenshots/${name}-fertig.png` });
+  // Blätter fliegen in den Korb, dann das Ende: Korb, Buchstabe, Kacheln
+  await page.waitForSelector('.ende');
+  await page.waitForTimeout(3000);
+  await page.screenshot({ path: `screenshots/${name}-fertig.png`, fullPage: true });
   // Hilfe auf dem Bild, Stufen 2 und 3, jedes Format
   for (const [bild, s] of HILFE_BILDER) {
     await vorbereiten(page, true, s);
     // der Knopf „Vergleichen“ steht fest unten: Bild (und Kasten der ähnlichen Aufgabe) in die Mitte holen
+    await page.evaluate(() => (document.querySelector('.hilfe-box') ?? document.querySelector('.aufgabe-bild')).scrollIntoView({ block: 'center' }));
+    await page.screenshot({ path: `screenshots/${name}-${bild}.png` });
+  }
+  // jedes Format als Satz nur aus diesem Format (wie auf der Probe-Seite #/alle), jede Aufgabe; bis 20 und bis 100
+  for (const id of ALLE)
+    for (const zahlenraum of [20, 100]) {
+      const s = neueSitzung(20261116, { zahlenraum }, probeSatzPlan(id));
+      await vorbereiten(page, true, s);
+      for (let i = 0; i < s.aufgaben.length; i++) {
+        await page.click(`.perle[data-i="${i}"]`);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.waitForTimeout(150);
+        await page.screenshot({ path: `screenshots/${name}-format-${id}-bis${zahlenraum}-${i + 1}-stufe${s.aufgaben[i].stufe}.png` });
+      }
+    }
+  // Probe-Seite „Alle Aufgaben“
+  await page.goto(url + '#/alle');
+  await page.waitForSelector('.alle-liste');
+  await page.screenshot({ path: `screenshots/${name}-alle.png`, fullPage: true });
+  // Gruppe Г1б: jedes Format ohne Hilfe, mit Hilfe 2 und 3
+  for (const [bild, s] of G1B_BILDER) {
+    await vorbereiten(page, true, s);
     await page.evaluate(() => (document.querySelector('.hilfe-box') ?? document.querySelector('.aufgabe-bild')).scrollIntoView({ block: 'center' }));
     await page.screenshot({ path: `screenshots/${name}-${bild}.png` });
   }
