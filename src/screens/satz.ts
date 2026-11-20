@@ -322,7 +322,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
         const an = gleich(w, pl.entwurf);
         return `<button type="button" class="nz-taste nz-option${an ? ' gewaehlt' : ''}" data-k="${k}" aria-pressed="${an}" aria-label="${perlenBild(w).name}"${z}>${wahlInhalt(w)}</button>`;
       }).join('')}</div>`;
-    } else if (pl.art === 'bild') werkzeug = `<div class="nz-tipp">${TIPP}<span>${KIND.tippOben}</span></div>`;
+    } else if (pl.art === 'bild') werkzeug = `<div class="nz-tipp">${TIPP}<span>${pl.auftrag === KIND.auftrag.werIstEs ? KIND.tippOben : KIND.tippBild}</span></div>`;
     const w = pl.entwurf;
     const key = w ? `${pl.ort}|${JSON.stringify(w)}` : null;
     let wechsel = '';

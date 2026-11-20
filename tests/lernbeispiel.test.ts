@@ -26,6 +26,14 @@ import type { WelcheAufgabe } from '../src/aufgaben/welche-aufgabe';
 import type { Geheimschrift } from '../src/aufgaben/geheimschrift';
 import { ablesen, type Uhr } from '../src/aufgaben/uhr';
 import type { Geld } from '../src/aufgaben/geld';
+import type { MusterFehler } from '../src/aufgaben/muster-fehler';
+import type { PasstNicht } from '../src/aufgaben/passt-nicht';
+import type { ZweiKreise } from '../src/aufgaben/zwei-kreise';
+import type { Spiegel } from '../src/aufgaben/spiegel';
+import type { Drehen } from '../src/aufgaben/drehen';
+import type { Spiegelachse } from '../src/aufgaben/spiegelachse';
+import type { Diagramm } from '../src/aufgaben/diagramm';
+import { falscheGruppen, type MauerFehler } from '../src/aufgaben/mauer-fehler';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -137,6 +145,19 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
   uhr: (b) => [ablesen(b as Uhr)!.minute],
   /** Geld: Zahl der Geldstücke */
   geld: (b) => [(b as Geld).stuecke.length],
+  // Gruppe Г3 (Engine Auswahl): wie viel man vergleichen muss
+  /** Fehler im Muster: verschiedene Dinge in der Reihe */
+  'muster-fehler': (b) => [new Set((b as MusterFehler).reihe.map((e) => e.form + e.farbe)).size],
+  'passt-nicht': (b) => [(b as PasstNicht).dinge.length],
+  'zwei-kreise': (b) => [(b as ZweiKreise).karten.length],
+  spiegel: (b) => [(b as Spiegel).karten.length],
+  /** Drehen: Karten, dann Kästchen der Figur */
+  drehen: (b) => [(b as Drehen).karten.length, (b as Drehen).figur.flat().filter((c) => c).length],
+  /** Spiegel-Achse: Größe der Figur, dann Zahl der Linien */
+  spiegelachse: (b) => [(b as Spiegelachse).figur.length, (b as Spiegelachse).linien.length],
+  diagramm: (b) => [(b as Diagramm).sorten.length],
+  /** Fehler in der Mauer: Dreiergruppen, die nicht stimmen */
+  'mauer-fehler': (b) => [falscheGruppen(b as MauerFehler)],
 };
 /** Zahl der Lösung (wie groß die Rechnung ist) */
 function antwortVon(id: FormatId, b: unknown): number {

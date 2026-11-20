@@ -44,6 +44,8 @@ export const KIND = {
   loeschen: 'Löschen',
   /** Lade bei Antwort im Bild (z. B. Wer ist es?): wohin getippt wird */
   tippOben: 'Tippe im Bild, wer passt.',
+  /** dasselbe für Formate, deren Antwort kein Wesen ist (Formen, Steine, Linien) */
+  tippBild: 'Tippe im Bild auf deine Antwort.',
   /** Zahl eingeben: Gruppe der Ziffern (für Screenreader) */
   zahlEingeben: 'Zahl eingeben',
   /** Perle unten im Lade: schickt die Antwort (für Screenreader) */
@@ -89,6 +91,15 @@ export const KIND = {
     // Gruppe Г2в
     wieSpaet: 'Wie spät ist es?',
     wieVielEuro: 'Wie viel Euro sind es?',
+    // Gruppe Г3 (Engine Auswahl)
+    wasIstFalsch: 'Was ist falsch?',
+    wasPasstNicht: 'Was passt nicht?',
+    wasGehoertHin: 'Was gehört dorthin?',
+    welcheHaelfte: 'Welche Hälfte passt?',
+    gleicheFigurGedreht: 'Welche ist dieselbe, nur gedreht?',
+    welcheLinieFalten: 'Wo kannst du falten?',
+    wasAmMeisten: 'Wovon gibt es am meisten?',
+    welcherSteinFalsch: 'Welcher Stein ist falsch?',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {

@@ -29,6 +29,15 @@ import { GEHEIMSCHRIFT } from './geheimschrift';
 // Gruppe Г2в
 import { UHR } from './uhr';
 import { GELD } from './geld';
+// Gruppe Г3 (Engine Auswahl)
+import { MUSTER_FEHLER } from './muster-fehler';
+import { PASST_NICHT } from './passt-nicht';
+import { ZWEI_KREISE } from './zwei-kreise';
+import { SPIEGEL } from './spiegel';
+import { DREHEN } from './drehen';
+import { SPIEGELACHSE } from './spiegelachse';
+import { DIAGRAMM } from './diagramm';
+import { MAUER_FEHLER } from './mauer-fehler';
 
 /**
  * Alle Formate. Jedes hier eingetragene Format kommt von selbst in die gemischten Sätze (src/satz/sitzung.ts,
@@ -65,4 +74,13 @@ export const FORMATE: Record<FormatId, Format<unknown>> = {
   // Gruppe Г2в
   uhr: UHR as Format<unknown>,
   geld: GELD as Format<unknown>,
+  // Gruppe Г3 (Engine Auswahl)
+  'muster-fehler': MUSTER_FEHLER as Format<unknown>,
+  'passt-nicht': PASST_NICHT as Format<unknown>,
+  'zwei-kreise': ZWEI_KREISE as Format<unknown>,
+  spiegel: SPIEGEL as Format<unknown>,
+  drehen: DREHEN as Format<unknown>,
+  spiegelachse: SPIEGELACHSE as Format<unknown>,
+  diagramm: DIAGRAMM as Format<unknown>,
+  'mauer-fehler': MAUER_FEHLER as Format<unknown>,
 };

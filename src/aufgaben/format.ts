@@ -40,7 +40,16 @@ export type FormatId =
   | 'geheimschrift'
   // Gruppe Г2в
   | 'uhr'
-  | 'geld';
+  | 'geld'
+  // Gruppe Г3 (Engine Auswahl)
+  | 'muster-fehler'
+  | 'passt-nicht'
+  | 'zwei-kreise'
+  | 'spiegel'
+  | 'drehen'
+  | 'spiegelachse'
+  | 'diagramm'
+  | 'mauer-fehler';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';
