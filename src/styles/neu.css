@@ -15,7 +15,7 @@
   --unten: calc(12px + env(safe-area-inset-bottom, 0px));
   position: fixed; inset: 0; overflow: hidden; color: var(--text); font-family: var(--font); background: #3E5F9A;
   display: grid; gap: var(--g);
-  padding: calc(14px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px), calc((100vw - 1360px) / 2)) var(--unten) max(12px, env(safe-area-inset-left, 0px), calc((100vw - 1360px) / 2));
+  padding: calc(18px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px), calc((100vw - 1360px) / 2)) var(--unten) max(12px, env(safe-area-inset-left, 0px), calc((100vw - 1360px) / 2));
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas: "ast" "tisch";
@@ -35,7 +35,13 @@
 .nz-menueknopf { position: fixed; z-index: 6; right: max(12px, env(safe-area-inset-right, 0px)); bottom: var(--unten); }
 .nz-rechts .nz-korb { position: fixed; z-index: 6; right: calc(max(12px, env(safe-area-inset-right, 0px)) + var(--knopf) + 6px); bottom: var(--unten); }
 .nz:not([data-lage="quer"])[data-phase="loesen"] .nz-korb { visibility: hidden; } /* beim Lösen liegt dort das Blatt */
-.nz:not([data-lage="quer"]):not([data-phase="loesen"]) .nz-tisch { margin-bottom: calc(var(--knopf) + 10px); }
+/* bereit, Vergleich, Ende: der Korb steht groß unten in der Mitte und fängt die Blätter */
+.nz:not([data-phase="loesen"]) .nz-rechts .nz-korb, .nz[data-lage="quer"]:not([data-phase="loesen"]) .nz-rechts .nz-korb {
+  position: fixed; right: auto; left: 50%; bottom: var(--unten); translate: -50% 0; height: auto; --korb: calc(var(--knopf) * 1.7); }
+.nz:not([data-phase="loesen"]) .nz-korb img { width: var(--korb); }
+.nz:not([data-phase="loesen"]) .nz-korb .nz-zahl { font-size: calc(var(--knopf) * .44); }
+.nz[data-lage="quer"]:not([data-phase="loesen"]) .nz-tisch { margin-bottom: calc(var(--knopf) * 1.7); }
+.nz:not([data-lage="quer"]):not([data-phase="loesen"]) .nz-tisch { margin-bottom: calc(var(--knopf) * 1.7 + 10px); }
 .nz[data-lage="quer"] .nz-oben > [data-zurueck] { position: static; grid-area: zurueck; align-self: start; }
 .nz[data-lage="quer"] .nz-rechts { grid-area: oben; align-self: start; justify-self: end; display: flex; align-items: flex-start; gap: 8px; }
 .nz[data-lage="quer"] .nz-rechts > * { position: static; }
@@ -79,14 +85,17 @@
 @keyframes nz-setzen { from { transform: scale(.6) } }
 .nz[data-phase="vergleich"] .nz-slot.zu-mark::after { content: none; } /* beim Vergleichen zeigen nur die Blätter, was offen ist */
 .nz-slot.zu-mark::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 4px dashed var(--wahl); z-index: 4; pointer-events: none; }
-/* Zwilling-Knopf, wenn alle Perlen da sind: links oben auf dem Brett, gegenüber von „Hilfe“ */
-.nz-ueberblick { position: absolute; top: calc(var(--knopf) * -.3); left: calc(var(--knopf) * -.18); z-index: 5; }
-.nz-ueberblick .nz-rund { border: 4px solid #fff; background: radial-gradient(circle at 40% 30%, #FFF4C8, #FFC21F); box-shadow: 0 4px 0 #D99400, 0 8px 12px -3px rgba(120, 80, 0, .45); }
-.nz-ueberblick img { width: 84%; height: 84%; object-fit: contain; object-position: center bottom; }
+/* „Vergleichen“, wenn alle Perlen da sind und das Kind noch etwas ändert: Honig-Kapsel mit dem Zwilling unten auf dem Brett */
+.nz-ueberblick { align-self: center; flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 56px; margin-top: 4px; padding: 4px 22px 4px 8px;
+  border-radius: 999px; border: 4px solid #fff; font-size: clamp(19px, 5cqw, 26px); font-weight: 800; color: #3A2400; position: relative; z-index: 4;
+  background: linear-gradient(180deg, #FFE27A, #FFC21F 55%, #F2A400); box-shadow: 0 6px 0 #C27D00, 0 12px 20px var(--schatten); animation: nz-lockt 2.4s ease-in-out infinite; }
+.nz-ueberblick img { width: 46px; height: 46px; object-fit: contain; object-position: center bottom; }
+.nz-ueberblick:active { transform: translateY(4px); box-shadow: 0 2px 0 #C27D00; }
 .nz-blatt { position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: contain; z-index: 3; pointer-events: none; transform: rotate(-12deg);
   transition: transform .8s cubic-bezier(.22, 1, .36, 1), opacity .7s ease-out; filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 2px rgba(30, 60, 10, .3)); }
 .nz-slot:nth-child(odd) .nz-blatt { transform: rotate(8deg) scaleX(-1); }
-.nz-blatt.weg, .nz-slot:nth-child(odd) .nz-blatt.weg { transform: translate(24px, -80px) rotate(-30deg) scale(.7); opacity: 0; }
+.nz-blatt.weg, .nz-slot:nth-child(odd) .nz-blatt.weg { transform: translate(var(--dx, 24px), var(--dy, -80px)) rotate(-200deg) scale(.45); opacity: 0;
+  transition: transform .9s cubic-bezier(.45, 0, .25, 1), opacity .25s ease-in .7s; } /* das Blatt fliegt in den Korb */
 .nz-blatt.wackelt { animation: nz-wackeln .55s ease-in-out; }
 @keyframes nz-wackeln { 25% { transform: rotate(-22deg) } 55% { transform: rotate(-4deg) } 80% { transform: rotate(-15deg) } }
 

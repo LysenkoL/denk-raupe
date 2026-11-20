@@ -115,7 +115,7 @@ describe('#/neu', () => {
     for (let k = 0; k < 6; k++) { await antworten(page); await page.click('[data-abgabe]'); await page.waitForTimeout(400); }
     await page.click('[data-slot="0"]', { force: true }); await page.waitForTimeout(400);
     expect(await page.locator('#nz-reihe .nz-ueberblick').count()).toBe(0);
-    expect(await page.locator('.nz-brett .nz-ueberblick').count()).toBe(1);
+    expect(await page.locator('.nz-brett .nz-ueberblick').textContent()).toBe('Vergleichen');
     await page.click('[data-ueberblick]');
     expect(await page.locator('[data-vergleichen]').count()).toBe(1);
     await page.close();

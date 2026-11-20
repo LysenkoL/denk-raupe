@@ -248,10 +248,11 @@ export function renderNeu(app: HTMLElement): void {
     const bild = f.zeichne(a.bedingung, { hilfe: s.hilfe ? 2 : 0, gewaehlt: entwurf(i) });
     const frisch = gezeigt !== i; gezeigt = i;
     const alleDa = s.antwort.every((x, k) => x !== null || !offen(k));
-    const ueberblick = alleDa ? `<button type="button" class="nz-ueberblick" data-ueberblick="1" aria-label="${KIND.vergleichen}"><span class="nz-rund"><img src="${zwillingBild}" alt=""></span></button>` : '';
-    tisch.innerHTML = `<div class="nz-brett${frisch ? ' frisch' : ''}"><div class="nz-frage-zeile">${ueberblick}<h1 class="nz-frage">${KIND.auftrag[f.auftrag]}</h1>
+    // alle Perlen da, das Kind ändert noch etwas: eine deutliche Honig-Kapsel „Vergleichen“ unten auf dem Brett
+    const ueberblick = alleDa ? `<button type="button" class="nz-ueberblick" data-ueberblick="1"><img src="${zwillingBild}" alt=""><span>${KIND.vergleichen}</span></button>` : '';
+    tisch.innerHTML = `<div class="nz-brett${frisch ? ' frisch' : ''}"><div class="nz-frage-zeile"><h1 class="nz-frage">${KIND.auftrag[f.auftrag]}</h1>
       <button class="nz-laterne" type="button" data-hilfe="1" aria-pressed="${s.hilfe}"><span class="nz-rund"><img src="${laterneBild}" alt=""></span><span class="nz-name">${KIND.hilfe}</span></button></div>
-      <div class="nz-bild" id="nz-bild">${bild}</div>${notiz ? `<p class="nz-hinweis">${notiz}</p>` : ''}</div>${ladeHtml(i)}`;
+      <div class="nz-bild" id="nz-bild">${bild}</div>${notiz ? `<p class="nz-hinweis">${notiz}</p>` : ''}${ueberblick}</div>${ladeHtml(i)}`;
   }
   function regen(): string {
     let h = '<div class="nz-regen" aria-hidden="true">';
@@ -335,7 +336,13 @@ export function renderNeu(app: HTMLElement): void {
       const g = zwilling.querySelector(`[data-gslot="${i}"] .nz-blatt`);
       if (stimmt(format(i), s.aufgaben[i], s.antwort[i]!)) {
         s.blatt[i] = erste ? 'gold' : 'auf'; s.korb += erste ? 2 : 1;
-        g?.classList.add('weg'); korbZeichnen();
+        korbZeichnen();
+        if (g instanceof HTMLElement) {
+          const a = g.getBoundingClientRect(), k = root.querySelector('#nz-korb img')?.getBoundingClientRect() ?? root.querySelector('#nz-korb')!.getBoundingClientRect();
+          g.style.setProperty('--dx', `${Math.round(k.left + k.width / 2 - (a.left + a.width / 2))}px`);
+          g.style.setProperty('--dy', `${Math.round(k.top + k.height / 3 - (a.top + a.height / 2))}px`);
+          g.classList.add('weg');
+        }
         const kb = root.querySelector('#nz-korb')!; kb.classList.remove('hupf'); void (kb as HTMLElement).offsetWidth; kb.classList.add('hupf');
       } else { bleiben.push(i); g?.classList.add('wackelt'); }
     }, kriechen + 300 + takt * k));
