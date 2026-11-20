@@ -226,7 +226,7 @@ Glossy juicy stylised 3D like the attached basket with leaves, warm light from t
 - **верх** насыщенный и тёмный; в середине верха ничего светлого: ни облаков, ни солнца — иначе сливаются гнёзда и белые подписи;
 - **середина** спокойная — её закрывает доска;
 - **низ** насыщенный, в тени, не белый и не светло-зелёный — иначе пропадает зелёный лист;
-- **на планшете** справа внизу клавиатура и лист — там пусто; украшения только по левому краю, в левом нижнем углу и справа выше середины;
+- **на планшете** справа внизу клавиатура и лист — там пусто; левую половину закрывает доска, поэтому украшения, которые видно, — справа выше середины;
 - за верхом и низом нет тонких линий, рам, веток (оранжерея не подошла именно поэтому).
 
 Порядок: один мир — один чат. Приложить вечерний луг автора (сад светлячков) как образец стиля. Сначала горизонтальный кадр, потом в том же чате вертикальный. Файлы: `welt-<имя>-quer.webp` и `welt-<имя>-hoch.webp`.
@@ -236,11 +236,11 @@ Glossy juicy stylised 3D like the attached basket with leaves, warm light from t
 ```
 Wide background picture for a children's learning game, 16:9. [WORLD]
 Layout rules, very important:
-- Top fifth: a rich, deep, saturated colour. Nothing light or white in the top middle: no clouds, no sun, no bright glow there.
+- Top fifth: a rich, saturated, medium-deep colour, like a deep sky blue or a violet-blue. Not dark navy, not black. A smooth gradient with no visible bands or stripes. Nothing light or white in the top middle: no clouds, no sun, no bright glow there.
 - Middle: calm, soft and simple. It will be covered by a big panel.
 - Bottom fifth: a rich, darker ground in soft shade. Not white, not light green.
 - Bottom right quarter: calm and simple, no plants or objects there.
-- Decorations only at the far left edge, in the bottom left corner and at the far right edge above the middle.
+- Decorations only at the far right edge in the upper half, at the far left edge and in the bottom left corner. No tree crowns or leaves hanging into the top corners.
 - No thin lines, frames, branches or busy patterns at the top and at the bottom.
 Style: the same style and materials as the attached picture, but with the light and colours described here: polished stylised 3D like a high-quality animated film for children, soft rounded shapes, juicy saturated colours, a soft magical glow, never neon. No characters, no animals, no text.
 ```
@@ -249,7 +249,7 @@ Style: the same style and materials as the attached picture, but with the light 
 
 ```
 The same place as in the previous picture, now as a tall background for a phone, portrait 9:16.
-- Top quarter: a rich, deep, saturated colour, nothing light or white in it: no clouds, no sun there.
+- Top quarter: a rich, saturated, medium-deep colour, not dark navy, not black, a smooth gradient with no visible bands. Nothing light or white in it: no clouds, no sun there. No tree crowns or leaves hanging into the top corners.
 - Middle: calm and simple. It will be covered by a big panel.
 - Bottom quarter: a rich, darker ground in soft shade, not white, not light green, calm in the middle.
 - Small decorations only in the two bottom corners and at the side edges, fully inside the picture.
@@ -288,4 +288,6 @@ A magical meadow at golden dusk: a deep violet-blue sky with a few small stars a
 
 Горизонтальный кадр сада светлячков у автора уже есть (вечерний луг); для него нужен только вертикальный.
 
-Быстрая проверка готовой картинки: середина верха тёмная, низ не светло-зелёный и не белый, справа внизу пусто. Потом — экран `#/neu` с этим фоном на телефоне и планшете.
+Первая проба (20.11.2026, экран `#/neu`): сад светлячков и дневной луг подошли — белые подписи кнопок, гнёзда и лист читаются. Простой ночной вариант — нет: почти чёрный верх с резкой полосой и пусто. Отсюда в общем блоке «не тёмно-синий, не чёрный, без полос» и «без крон в верхних углах».
+
+Быстрая проверка готовой картинки: середина верха насыщенная, но не чёрная, без полос; низ не светло-зелёный и не белый; справа внизу пусто; в верхних углах нет веток; большая сторона не меньше 2000 px. Потом — экран `#/neu` с этим фоном на телефоне и планшете.
