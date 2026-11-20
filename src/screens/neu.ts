@@ -21,6 +21,10 @@ import herbstHoch from '../bilder/welten/herbst-hoch.webp';
 import lavendelHoch from '../bilder/welten/lavendel-hoch.webp';
 import gluehHoch from '../bilder/welten/gluehwuermchen-hoch.webp';
 import gluehQuer from '../bilder/welten/gluehwuermchen-quer.webp';
+import wieseQuer from '../bilder/welten/wiese-quer.webp';
+import teichQuer from '../bilder/welten/teich-quer.webp';
+import herbstQuer from '../bilder/welten/herbst-quer.webp';
+import lavendelQuer from '../bilder/welten/lavendel-quer.webp';
 
 /**
  * Neuer Satzbildschirm nach Probe 7c (#/neu) – Vorschau für die Autorin, bis A10 den alten Bildschirm ersetzt.
@@ -64,9 +68,10 @@ interface Zustand {
 }
 
 const SATZ = 6;
-/** Welten in fester Reihenfolge; ein querer Ausschnitt nur, wo er schon gemalt ist (sonst wird der hohe beschnitten) */
+/** Welten in fester Reihenfolge: hochkant und quer je ein eigenes Bild (16:9 und 9:16) */
 const WELTEN: { hoch: string; quer?: string }[] = [
-  { hoch: wieseHoch }, { hoch: teichHoch }, { hoch: herbstHoch }, { hoch: lavendelHoch }, { hoch: gluehHoch, quer: gluehQuer },
+  { hoch: wieseHoch, quer: wieseQuer }, { hoch: teichHoch, quer: teichQuer }, { hoch: herbstHoch, quer: herbstQuer },
+  { hoch: lavendelHoch, quer: lavendelQuer }, { hoch: gluehHoch, quer: gluehQuer },
 ];
 const WELT_SCHLUESSEL = 'denk-raupe.welt';
 /** nächste Welt; gemerkt nur auf dem Gerät, ohne Speicher geht es bei der ersten weiter */
