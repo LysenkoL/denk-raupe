@@ -244,7 +244,6 @@ export function renderNeu(app: HTMLElement): void {
       return;
     }
     const i = s.aktuell, a = s.aufgaben[i], f = format(i);
-    const notiz = s.runden > 0 && offen(i) && !s.geaendert[i] ? 'Hier ist noch ein Blatt. Schau noch einmal.' : '';
     const bild = f.zeichne(a.bedingung, { hilfe: s.hilfe ? 2 : 0, gewaehlt: entwurf(i) });
     const frisch = gezeigt !== i; gezeigt = i;
     const alleDa = s.antwort.every((x, k) => x !== null || !offen(k));
@@ -252,7 +251,7 @@ export function renderNeu(app: HTMLElement): void {
     const ueberblick = alleDa ? `<button type="button" class="nz-ueberblick" data-ueberblick="1"><img src="${zwillingBild}" alt=""><span>${KIND.vergleichen}</span></button>` : '';
     tisch.innerHTML = `<div class="nz-brett${frisch ? ' frisch' : ''}"><div class="nz-frage-zeile"><h1 class="nz-frage">${KIND.auftrag[f.auftrag]}</h1>
       <button class="nz-laterne" type="button" data-hilfe="1" aria-pressed="${s.hilfe}"><span class="nz-rund"><img src="${laterneBild}" alt=""></span><span class="nz-name">${KIND.hilfe}</span></button></div>
-      <div class="nz-bild" id="nz-bild">${bild}</div>${notiz ? `<p class="nz-hinweis">${notiz}</p>` : ''}${ueberblick}</div>${ladeHtml(i)}`;
+      <div class="nz-bild" id="nz-bild">${bild}</div>${ueberblick}</div>${ladeHtml(i)}`;
   }
   function regen(): string {
     let h = '<div class="nz-regen" aria-hidden="true">';
