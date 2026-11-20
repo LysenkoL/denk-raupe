@@ -49,7 +49,16 @@ export type FormatId =
   | 'drehen'
   | 'spiegelachse'
   | 'diagramm'
-  | 'mauer-fehler';
+  | 'mauer-fehler'
+  // Gruppen Г4–Г6 (Raster mit einer Zelle, Reihe, Weg)
+  | 'zahlenhaus'
+  | 'rechendreieck'
+  | 'bilder-gitter'
+  | 'zahlenreihe'
+  | 'perlenkette'
+  | 'abc-reihe'
+  | 'raupen-weg'
+  | 'labyrinth';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';

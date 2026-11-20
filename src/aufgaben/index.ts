@@ -38,6 +38,15 @@ import { DREHEN } from './drehen';
 import { SPIEGELACHSE } from './spiegelachse';
 import { DIAGRAMM } from './diagramm';
 import { MAUER_FEHLER } from './mauer-fehler';
+// Gruppen Г4–Г6
+import { ZAHLENHAUS } from './zahlenhaus';
+import { RECHENDREIECK } from './rechendreieck';
+import { BILDER_GITTER } from './bilder-gitter';
+import { ZAHLENREIHE } from './zahlenreihe';
+import { PERLENKETTE } from './perlenkette';
+import { ABC_REIHE } from './abc-reihe';
+import { RAUPEN_WEG } from './raupen-weg';
+import { LABYRINTH } from './labyrinth';
 
 /**
  * Alle Formate. Jedes hier eingetragene Format kommt von selbst in die gemischten Sätze (src/satz/sitzung.ts,
@@ -83,4 +92,13 @@ export const FORMATE: Record<FormatId, Format<unknown>> = {
   spiegelachse: SPIEGELACHSE as Format<unknown>,
   diagramm: DIAGRAMM as Format<unknown>,
   'mauer-fehler': MAUER_FEHLER as Format<unknown>,
+  // Gruppen Г4–Г6
+  zahlenhaus: ZAHLENHAUS as Format<unknown>,
+  rechendreieck: RECHENDREIECK as Format<unknown>,
+  'bilder-gitter': BILDER_GITTER as Format<unknown>,
+  zahlenreihe: ZAHLENREIHE as Format<unknown>,
+  perlenkette: PERLENKETTE as Format<unknown>,
+  'abc-reihe': ABC_REIHE as Format<unknown>,
+  'raupen-weg': RAUPEN_WEG as Format<unknown>,
+  labyrinth: LABYRINTH as Format<unknown>,
 };

@@ -34,6 +34,15 @@ import type { Drehen } from '../src/aufgaben/drehen';
 import type { Spiegelachse } from '../src/aufgaben/spiegelachse';
 import type { Diagramm } from '../src/aufgaben/diagramm';
 import { falscheGruppen, type MauerFehler } from '../src/aufgaben/mauer-fehler';
+import type { Zahlenhaus } from '../src/aufgaben/zahlenhaus';
+import type { Rechendreieck } from '../src/aufgaben/rechendreieck';
+import type { BilderGitter } from '../src/aufgaben/bilder-gitter';
+import type { Zahlenreihe } from '../src/aufgaben/zahlenreihe';
+import type { Perlenkette } from '../src/aufgaben/perlenkette';
+import type { AbcReihe } from '../src/aufgaben/abc-reihe';
+import type { RaupenWeg } from '../src/aufgaben/raupen-weg';
+import type { Labyrinth } from '../src/aufgaben/labyrinth';
+import { gehen } from '../src/aufgaben/raupen-weg';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -158,6 +167,20 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
   diagramm: (b) => [(b as Diagramm).sorten.length],
   /** Fehler in der Mauer: Dreiergruppen, die nicht stimmen */
   'mauer-fehler': (b) => [falscheGruppen(b as MauerFehler)],
+  // Gruppen Г4–Г6
+  /** Zahlenhaus: Stockwerke, dann Dachzahl */
+  zahlenhaus: (b) => [(b as Zahlenhaus).stockwerke.length, (b as Zahlenhaus).dach],
+  /** Rechendreieck: größte Zahl (mit der Lösung) */
+  rechendreieck: (b) => [Math.max(antwortVon('rechendreieck', b), ...Object.values((b as Rechendreieck).zahlen))],
+  'bilder-gitter': (b) => [(b as BilderGitter).perlen.length],
+  /** Zahlenreihe: Größe des Schritts */
+  zahlenreihe: (b) => [(b as Zahlenreihe).zahlen[1] - (b as Zahlenreihe).zahlen[0]],
+  /** Perlenkette: wie weit hinter den aufgefädelten gefragt wird */
+  perlenkette: (b) => [(b as Perlenkette).frage - (b as Perlenkette).perlen.length],
+  'abc-reihe': (b) => [(b as AbcReihe).reihe.length],
+  /** Raupen-Weg: Größe des Feldes, dann Länge des Wegs */
+  'raupen-weg': (b) => [(b as RaupenWeg).n, gehen(b as RaupenWeg).felder.length],
+  labyrinth: (b) => [(b as Labyrinth).wege],
 };
 /** Zahl der Lösung (wie groß die Rechnung ist) */
 function antwortVon(id: FormatId, b: unknown): number {

@@ -100,6 +100,13 @@ export const KIND = {
     welcheLinieFalten: 'Wo kannst du falten?',
     wasAmMeisten: 'Wovon gibt es am meisten?',
     welcherSteinFalsch: 'Welcher Stein ist falsch?',
+    // Gruppen Г4–Г6
+    wasGehoertHinein: 'Was gehört hinein?',
+    welcheZahlKommt: 'Welche Zahl kommt als Nächste?',
+    welchePerleKommt: 'Welche Perle kommt dorthin?',
+    welcherBuchstabeFehlt: 'Welcher Buchstabe fehlt?',
+    durchWelchesTor: 'Durch welches Tor geht die Raupe?',
+    woKommtSieAn: 'Wo kommt die Raupe an?',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {
