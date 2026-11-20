@@ -294,11 +294,18 @@ a.nz-wahl-satz { color: inherit; text-decoration: none; display: flex; align-ite
 .nz[data-lage="quer"] .nz-rechts > .nz-korb { position: relative; }
 /* Telefon quer: zwei Bilder (Hilfe 3/4) nebeneinander – untereinander wäre jedes zu flach */
 .nz[data-niedrig] .nz-bild.zwei { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
-/* Telefon quer, Ende: kein Platz für zwei Raupen und Karte – die Karte allein, der Korb oben rechts wie beim Lösen */
+/* Telefon quer, Ende: kein Platz für zwei Raupen und Karte – die Karte allein; der Korb oben rechts wie beim Lösen,
+   auch beim Vergleichen (unten in der Mitte läge er auf der Zeile „Dein Zwilling kommt!“) */
 .nz[data-niedrig][data-phase="fertig"] .nz-ast { display: none; }
-.nz[data-niedrig][data-lage="quer"][data-phase="fertig"] .nz-rechts .nz-korb { position: relative; left: auto; bottom: auto; translate: none; --korb: calc(var(--knopf) * 1.05); }
-.nz[data-niedrig][data-lage="quer"][data-phase="fertig"] .nz-tisch { margin-bottom: 0; }
+.nz[data-niedrig][data-lage="quer"]:is([data-phase="fertig"], [data-phase="vergleich"]) .nz-rechts .nz-korb { position: relative; left: auto; bottom: auto; translate: none; --korb: calc(var(--knopf) * 1.05); }
+.nz[data-niedrig][data-lage="quer"]:is([data-phase="fertig"], [data-phase="vergleich"]) .nz-tisch { margin-bottom: 0; }
 .nz[data-niedrig] .nz-karte.ende { padding: 12px 16px 16px; gap: 8px; }
 .nz[data-niedrig] .nz-kachel img, .nz[data-niedrig] .nz-kachel svg { height: min(64px, 14vh); }
 /* quer, mittlere Höhe: Kacheln am Ende flacher, damit die Karte über dem Korb bleibt */
 .nz[data-lage="quer"] .nz-kachel img, .nz[data-lage="quer"] .nz-kachel svg { height: min(100px, 11vh); }
+/* schmales Brett (Telefon): die Unterschrift der ähnlichen Aufgabe nur für Vorleser, „Später“ unten rechts im Teil –
+   sonst bleibt für das Bild der ähnlichen Aufgabe kein Platz */
+@container (max-width: 449px) {
+  .nz-aehnlich-titel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .nz-aehnlich-kopf { position: absolute; right: 4px; bottom: 4px; z-index: 2; }
+}

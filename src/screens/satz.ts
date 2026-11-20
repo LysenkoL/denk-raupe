@@ -938,7 +938,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     px('--p', p);
     px('--luecke', p * 0.08);
     px('--treffer', Math.max(0, (48 - p) / 2));
-    px('--lade-b', ladeB);
+    // Telefon quer: Kacheln sind nie kleiner als 48 px – dann wird die Lade so breit, dass zwei Reihen hineinpassen
+    px('--lade-b', quer && !niedrig ? ladeB : Math.max(ladeB, taste * 7.16 + 6));
     px('--taste', taste);
     px('--ab', Math.max(56, Math.min(96, taste * 1.25)));
     if (!finger.hidden) fingerNachfuehren(platz());

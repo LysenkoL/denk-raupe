@@ -134,6 +134,13 @@ const pruefen = (page: Page) => page.evaluate(() => {
     return !!p && !!q && p.width > 0 && q.width > 0 && p.left < q.right && q.left < p.right && p.top < q.bottom && q.top < p.bottom;
   };
   for (const k of ['[data-zurueck]', '[data-menue]']) for (const z of ['.nz-werkzeug', '.nz-schale', '.nz-brett']) if (ueber(k, z)) fehler.push(`${k} auf ${z}`);
+  // Lade ganz im Fenster, Kacheln ganz in ihrem Glas
+  const lade = document.querySelector('.nz-werkzeug')?.getBoundingClientRect();
+  if (lade && lade.width && (lade.left < -1 || lade.right > W + 1 || lade.bottom > H + 1)) fehler.push('Lade ragt aus dem Fenster');
+  for (const k of document.querySelectorAll('.nz-werkzeug .nz-taste')) {
+    const r = k.getBoundingClientRect();
+    if (lade && (r.left < lade.left - 1 || r.right > lade.right + 1 || r.top < lade.top - 1 || r.bottom > lade.bottom + 1)) fehler.push('Kachel ragt aus der Lade');
+  }
   const bild = document.querySelector('#nz-bild svg')?.getBoundingClientRect();
   const brett = document.querySelector('.nz-brett')?.getBoundingClientRect();
   if (bild && brett && (bild.left < brett.left - 1 || bild.right > brett.right + 1 || bild.bottom > brett.bottom + 1)) fehler.push('Bild ragt aus dem Brett');
