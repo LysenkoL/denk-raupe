@@ -48,6 +48,7 @@ import type { ZehnerPaare } from '../src/aufgaben/zehner-paare';
 import type { Schuettelbox } from '../src/aufgaben/schuettelbox';
 import type { GleichesPaar } from '../src/aufgaben/gleiches-paar';
 import type { Blitzblick } from '../src/aufgaben/blitzblick';
+import type { MiniSudoku } from '../src/aufgaben/mini-sudoku';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -192,6 +193,8 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
   schuettelbox: (b) => [(b as Schuettelbox).gesamt],
   'gleiches-paar': (b) => [(b as GleichesPaar).karten.length],
   blitzblick: (b) => [(b as Blitzblick).punkte.length],
+  /** Mini-Sudoku: Zahl der leeren Zellen */
+  'mini-sudoku': (b) => [(b as MiniSudoku).start.filter((v) => v === -1).length],
 };
 /** Zahl der Lösung (wie groß die Rechnung ist) */
 function antwortVon(id: FormatId, b: unknown): number {

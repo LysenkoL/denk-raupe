@@ -16,8 +16,8 @@ import { kartenReihe } from './auswahl';
  *          sich ähnlich.
  * Der Löser sucht alle Paare gleicher Karten (alle drei Merkmale gleich); genau eins muss es sein.
  *
- * Hilfe auf dem Bild: Stufe 2 rahmt die Karten mit der Form des Paars ein; Stufe 3 macht die Karten in anderer Farbe als
- * das Paar blass (bleiben dann nur zwei, verrät das alles – dann an der ähnlichen Aufgabe).
+ * Hilfe auf dem Bild: Stufe 2 rahmt die Karten mit der Form des Paars ein; Stufe 3 macht die Karten blass, die in einem
+ * Merkmal (zuerst Farbe, sonst Form, sonst Punkte) anders sind als das Paar (bleiben dann nur zwei, verrät das alles – dann an der ähnlichen Aufgabe).
  */
 export interface Bild {
   form: Form;
@@ -74,11 +74,19 @@ function erzeuge(z: Zufall, stufe: number): GleichesPaar {
   }
 }
 
-const sichtbarNachSchritt = (g: GleichesPaar) => {
+/** Merkmal für Stufe 3: das erste (Farbe, Form, Punkte), in dem sich eine andere Karte vom Paar unterscheidet */
+export function schrittMerkmal(g: GleichesPaar): keyof Bild {
   const [i] = paare(g)[0];
-  return g.karten.filter((k) => k.farbe === g.karten[i - 1].farbe).length;
-};
-const schrittVerraet = (g: GleichesPaar) => sichtbarNachSchritt(g) < 3;
+  const p = g.karten[i - 1];
+  return (['farbe', 'form', 'punkte'] as const).find((m) => g.karten.some((k) => k[m] !== p[m])) ?? 'farbe';
+}
+/** Karten, die Stufe 3 blass macht: die im Merkmal anders sind als das Paar */
+export function blasseKarten(g: GleichesPaar): number[] {
+  const [i] = paare(g)[0];
+  const m = schrittMerkmal(g);
+  return g.karten.map((k, j) => (k[m] !== g.karten[i - 1][m] ? j : -1)).filter((j) => j >= 0);
+}
+const schrittVerraet = (g: GleichesPaar) => g.karten.length - blasseKarten(g).length < 3;
 
 /* ---------- Bild ---------- */
 
@@ -96,7 +104,7 @@ function zeichne(g: GleichesPaar, o: ZeichenOptionen): string {
   const loesung = paare(g)[0];
   const gew = o.vorrechnen ? loesung : o.gewaehlt?.art === 'sammel' && o.gewaehlt.zeichen === 'paar' ? (o.gewaehlt.wert as number[]) : null;
   const paarBild = loesung ? g.karten[loesung[0] - 1] : null;
-  const blass = o.hilfe >= 3 && !o.vorrechnen && (o.aehnlich || !schrittVerraet(g));
+  const blass = o.hilfe >= 3 && !o.vorrechnen && (o.aehnlich || !schrittVerraet(g)) ? blasseKarten(g) : [];
   const reihe = kartenReihe(
     n,
     spalten,
@@ -106,7 +114,7 @@ function zeichne(g: GleichesPaar, o: ZeichenOptionen): string {
     {
       gewaehlt: gew ? gew.map((x) => x - 1) : null,
       hell: (i) => ((o.hilfe >= 2 || o.vorrechnen) && paarBild && g.karten[i].form === paarBild.form ? 'teil' : null),
-      blass: (i) => (blass && paarBild && g.karten[i].farbe !== paarBild.farbe ? 'schritt' : null),
+      blass: (i) => (blass.includes(i) ? 'schritt' : null),
     },
     (i) => `Karte ${i + 1}`,
   );

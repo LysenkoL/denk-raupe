@@ -53,6 +53,7 @@ import { ZEHNER_PAARE } from './zehner-paare';
 import { SCHUETTELBOX } from './schuettelbox';
 import { GLEICHES_PAAR } from './gleiches-paar';
 import { BLITZBLICK } from './blitzblick';
+import { MINI_SUDOKU } from './mini-sudoku';
 
 /**
  * Alle Formate. Jedes hier eingetragene Format kommt von selbst in die gemischten Sätze (src/satz/sitzung.ts,
@@ -113,4 +114,5 @@ export const FORMATE: Record<FormatId, Format<unknown>> = {
   schuettelbox: SCHUETTELBOX as Format<unknown>,
   'gleiches-paar': GLEICHES_PAAR as Format<unknown>,
   blitzblick: BLITZBLICK as Format<unknown>,
+  'mini-sudoku': MINI_SUDOKU as Format<unknown>,
 };

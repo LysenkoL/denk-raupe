@@ -230,5 +230,9 @@
   "format.blitzblick.name": "Blitzblick",
   "format.blitzblick.uebt": "Mengen auf einen Blick erfassen, ohne einzeln zu zählen. Das Kind öffnet die Blätter selbst, wenn es bereit ist; die Punkte sind 2 Sekunden zu sehen. Auf der höchsten Stufe liegen sie in Fünferreihen – fünf und noch ein paar.",
   "format.blitzblick.beispiel": "Eine volle Fünferreihe und darunter zwei Punkte: Es waren 7.",
-  "format.blitzblick.helfen": "Ermuntern Sie: „Schau nur kurz hin – siehst du fünf?“ Das Kind darf die Blätter beliebig oft öffnen. Nennen Sie die Zahl nicht."
+  "format.blitzblick.helfen": "Ermuntern Sie: „Schau nur kurz hin – siehst du fünf?“ Das Kind darf die Blätter beliebig oft öffnen. Nennen Sie die Zahl nicht.",
+  "format.mini-sudoku.name": "Mini-Sudoku",
+  "format.mini-sudoku.uebt": "Logisch schließen: In jeder Zeile und jeder Spalte kommt jedes Zeichen genau einmal vor (bei 4 × 4 auch in jedem Viererblock). Das Kind tippt ein leeres Feld an und setzt unten ein Zeichen. Erst zwei Lücken, dann mehr, zuletzt 4 × 4.",
+  "format.mini-sudoku.beispiel": "In der Zeile fehlen Stern und Kreis; in der Spalte des ersten leeren Feldes steht schon ein Stern – also kommt dort der Kreis hin.",
+  "format.mini-sudoku.helfen": "Fragen Sie: „Was fehlt in dieser Zeile? Steht es schon in der Spalte?“ Beginnen Sie mit dem Feld, in das nur eins passt. Setzen Sie kein Zeichen ein."
 }

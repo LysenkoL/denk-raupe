@@ -247,6 +247,35 @@ describe('Engine Blick (Blitzblick, Nr. 2)', () => {
   });
 });
 
+describe('Raster mit mehreren Zellen (Mini-Sudoku, Nr. 25)', () => {
+  it('Zelle wählen, Zeichen setzen; erst das volle Gitter macht die Perle bereit; sie schickt das Gitter', async () => {
+    const s = neueSitzung(SAMEN, undefined, [{ format: 'mini-sudoku', stufe: 2 }, { format: 'muster', stufe: 1 }]);
+    const m = s.aufgaben[0].bedingung as { start: number[] };
+    const voll = (FORMATE['mini-sudoku'].loesungen(s.aufgaben[0].bedingung)[0] as unknown as { wert: number[] }).wert;
+    const leer = m.start.map((v, k) => (v === -1 ? k : -1)).filter((k) => k >= 0);
+    const page = await oeffnen(412, 800, { sitzung: s });
+    expect(await page.locator('[data-zeichen-nr]').count()).toBe(3);
+    for (const [i, k] of leer.entries()) {
+      await page.click(`#nz-bild [data-zelle="${k}"]`, { force: true });
+      expect(await page.getAttribute(`#nz-bild [data-zelle="${k}"]`, 'class')).toContain('aktiv');
+      await page.click(`[data-zeichen-nr="${voll[k]}"]`);
+      // vor der letzten Zelle bleibt die Perle leer
+      expect(await page.locator('[data-abgabe].leer').count()).toBe(i < leer.length - 1 ? 1 : 0);
+    }
+    expect(await page.locator('#nz-bild [data-inhalt]').count()).toBe(leer.length);
+    // ein Zeichen wieder weg: die Perle ist wieder leer
+    await page.click(`#nz-bild [data-zelle="${leer[0]}"]`, { force: true });
+    await page.click('[data-raster-weg]');
+    expect(await page.locator('[data-abgabe].leer').count()).toBe(1);
+    await page.click(`[data-zeichen-nr="${voll[leer[0]]}"]`);
+    await page.waitForTimeout(320);
+    await page.click('[data-abgabe]');
+    await page.waitForTimeout(330);
+    expect(await page.locator('[data-slot="0"] .nz-perle').count()).toBe(1);
+    await page.close();
+  });
+});
+
 describe('Bedienung: nur die Perle schickt', () => {
   it('Wahl und Zahl bauen nur den Entwurf; leere Perle schickt nichts; der Entwurf steht in der Aufgabe', async () => {
     const s = probe();

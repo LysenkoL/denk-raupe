@@ -113,6 +113,7 @@ export const KIND = {
     wieVieleVersteckt: 'Wie viele sind versteckt?',
     welcheZweiGleich: 'Welche zwei sind gleich?',
     wieVieleWaren: 'Tippe auf die Blätter. Wie viele waren es?',
+    fuelleDasGitter: 'Jedes Zeichen einmal in jeder Reihe.',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {

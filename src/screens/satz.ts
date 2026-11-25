@@ -68,7 +68,7 @@ import lavendelQuer from '../bilder/welten/lavendel-quer.webp';
 
 type Phase = 'loesen' | 'bereit' | 'vergleich' | 'fertig';
 type Modus = 'satz' | 'lern' | 'geste';
-type Art = 'zahl' | 'wahl' | 'bild';
+type Art = 'zahl' | 'wahl' | 'bild' | 'raster';
 
 /** Welten in fester Reihenfolge, je Satz die nächste: hochkant und quer je ein eigenes Bild */
 const WELTEN: { hoch: string; quer: string }[] = [
@@ -135,6 +135,8 @@ interface Platz {
   ort: string;
   /** Antwort im Bild aus mehreren Dingen (Gleiches Paar): zwei antippen, dann ist die Antwort ein Paar */
   mehrfach?: boolean;
+  /** Raster mit mehreren Zellen: Anfang des Gitters und Zeichen im Lade */
+  raster?: { start: number[]; zeichen: Antwort[] };
 }
 
 export async function renderSatz(app: HTMLElement): Promise<void> {
@@ -175,6 +177,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   let gezaehlt: { wo: string; nr: Set<number> } | null = null;
   /** angetippte Dinge einer Antwort aus mehreren (Gleiches Paar), bevor das Paar voll ist; gehört zu einem Ort */
   let paarTeil: { wo: string; nr: number[] } | null = null;
+  /** Raster (Mini-Sudoku): halb volles Gitter und gewählte Zelle, bis alles voll ist */
+  let rasterTeil: { wo: string; werte: number[]; zelle: number | null } | null = null;
   // Finger
   let letzteBeruehrung = Date.now();
   let leerTipps = 0;
@@ -250,11 +254,29 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     if (m === 'lern') {
       const { a, st, k } = lernSchritt();
       const e = format().eingabe(a.bedingung);
-      return { modus: m, auftrag: KIND.auftrag[format().auftrag], art: e.art as Art, wahl: a.wahl, feld: e.art === 'zahl' ? zahlfeld(e, a.zahlenraum) : 99, entwurf: st.antwort, ort: `lern:${a.format}:${k}`, mehrfach: e.art === 'bild' && !!e.mehrfach };
+      return { modus: m, auftrag: KIND.auftrag[format().auftrag], art: e.art as Art, wahl: a.wahl, feld: e.art === 'zahl' ? zahlfeld(e, a.zahlenraum) : 99, entwurf: st.antwort, ort: `lern:${a.format}:${k}`, mehrfach: e.art === 'bild' && !!e.mehrfach, raster: rasterVon(a) };
     }
     const a = aufgabe();
     const e = format().eingabe(a.bedingung);
-    return { modus: m, auftrag: KIND.auftrag[format().auftrag], art: e.art as Art, wahl: a.wahl, feld: e.art === 'zahl' ? zahlfeld(e, a.zahlenraum) : 99, entwurf: entwuerfe()[aktuell()], ort: `${sitzung.samen}:${aktuell()}`, mehrfach: e.art === 'bild' && !!e.mehrfach };
+    return { modus: m, auftrag: KIND.auftrag[format().auftrag], art: e.art as Art, wahl: a.wahl, feld: e.art === 'zahl' ? zahlfeld(e, a.zahlenraum) : 99, entwurf: entwuerfe()[aktuell()], ort: `${sitzung.samen}:${aktuell()}`, mehrfach: e.art === 'bild' && !!e.mehrfach, raster: rasterVon(a) };
+  }
+  /** Raster-Format: Anfang und Zeichen der Aufgabe a (sonst nichts) */
+  function rasterVon(a: Aufgabe): Platz['raster'] {
+    const r = FORMATE[a.format].raster;
+    return r ? { start: r.start(a.bedingung), zeichen: r.zeichen(a.bedingung) } : undefined;
+  }
+  /** Raster: Werte, die das Kind schon gesetzt hat (auch halb voll), und die gewählte Zelle; gehört zu einem Ort */
+  function rasterStand(pl: Platz): { werte: number[]; zelle: number | null } {
+    if (!rasterTeil || rasterTeil.wo !== pl.ort) {
+      const voll = pl.entwurf?.art === 'sammel' ? (pl.entwurf.wert as number[]) : null;
+      rasterTeil = { wo: pl.ort, werte: voll ? [...voll] : [...pl.raster!.start], zelle: null };
+    }
+    return rasterTeil;
+  }
+  /** was im Bild steht: beim Raster auch das halb volle Gitter, sonst der Entwurf */
+  function imBild(pl: Platz): Antwort | null {
+    if (pl.art !== 'raster' || !pl.raster) return pl.entwurf;
+    return { art: 'sammel', zeichen: 'gitter', wert: rasterStand(pl).werte };
   }
   function entwurfSetzen(w: Antwort | null): void {
     const m = modus();
@@ -326,6 +348,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
         const an = gleich(w, pl.entwurf);
         return `<button type="button" class="nz-taste nz-option${an ? ' gewaehlt' : ''}" data-k="${k}" aria-pressed="${an}" aria-label="${perlenBild(w).name}"${z}>${wahlInhalt(w)}</button>`;
       }).join('')}</div>`;
+    } else if (pl.art === 'raster' && pl.raster) {
+      werkzeug = `<div class="nz-wahl">${pl.raster.zeichen.map((w, k) => `<button type="button" class="nz-taste nz-option" data-zeichen-nr="${k}" aria-label="${perlenBild(w).name}">${wahlInhalt(w)}</button>`).join('')}<button class="nz-taste nz-option nz-loeschen" type="button" data-raster-weg="1" aria-label="${KIND.loeschen}">${LOESCHEN}</button></div>`;
     } else if (pl.art === 'bild') werkzeug = `<div class="nz-tipp">${TIPP}<span>${pl.auftrag === KIND.auftrag.werIstEs ? KIND.tippOben : KIND.tippBild}</span></div>`;
     const w = pl.entwurf;
     const key = w ? `${pl.ort}|${JSON.stringify(w)}` : null;
@@ -356,7 +380,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       links = `<span class="nz-marke">${KIND.soGehts}</span>`;
     } else if (m === 'lern') {
       const { a, st } = lernSchritt();
-      bild = format().zeichne(a.bedingung, { hilfe: st.versucht && lernBlatt !== 'hebt' ? 2 : 0, gewaehlt: st.antwort });
+      bild = format().zeichne(a.bedingung, { hilfe: st.versucht && lernBlatt !== 'hebt' ? 2 : 0, gewaehlt: imBild(pl) });
       // von selbst gezeigt: erst nach dem letzten Schritt geht es zur Aufgabe; auf Wunsch jederzeit zurück
       links = lernNoetig() ? `<span class="nz-marke">${KIND.soGehts}</span>` : `<button type="button" class="nz-los" data-los="1">${KIND.losGehts}</button>`;
     } else {
@@ -365,7 +389,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       const p = satz().perlen[i];
       const offen = sitzung.hilfeOffen[i];
       const f = format();
-      bild = f.zeichne(a.bedingung, { hilfe: bildHilfe(offen), gewaehlt: pl.entwurf });
+      bild = f.zeichne(a.bedingung, { hilfe: bildHilfe(offen), gewaehlt: imBild(pl) });
       if (offen >= 2) links = `<button type="button" class="nz-sogehts" data-sogehts="1">${KIND.soGehts}</button>`;
       const max = offen >= hoechsteHilfe(satz());
       const pulst = hilfePulst(sitzung, i);
@@ -442,7 +466,14 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     meldung = '';
     zaehlMarken(pl);
     teilMarken(pl);
+    rasterMarken(pl);
     fingerNachfuehren(pl);
+  }
+  /** gewählte Zelle des Rasters hervorheben */
+  function rasterMarken(pl: Platz): void {
+    if (pl.art !== 'raster' || !pl.raster) return;
+    const z = rasterStand(pl).zelle;
+    for (const e of tisch.querySelectorAll('#nz-bild > svg [data-zelle]')) e.classList.toggle('aktiv', Number(e.getAttribute('data-zelle')) === z);
   }
   /** erstes angetipptes Ding eines Paars markieren (das volle Paar zeichnet das Format selbst als gewählt) */
   function teilMarken(pl: Platz): void {
@@ -510,7 +541,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     if (location.hash !== hash) return clearInterval(fingerUhr);
     if (phase !== 'loesen' || fliegt || modus() !== 'satz' || !finger.hidden) return;
     const pl = platz();
-    if (pl.art === 'zahl' || !pl.entwurf || profil.abgaben[pl.art] >= FINGER_BIS) return;
+    if (pl.art === 'zahl' || !pl.entwurf || profil.abgaben[pl.art === 'raster' ? 'bild' : pl.art] >= FINGER_BIS) return;
     if (Date.now() - letzteBeruehrung < FINGER_RUHE_MS || fingerSchon.has(pl.ort + ':abgabe')) return;
     fingerSchon.add(pl.ort + ':abgabe');
     fingerAuf(tisch.querySelector('[data-abgabe]'));
@@ -580,7 +611,11 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     // das Modell nimmt die Abgabe zuerst an und speichert; der Flug zeigt sie nur noch
     sitzung = { ...sitzung, satz: setzeAntwort(satz(), i, w) };
     if (satz().runden > 0) geaendert[i] = true;
-    if (pl.art !== 'zahl') profil = { ...profil, abgaben: { ...profil.abgaben, [pl.art]: profil.abgaben[pl.art] + 1 } };
+    if (pl.art !== 'zahl') {
+      // Raster zählt wie ein Tippen im Bild (Finger zur Perle, bis das Kind sie kennt)
+      const art = pl.art === 'raster' ? 'bild' : pl.art;
+      profil = { ...profil, abgaben: { ...profil.abgaben, [art]: profil.abgaben[art] + 1 } };
+    }
     speichern();
     flug(w, knopf, ziel, () => {
       neuSlot = i;
@@ -825,7 +860,7 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     }
     // das Bild der ähnlichen Aufgabe ist nur zum Ansehen: Tippen darin wählt nichts
     if (t.closest('.nz-aehnlich') && !t.closest('[data-spaeter]')) return;
-    const el = t.closest<HTMLElement>('button, [data-wahl], a');
+    const el = t.closest<HTMLElement>('button, [data-wahl], [data-zelle], a');
     if (!el || (el as HTMLButtonElement).disabled) return;
     const d = el.dataset;
     if (d.menue) {
@@ -912,6 +947,31 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       const wert = tippe(markiert ? null : alt, d.loeschen ? { art: 'loeschen' } : { art: 'ziffer', ziffer: Number(d.ziffer) }, pl.feld);
       markiert = false;
       entwurfSetzen(wert === null ? null : { art: 'zahl', wert });
+      geaendertUm = Date.now();
+      setzenTon();
+      speichern();
+      return zeichnen();
+    }
+    // Raster: Zelle wählen (nur leere des Anfangs), dann ein Zeichen setzen; voll = Entwurf
+    if (pl.art === 'raster' && pl.raster && (d.zelle !== undefined || d.zeichenNr !== undefined || d.rasterWeg)) {
+      const st = rasterStand(pl);
+      if (d.zelle !== undefined) {
+        const k = Number(d.zelle);
+        if (pl.raster.start[k] !== -1) return;
+        // Tippen wählt die Zelle immer (auch die, zu der der Lade nach dem letzten Zeichen schon gesprungen ist)
+        st.zelle = k;
+        setzenTon();
+        return zeichnen();
+      }
+      if (st.zelle === null) st.zelle = st.werte.findIndex((v, i) => v === -1 && pl.raster!.start[i] === -1);
+      if (st.zelle === null || st.zelle < 0) return void (st.zelle = null);
+      st.werte[st.zelle] = d.rasterWeg ? -1 : Number(d.zeichenNr);
+      // weiter zur nächsten leeren Zelle (beim Löschen bleibt sie)
+      if (!d.rasterWeg) {
+        const naechste = st.werte.findIndex((v, i) => v === -1 && pl.raster!.start[i] === -1);
+        st.zelle = naechste >= 0 ? naechste : null;
+      }
+      entwurfSetzen(st.werte.includes(-1) ? null : { art: 'sammel', zeichen: 'gitter', wert: [...st.werte] });
       geaendertUm = Date.now();
       setzenTon();
       speichern();

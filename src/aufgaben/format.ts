@@ -64,7 +64,8 @@ export type FormatId =
   | 'zehner-paare'
   | 'schuettelbox'
   | 'gleiches-paar'
-  | 'blitzblick';
+  | 'blitzblick'
+  | 'mini-sudoku';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';
@@ -174,6 +175,11 @@ export interface Format<B> {
   wahl?(b: B, z: Zufall): Antwort[];
   /** true nur bei Nr. 9 und 10: jede richtige Belegung zählt */
   mehrere?: boolean;
+  /**
+   * Engine Raster mit mehreren Zellen (Mini-Sudoku): Anfang des Gitters (Wert je Zelle, −1 = leer, vom Kind zu füllen)
+   * und die Zeichen im Lade. Die Antwort ist die volle Belegung als Sammelantwort „gitter“ (Werte = Nummern der Zeichen).
+   */
+  raster?: { start(b: B): number[]; zeichen(b: B): Antwort[] };
 
   // Anzeige
   /**

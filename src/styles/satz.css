@@ -281,6 +281,9 @@
 .nz-bild [data-blick].laeuft .blick-blatt { animation: blick-oeffnen var(--blick-dauer, 2s) steps(1, end) forwards; }
 @keyframes blick-zeigen { 0% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes blick-oeffnen { 0% { opacity: 0; } 100% { opacity: 1; } }
+/* Raster (Mini-Sudoku): gewählte Zelle */
+.nz-bild [data-zelle] { cursor: pointer; }
+.nz-bild [data-zelle].aktiv .zelle-rand { stroke: #2B289F; stroke-width: 5; }
 /* Gleiches Paar: das erste angetippte Ding, bis das zweite kommt (dieselbe Fokusfarbe wie eine gewählte Karte) */
 .nz-bild [data-wahl].angetippt { filter: drop-shadow(0 0 3px #2B289F) drop-shadow(0 0 1.5px #2B289F); }
 /* Ende: Geheimwort */

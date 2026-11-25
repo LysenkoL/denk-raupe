@@ -70,7 +70,8 @@ function zeichne(b: Blitzblick, o: ZeichenOptionen): string {
   if (offen) s += punkte;
   else {
     s += `<g data-blick="1" class="blick" style="--blick-dauer:${dauer}s" role="button" tabindex="0" aria-label="Blätter öffnen">`;
-    s += `<g class="blick-inhalt">${punkte}</g>`;
+    // zugedeckt auch ohne die Stile des Satzes (Musterseite, Druckvorschau): die Animation von „laeuft“ zeigt sie
+    s += `<g class="blick-inhalt" style="opacity:0">${punkte}</g>`;
     s += `<g class="blick-blatt">${blatt(4, 4, b.breite / 2 + 10, b.hoehe, true)}${blatt(4 + b.breite / 2 - 10, 4, b.breite / 2 + 10, b.hoehe, false)}</g>`;
     s += `<rect x="4" y="4" width="${b.breite}" height="${b.hoehe}" fill="${PAPIER}" opacity="0"/>`;
     s += '</g>';
