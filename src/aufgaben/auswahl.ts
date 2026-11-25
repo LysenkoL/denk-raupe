@@ -14,8 +14,8 @@ export const KARTE_AB = 120;
 export const KARTE_ZEILE = 116;
 
 export interface KartenOptionen {
-  /** Nummer der gewählten Karte (Index) oder null */
-  gewaehlt: number | null;
+  /** Nummer der gewählten Karte (Index), mehrere (Paar) oder null */
+  gewaehlt: number | number[] | null;
   /** Hilfe: Karte blass (data-hilfe="schritt" oder "schatten") */
   blass?: (k: number) => 'schritt' | 'schatten' | null;
   /** Hilfe: Karte warm umrahmt – Stufe 2 „teil“, Stufe 3 „schritt“ (gestrichelt) */
@@ -66,7 +66,7 @@ export function kartenReihe(
     const y = oben + zeile * KARTE_ZEILE + 6;
     const blass = o.blass?.(k) ?? null;
     s += `<g class="wahl-ziel" data-wahl="${k}" role="button" tabindex="0" aria-label="${name(k)}" opacity="${blass ? 0.25 : 1}"${blass ? ` data-hilfe="${blass}"` : ''}>`;
-    s += karte(x, y, o.gewaehlt === k, inhalt(k, x + KARTE_B / 2, y + KARTE_H / 2 + 2), o.nummer ? k + 1 : null, o.hell?.(k) ?? null);
+    s += karte(x, y, Array.isArray(o.gewaehlt) ? o.gewaehlt.includes(k) : o.gewaehlt === k, inhalt(k, x + KARTE_B / 2, y + KARTE_H / 2 + 2), o.nummer ? k + 1 : null, o.hell?.(k) ?? null);
     s += '</g>';
   }
   return { svg: s, hoehe: zeilen * KARTE_ZEILE + 10 };

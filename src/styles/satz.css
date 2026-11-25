@@ -273,6 +273,16 @@
 .nz-bild [data-zaehl] { cursor: pointer; }
 .nz-bild [data-zaehl].gezaehlt .zaehl-ring { opacity: 1; }
 .nz-bild [data-zaehl].gezaehlt .ding { opacity: .55; }
+/* Engine Blick (Blitzblick): zugedeckt; „laeuft“ zeigt den Inhalt für --blick-dauer, dann wieder zu. Ohne Bewegung:
+   nur Sichtbarkeit (auch bei „weniger Bewegung“ gleich) */
+.nz-bild [data-blick] { cursor: pointer; }
+.nz-bild [data-blick] .blick-inhalt { opacity: 0; }
+.nz-bild [data-blick].laeuft .blick-inhalt { animation: blick-zeigen var(--blick-dauer, 2s) steps(1, end) forwards; }
+.nz-bild [data-blick].laeuft .blick-blatt { animation: blick-oeffnen var(--blick-dauer, 2s) steps(1, end) forwards; }
+@keyframes blick-zeigen { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes blick-oeffnen { 0% { opacity: 0; } 100% { opacity: 1; } }
+/* Gleiches Paar: das erste angetippte Ding, bis das zweite kommt (dieselbe Fokusfarbe wie eine gewählte Karte) */
+.nz-bild [data-wahl].angetippt { filter: drop-shadow(0 0 3px #2B289F) drop-shadow(0 0 1.5px #2B289F); }
 /* Ende: Geheimwort */
 .nz-geheim { display: flex; gap: 6px; }
 .nz-geheim span { width: 40px; height: 46px; display: grid; place-items: center; border-radius: 10px; border: 3px dashed rgba(90, 70, 30, .35); font-size: 26px; font-weight: 800; background: rgba(255, 255, 255, .5); }

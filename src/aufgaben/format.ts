@@ -62,7 +62,9 @@ export type FormatId =
   // Gruppe Г7 (Verbinden, Bauen)
   | 'gross-klein'
   | 'zehner-paare'
-  | 'schuettelbox';
+  | 'schuettelbox'
+  | 'gleiches-paar'
+  | 'blitzblick';
 
 /** Sieben Bereiche, die der Elternteil ein- und ausschaltet */
 export type Bereich = 'zahlen' | 'muster' | 'logik' | 'raum' | 'blick' | 'woerter' | 'welt';

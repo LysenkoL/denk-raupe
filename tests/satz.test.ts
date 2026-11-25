@@ -203,6 +203,50 @@ describe('sieben Größen: fester Tisch, kein Scrollen, ganzer Satz bis zum Ende
     });
 });
 
+describe('Paar im Bild (Gleiches Paar, Nr. 49)', () => {
+  it('erstes Tippen markiert, zweites macht das Paar, noch einmal nimmt eins weg; die Perle schickt das Paar', async () => {
+    const s = neueSitzung(SAMEN, undefined, [{ format: 'gleiches-paar', stufe: 1 }, { format: 'muster', stufe: 1 }]);
+    const [a, b] = (FORMATE['gleiches-paar'].loesungen(s.aufgaben[0].bedingung)[0] as unknown as { wert: number[] }).wert;
+    const page = await oeffnen(412, 800, { sitzung: s });
+    const ziel = (k: number) => `#nz-bild [data-wahl="${k - 1}"]`;
+    await page.click(ziel(a), { force: true });
+    expect(await page.getAttribute(ziel(a), 'class')).toContain('angetippt');
+    expect(await page.locator('[data-abgabe].leer').count()).toBe(1);
+    await page.click(ziel(b), { force: true });
+    // zwei gewählt: das Format zeichnet beide als gewählt, die Perle ist bereit
+    expect(await page.locator('#nz-bild [data-inhalt]').count()).toBe(2);
+    expect(await page.locator('[data-abgabe].leer').count()).toBe(0);
+    // noch einmal auf eins: das Paar ist weg, das andere bleibt markiert
+    await page.click(ziel(b), { force: true });
+    expect(await page.locator('#nz-bild [data-inhalt]').count()).toBe(0);
+    expect(await page.getAttribute(ziel(a), 'class')).toContain('angetippt');
+    await page.click(ziel(b), { force: true });
+    await page.waitForTimeout(320);
+    await page.click('[data-abgabe]');
+    await page.waitForTimeout(330);
+    expect(await page.locator('[data-slot="0"] .nz-perle').count()).toBe(1);
+    await page.close();
+  });
+});
+
+describe('Engine Blick (Blitzblick, Nr. 2)', () => {
+  it('zugedeckt, bis das Kind tippt; dann 2 Sekunden offen, danach wieder zu; noch einmal geht', async () => {
+    const s = neueSitzung(SAMEN, undefined, [{ format: 'blitzblick', stufe: 1 }, { format: 'muster', stufe: 1 }]);
+    const page = await oeffnen(412, 800, { sitzung: s, bewegung: true });
+    const deckkraft = () => page.evaluate(() => getComputedStyle(document.querySelector('#nz-bild .blick-inhalt')!).opacity);
+    expect(await deckkraft()).toBe('0');
+    await page.click('#nz-bild [data-blick]', { force: true });
+    await page.waitForTimeout(400);
+    expect(await deckkraft()).toBe('1');
+    await page.waitForTimeout(2000);
+    expect(await deckkraft()).toBe('0');
+    await page.click('#nz-bild [data-blick]', { force: true });
+    await page.waitForTimeout(300);
+    expect(await deckkraft()).toBe('1');
+    await page.close();
+  });
+});
+
 describe('Bedienung: nur die Perle schickt', () => {
   it('Wahl und Zahl bauen nur den Entwurf; leere Perle schickt nichts; der Entwurf steht in der Aufgabe', async () => {
     const s = probe();

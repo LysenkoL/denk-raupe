@@ -46,6 +46,8 @@ import { gehen } from '../src/aufgaben/raupen-weg';
 import type { GrossKlein } from '../src/aufgaben/gross-klein';
 import type { ZehnerPaare } from '../src/aufgaben/zehner-paare';
 import type { Schuettelbox } from '../src/aufgaben/schuettelbox';
+import type { GleichesPaar } from '../src/aufgaben/gleiches-paar';
+import type { Blitzblick } from '../src/aufgaben/blitzblick';
 import { neueHistorie } from '../src/satz/historie';
 import {
   abschliessen,
@@ -188,6 +190,8 @@ const AUFWAND: Record<FormatId, (b: unknown) => number[]> = {
   'gross-klein': (b) => [(b as GrossKlein).wahl.length],
   'zehner-paare': (b) => [(b as ZehnerPaare).zahlen.length],
   schuettelbox: (b) => [(b as Schuettelbox).gesamt],
+  'gleiches-paar': (b) => [(b as GleichesPaar).karten.length],
+  blitzblick: (b) => [(b as Blitzblick).punkte.length],
 };
 /** Zahl der Lösung (wie groß die Rechnung ist) */
 function antwortVon(id: FormatId, b: unknown): number {

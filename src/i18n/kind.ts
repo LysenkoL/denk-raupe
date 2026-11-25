@@ -111,6 +111,8 @@ export const KIND = {
     welcherKleineBuchstabe: 'Welcher kleine Buchstabe gehört dazu?',
     welcheBleibtUebrig: 'Welche Zahl bleibt übrig?',
     wieVieleVersteckt: 'Wie viele sind versteckt?',
+    welcheZweiGleich: 'Welche zwei sind gleich?',
+    wieVieleWaren: 'Tippe auf die Blätter. Wie viele waren es?',
   },
   /** Korb mit Blättern (für Screenreader) */
   korb(n: number): string {

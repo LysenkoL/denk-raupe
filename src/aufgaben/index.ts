@@ -51,6 +51,8 @@ import { LABYRINTH } from './labyrinth';
 import { GROSS_KLEIN } from './gross-klein';
 import { ZEHNER_PAARE } from './zehner-paare';
 import { SCHUETTELBOX } from './schuettelbox';
+import { GLEICHES_PAAR } from './gleiches-paar';
+import { BLITZBLICK } from './blitzblick';
 
 /**
  * Alle Formate. Jedes hier eingetragene Format kommt von selbst in die gemischten Sätze (src/satz/sitzung.ts,
@@ -109,4 +111,6 @@ export const FORMATE: Record<FormatId, Format<unknown>> = {
   'gross-klein': GROSS_KLEIN as Format<unknown>,
   'zehner-paare': ZEHNER_PAARE as Format<unknown>,
   schuettelbox: SCHUETTELBOX as Format<unknown>,
+  'gleiches-paar': GLEICHES_PAAR as Format<unknown>,
+  blitzblick: BLITZBLICK as Format<unknown>,
 };

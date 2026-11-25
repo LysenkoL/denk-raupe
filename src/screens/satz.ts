@@ -133,6 +133,8 @@ interface Platz {
   entwurf: Antwort | null;
   /** Schlüssel für Finger und gezählte Dinge: wechselt mit der Aufgabe oder dem Schritt */
   ort: string;
+  /** Antwort im Bild aus mehreren Dingen (Gleiches Paar): zwei antippen, dann ist die Antwort ein Paar */
+  mehrfach?: boolean;
 }
 
 export async function renderSatz(app: HTMLElement): Promise<void> {
@@ -171,6 +173,8 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   let gezeigt = '';
   /** gezählte Dinge (Werkzeug der Engine Bild), je Ort; nur auf dem Bildschirm */
   let gezaehlt: { wo: string; nr: Set<number> } | null = null;
+  /** angetippte Dinge einer Antwort aus mehreren (Gleiches Paar), bevor das Paar voll ist; gehört zu einem Ort */
+  let paarTeil: { wo: string; nr: number[] } | null = null;
   // Finger
   let letzteBeruehrung = Date.now();
   let leerTipps = 0;
@@ -246,11 +250,11 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     if (m === 'lern') {
       const { a, st, k } = lernSchritt();
       const e = format().eingabe(a.bedingung);
-      return { modus: m, auftrag: KIND.auftrag[format().auftrag], art: e.art as Art, wahl: a.wahl, feld: e.art === 'zahl' ? zahlfeld(e, a.zahlenraum) : 99, entwurf: st.antwort, ort: `lern:${a.format}:${k}` };
+      return { modus: m, auftrag: KIND.auftrag[format().auftrag], art: e.art as Art, wahl: a.wahl, feld: e.art === 'zahl' ? zahlfeld(e, a.zahlenraum) : 99, entwurf: st.antwort, ort: `lern:${a.format}:${k}`, mehrfach: e.art === 'bild' && !!e.mehrfach };
     }
     const a = aufgabe();
     const e = format().eingabe(a.bedingung);
-    return { modus: m, auftrag: KIND.auftrag[format().auftrag], art: e.art as Art, wahl: a.wahl, feld: e.art === 'zahl' ? zahlfeld(e, a.zahlenraum) : 99, entwurf: entwuerfe()[aktuell()], ort: `${sitzung.samen}:${aktuell()}` };
+    return { modus: m, auftrag: KIND.auftrag[format().auftrag], art: e.art as Art, wahl: a.wahl, feld: e.art === 'zahl' ? zahlfeld(e, a.zahlenraum) : 99, entwurf: entwuerfe()[aktuell()], ort: `${sitzung.samen}:${aktuell()}`, mehrfach: e.art === 'bild' && !!e.mehrfach };
   }
   function entwurfSetzen(w: Antwort | null): void {
     const m = modus();
@@ -437,7 +441,14 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
     tisch.innerHTML = brettHtml(pl) + ladeHtml(pl);
     meldung = '';
     zaehlMarken(pl);
+    teilMarken(pl);
     fingerNachfuehren(pl);
+  }
+  /** erstes angetipptes Ding eines Paars markieren (das volle Paar zeichnet das Format selbst als gewählt) */
+  function teilMarken(pl: Platz): void {
+    if (paarTeil && paarTeil.wo !== pl.ort) paarTeil = null;
+    const teil = pl.mehrfach && !pl.entwurf && paarTeil ? paarTeil.nr : [];
+    for (const e of tisch.querySelectorAll('#nz-bild > svg [data-wahl]')) e.classList.toggle('angetippt', teil.includes(Number(e.getAttribute('data-wahl')) + 1));
   }
   function regen(): string {
     let h = '<div class="nz-regen" aria-hidden="true">';
@@ -792,6 +803,14 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
   }, { passive: true });
   root.addEventListener('click', (ev) => {
     const t = ev.target as Element;
+    // Engine Blick: Tippen auf die Blätter zeigt das Bild für --blick-dauer, noch einmal tippen zeigt es noch einmal
+    const blick = t.closest('[data-blick]');
+    if (blick && t.closest('#nz-bild') && !t.closest('.nz-aehnlich') && phase === 'loesen') {
+      blick.classList.remove('laeuft');
+      void blick.getBoundingClientRect();
+      blick.classList.add('laeuft');
+      return setzenTon();
+    }
     // Werkzeug „gezählt markieren“: ein Ding im eigenen Bild an- oder abhaken (nie im Teil der ähnlichen Aufgabe)
     const zaehl = t.closest('[data-zaehl]');
     if (zaehl && !t.closest('.nz-aehnlich') && t.closest('#nz-bild') && phase === 'loesen' && !fliegt) {
@@ -893,6 +912,21 @@ export async function renderSatz(app: HTMLElement): Promise<void> {
       const wert = tippe(markiert ? null : alt, d.loeschen ? { art: 'loeschen' } : { art: 'ziffer', ziffer: Number(d.ziffer) }, pl.feld);
       markiert = false;
       entwurfSetzen(wert === null ? null : { art: 'zahl', wert });
+      geaendertUm = Date.now();
+      setzenTon();
+      speichern();
+      return zeichnen();
+    }
+    // Paar im Bild: das erste Tippen merkt sich das Ding, das zweite macht die Antwort; ein drittes fängt neu an,
+    // ein Ding noch einmal nimmt es weg (docs/FORMATE.md, Engine Verbinden: „отмена снимает последнюю“)
+    if (d.wahl !== undefined && pl.mehrfach) {
+      const nr = Number(d.wahl) + 1;
+      const alt = pl.entwurf?.art === 'sammel' ? (pl.entwurf.wert as number[]) : paarTeil?.wo === pl.ort ? paarTeil.nr : [];
+      let neu = alt.includes(nr) ? alt.filter((x) => x !== nr) : [...alt, nr];
+      if (neu.length > 2) neu = [nr];
+      neu.sort((x, y) => x - y);
+      paarTeil = { wo: pl.ort, nr: neu };
+      entwurfSetzen(neu.length === 2 ? { art: 'sammel', zeichen: 'paar', wert: neu } : null);
       geaendertUm = Date.now();
       setzenTon();
       speichern();

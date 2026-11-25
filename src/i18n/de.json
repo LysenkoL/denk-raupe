@@ -222,5 +222,13 @@
   "format.schuettelbox.name": "Schüttelbox",
   "format.schuettelbox.uebt": "Zahlen zerlegen und ergänzen: Das Schild sagt, wie viele Kugeln in der Schachtel sind; ein Teil liegt unter dem Deckel. Die Zahlen werden größer (bis 20).",
   "format.schuettelbox.beispiel": "Auf dem Schild 7, offen liegen 4 Kugeln: Unter dem Deckel sind 3.",
-  "format.schuettelbox.helfen": "Mit einer echten Schachtel und Murmeln spielen hilft sehr. Fragen Sie: „Wie viele fehlen noch bis 7?“ Nennen Sie die Zahl nicht."
+  "format.schuettelbox.helfen": "Mit einer echten Schachtel und Murmeln spielen hilft sehr. Fragen Sie: „Wie viele fehlen noch bis 7?“ Nennen Sie die Zahl nicht.",
+  "format.gleiches-paar.name": "Gleiches Paar",
+  "format.gleiches-paar.uebt": "Genau vergleichen: Unter ähnlichen Karten sind genau zwei gleich – gleiche Form, gleiche Farbe, gleich viele Punkte. Erst unterscheiden sich die anderen stark, dann nur noch in einem Merkmal.",
+  "format.gleiches-paar.beispiel": "Zwei rote Kreise mit zwei Punkten sind gleich; ein roter Kreis mit drei Punkten und ein blauer mit zwei sind es nicht.",
+  "format.gleiches-paar.helfen": "Fragen Sie: „Sieh dir die Form an. Und die Farbe? Und die Punkte?“ Das Kind tippt beide Karten an. Zeigen Sie nicht auf das Paar.",
+  "format.blitzblick.name": "Blitzblick",
+  "format.blitzblick.uebt": "Mengen auf einen Blick erfassen, ohne einzeln zu zählen. Das Kind öffnet die Blätter selbst, wenn es bereit ist; die Punkte sind 2 Sekunden zu sehen. Auf der höchsten Stufe liegen sie in Fünferreihen – fünf und noch ein paar.",
+  "format.blitzblick.beispiel": "Eine volle Fünferreihe und darunter zwei Punkte: Es waren 7.",
+  "format.blitzblick.helfen": "Ermuntern Sie: „Schau nur kurz hin – siehst du fünf?“ Das Kind darf die Blätter beliebig oft öffnen. Nennen Sie die Zahl nicht."
 }

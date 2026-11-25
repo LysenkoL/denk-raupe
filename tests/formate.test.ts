@@ -124,7 +124,7 @@ describe('Pass jedes Formats (docs/FORMATE.md, Abschnitte 2, 3 und 6)', () => {
       const e = f.eingabe(a.bedingung);
       expect(EINGABEN).toContain(e.art);
       if (e.art === 'zahl') expect(e.einstellig === undefined || e.einstellig === true).toBe(true);
-      if (e.art === 'wahl' || e.art === 'bild') expect(a.wahl?.length).toBeGreaterThan(1);
+      if (e.art === 'wahl' || (e.art === 'bild' && !e.mehrfach)) expect(a.wahl?.length).toBeGreaterThan(1);
     }
   });
 
